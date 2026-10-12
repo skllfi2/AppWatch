@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <DOTNET_SYSTEM_GLOBALIZATION_INVARIANT>true</DOTNET_SYSTEM_GLOBALIZATION_INVARIANT>
+  </PropertyGroup>
+  <Target Name="SetInvariantCulture" BeforeTargets="XamlPreCompile">
+    <PropertyGroup>
+      <XamlCompilerCulture>en-US</XamlCompilerCulture>
+      <XamlCompilerUICulture>en-US</XamlCompilerUICulture>
+    </PropertyGroup>
+  </Target>
+</Project>

@@ -1,0 +1,74 @@
+<Page
+    x:Class="AppWatch.Views.AboutPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="Transparent"
+    NavigationCacheMode="Required">
+
+    <Grid Padding="32,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,16">
+            <Button Click="Back_Click" Padding="8" CornerRadius="6" Background="Transparent" BorderThickness="0">
+                <FontIcon Glyph="&#xE72B;" FontSize="14"/>
+            </Button>
+            <TextBlock Text="{x:Bind Loc.AboutPageTitle, Mode=OneWay}" Style="{StaticResource PageHeaderStyle}" />
+            <TextBlock Text="{x:Bind Loc.AboutPageSubtitle, Mode=OneWay}" Style="{StaticResource PageSubtitleStyle}" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Spacing="12" MaxWidth="720" HorizontalAlignment="Left" Margin="0,8,0,0">
+
+                <!-- App identity card -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1" CornerRadius="8" Padding="24">
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Border Width="48" Height="48" CornerRadius="10"
+                                    Background="{StaticResource HeroOverlayBrush}">
+                                <TextBlock Text="A" FontSize="24" FontWeight="Bold"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center" Spacing="2">
+                                <TextBlock Text="AppWatch" FontSize="20" FontWeight="SemiBold" />
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{x:Bind Loc.AboutVersion, Mode=OneWay}" Opacity="0.7" />
+                                    <TextBlock Text="{x:Bind AppVersion}" FontWeight="SemiBold" />
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Repository -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1" CornerRadius="8" Padding="24">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{x:Bind Loc.AboutRepo, Mode=OneWay}" FontWeight="SemiBold" />
+                        <HyperlinkButton NavigateUri="https://github.com/skllfi2/AppWatch" Padding="0"
+                                         Content="github.com/skllfi2/AppWatch" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Attribution -->
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1" CornerRadius="8" Padding="24">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{x:Bind Loc.AboutAttribution, Mode=OneWay}" FontWeight="SemiBold" />
+                        <TextBlock Text="komi-store (Apache-2.0) — идеи обновления портативных приложений" Opacity="0.7" FontSize="12" TextWrapping="Wrap" />
+                        <TextBlock Text="UniGetUI (MIT) — UX-паттерны списков обновлений" Opacity="0.7" FontSize="12" TextWrapping="Wrap" />
+                        <TextBlock Text="ZuiV2 (собственная разработка) — дизайн-система и тема" Opacity="0.7" FontSize="12" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

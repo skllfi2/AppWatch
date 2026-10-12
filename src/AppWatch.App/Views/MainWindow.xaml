@@ -1,0 +1,21 @@
+<Window
+    x:Class="AppWatch.Views.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="AppWatch">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid Background="Transparent">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TitleBar Grid.Row="0" x:Name="AppTitleBar" Title="AppWatch" />
+
+        <Frame Grid.Row="1" x:Name="ContentFrame" Background="Transparent" />
+    </Grid>
+</Window>

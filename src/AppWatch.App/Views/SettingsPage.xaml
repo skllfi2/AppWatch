@@ -1,0 +1,192 @@
+<Page
+    x:Class="AppWatch.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="Transparent"
+    NavigationCacheMode="Required">
+
+    <Grid Padding="32,24" RowSpacing="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header (ZuiV2 pattern) -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,16">
+            <Button Click="Back_Click" Padding="8" CornerRadius="6" Background="Transparent" BorderThickness="0">
+                <FontIcon Glyph="&#xE72B;" FontSize="14"/>
+            </Button>
+            <TextBlock Text="{x:Bind Loc.SettingsPageTitle, Mode=OneWay}" FontSize="28" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+            <TextBlock Text="{x:Bind Loc.SettingsPageSubtitle, Mode=OneWay}" FontSize="13"
+                       Foreground="{StaticResource TextSecondaryBrush}"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Spacing="20" Padding="0,0,16,0">
+
+                <!-- General section (ZuiV2: icon + CharacterSpacing label) -->
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="4,0">
+                        <FontIcon Glyph="&#xE713;" FontSize="14" Foreground="{StaticResource AccentBrush}"/>
+                        <TextBlock Text="{x:Bind Loc.SettingsGeneral, Mode=OneWay}" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextSecondaryBrush}" CharacterSpacing="40"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="2">
+                        <!-- Language -->
+                        <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="16">
+                            <Grid ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Loc.SettingsLanguage, Mode=OneWay}" FontSize="14"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                </StackPanel>
+                                <ComboBox Grid.Column="1" MinWidth="160" VerticalAlignment="Center"
+                                          SelectedIndex="{x:Bind ViewModel.SelectedLanguageIndex, Mode=TwoWay}">
+                                    <ComboBoxItem Content="Русский"/>
+                                    <ComboBoxItem Content="English"/>
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+
+                        <!-- Theme -->
+                        <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="16">
+                            <Grid ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Loc.SettingsTheme, Mode=OneWay}" FontSize="14"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                </StackPanel>
+                                <ComboBox Grid.Column="1" MinWidth="160" VerticalAlignment="Center"
+                                          SelectedIndex="{x:Bind ViewModel.SelectedThemeIndex, Mode=TwoWay}">
+                                    <ComboBoxItem Content="{x:Bind Loc.SettingsThemeSystem, Mode=OneWay}"/>
+                                    <ComboBoxItem Content="{x:Bind Loc.SettingsThemeDark, Mode=OneWay}"/>
+                                    <ComboBoxItem Content="{x:Bind Loc.SettingsThemeLight, Mode=OneWay}"/>
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Behavior section -->
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="4,0">
+                        <FontIcon Glyph="&#xE77B;" FontSize="14" Foreground="{StaticResource AccentBrush}"/>
+                        <TextBlock Text="{x:Bind Loc.SettingsBehavior, Mode=OneWay}" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextSecondaryBrush}" CharacterSpacing="40"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="2">
+                        <!-- Auto-check -->
+                        <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="16">
+                            <Grid ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Loc.SettingsAutoCheck, Mode=OneWay}" FontSize="14"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="{x:Bind Loc.SettingsAutoCheckHint, Mode=OneWay}" FontSize="11"
+                                               Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
+                                              IsOn="{x:Bind ViewModel.AutoCheckEnabled, Mode=TwoWay}"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Interval -->
+                        <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="16">
+                            <Grid ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Loc.SettingsInterval, Mode=OneWay}" FontSize="14"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                </StackPanel>
+                                <ComboBox Grid.Column="1" MinWidth="120" VerticalAlignment="Center"
+                                          SelectedIndex="{x:Bind ViewModel.SelectedIntervalIndex, Mode=TwoWay}">
+                                    <ComboBoxItem Content="1 ч"/>
+                                    <ComboBoxItem Content="3 ч"/>
+                                    <ComboBoxItem Content="6 ч"/>
+                                    <ComboBoxItem Content="12 ч"/>
+                                    <ComboBoxItem Content="24 ч"/>
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- GitHub section -->
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="4,0">
+                        <FontIcon Glyph="&#xE895;" FontSize="14" Foreground="{StaticResource AccentBrush}"/>
+                        <TextBlock Text="{x:Bind Loc.SettingsGitHub, Mode=OneWay}" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextSecondaryBrush}" CharacterSpacing="40"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="2">
+                        <!-- PAT -->
+                        <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="16">
+                            <StackPanel Spacing="10">
+                                <Grid ColumnSpacing="16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Bind Loc.SettingsPatToken, Mode=OneWay}" FontSize="14"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="{x:Bind ViewModel.PatStatus, Mode=OneWay}" FontSize="11"
+                                                   Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Grid>
+                                <PasswordBox PlaceholderText="ghp_…" MaxLength="255"
+                                             Password="{x:Bind ViewModel.PatToken, Mode=TwoWay}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Self-update -->
+                        <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="16">
+                            <Grid ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Loc.SettingsSelfUpdate, Mode=OneWay}" FontSize="14"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="{x:Bind Loc.SettingsSelfUpdateHint, Mode=OneWay}" FontSize="11"
+                                               Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" VerticalAlignment="Center" Padding="12,6" CornerRadius="6"
+                                        Background="{StaticResource HeroOverlayBrush}" BorderThickness="0"
+                                        Command="{x:Bind ViewModel.CheckSelfUpdateCommand}"
+                                        Content="{x:Bind Loc.SettingsSelfUpdateCheck, Mode=OneWay}"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Status + Save -->
+                <StackPanel Orientation="Horizontal" Spacing="12" Margin="4,8,0,0">
+                    <Button Style="{StaticResource AccentButtonStyle}"
+                            Command="{x:Bind ViewModel.SaveCommand}"
+                            Content="{x:Bind Loc.SettingsSave, Mode=OneWay}"
+                            Padding="20,8" CornerRadius="6" FontSize="13"/>
+                    <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" VerticalAlignment="Center" Opacity="0.8"/>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

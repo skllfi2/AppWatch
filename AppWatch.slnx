@@ -1,0 +1,16 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/AppWatch.App/AppWatch.App.csproj">
+      <Platform Solution="*|x64" Project="x64" />
+      <Deploy Solution="*|x64" />
+    </Project>
+    <Project Path="src/AppWatch.Core/AppWatch.Core.csproj" />
+    <Project Path="src/AppWatch.Infrastructure/AppWatch.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AppWatch.Core.Tests/AppWatch.Core.Tests.csproj" />
+  </Folder>
+</Solution>

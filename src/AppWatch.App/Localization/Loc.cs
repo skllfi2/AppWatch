@@ -1,0 +1,116 @@
+using System.ComponentModel;
+
+namespace AppWatch.Localization;
+
+/// <summary>
+/// XAML-friendly localization wrapper for x:Bind: typed properties re-evaluate
+/// on language switch (INotifyPropertyChanged with an empty property name).
+/// </summary>
+public sealed class Loc : INotifyPropertyChanged
+{
+    public static Loc Instance { get; } = new();
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private Loc()
+    {
+        LocalizationService.Instance.PropertyChanged += (_, _) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
+    }
+
+    public string this[string key] => LocalizationService.Instance[key];
+
+    public string WindowTitle => LocalizationService.Instance["windowTitle"];
+    public string CheckUpdates => LocalizationService.Instance["checkUpdates"];
+    public string UpdateAll => LocalizationService.Instance["updateAll"];
+    public string TrackedApps => LocalizationService.Instance["trackedApps"];
+
+        public string NoTrackedApps => LocalizationService.Instance["NoTrackedApps"];
+    public string Catalog => LocalizationService.Instance["catalog"];
+    public string CatalogHint => LocalizationService.Instance["catalogHint"];
+    public string WingetUpdates => LocalizationService.Instance["wingetUpdates"];
+    public string WingetGoTo => LocalizationService.Instance["wingetGoTo"];
+    public string WingetScan => LocalizationService.Instance["wingetScan"];
+    public string WingetUnavailable => LocalizationService.Instance["wingetUnavailable"];
+    public string NavApps => LocalizationService.Instance["navApps"];
+    public string NavCatalog => LocalizationService.Instance["navCatalog"];
+    public string NavWinget => LocalizationService.Instance["navWinget"];
+    public string NavSettings => LocalizationService.Instance["navSettings"];
+    public string NavAbout => LocalizationService.Instance["navAbout"];
+    public string AppsPageSubtitle => LocalizationService.Instance["appsPageSubtitle"];
+    public string CatalogPageSubtitle => LocalizationService.Instance["catalogPageSubtitle"];
+    public string WingetPageSubtitle => LocalizationService.Instance["wingetPageSubtitle"];
+    public string SettingsPageTitle => LocalizationService.Instance["settingsPageTitle"];
+    public string SettingsPageSubtitle => LocalizationService.Instance["settingsPageSubtitle"];
+    public string AboutPageTitle => LocalizationService.Instance["aboutPageTitle"];
+        public string AboutPageSubtitle => LocalizationService.Instance["aboutPageSubtitle"];
+
+        // Settings page keys
+        public string SettingsGeneral => LocalizationService.Instance["SettingsGeneral"];
+        public string SettingsBehavior => LocalizationService.Instance["SettingsBehavior"];
+        public string SettingsGitHub => LocalizationService.Instance["SettingsGitHub"];
+        public string SettingsLanguage => LocalizationService.Instance["SettingsLanguage"];
+        public string SettingsTheme => LocalizationService.Instance["SettingsTheme"];
+        public string SettingsThemeSystem => LocalizationService.Instance["SettingsThemeSystem"];
+        public string SettingsThemeDark => LocalizationService.Instance["SettingsThemeDark"];
+        public string SettingsThemeLight => LocalizationService.Instance["SettingsThemeLight"];
+        public string SettingsAutoCheck => LocalizationService.Instance["SettingsAutoCheck"];
+        public string SettingsAutoCheckHint => LocalizationService.Instance["SettingsAutoCheckHint"];
+        public string SettingsInterval => LocalizationService.Instance["SettingsInterval"];
+        public string SettingsHours => LocalizationService.Instance["SettingsHours"];
+        public string SettingsPatToken => LocalizationService.Instance["SettingsPatToken"];
+        public string SettingsPatHint => LocalizationService.Instance["SettingsPatHint"];
+        public string SettingsPatStatusOk => LocalizationService.Instance["SettingsPatStatusOk"];
+        public string SettingsPatStatusEmpty => LocalizationService.Instance["SettingsPatStatusEmpty"];
+        public string SettingsSave => LocalizationService.Instance["SettingsSave"];
+        public string SettingsSaved => LocalizationService.Instance["SettingsSaved"];
+        public string SettingsSelfUpdate => LocalizationService.Instance["SettingsSelfUpdate"];
+        public string SettingsSelfUpdateHint => LocalizationService.Instance["SettingsSelfUpdateHint"];
+        public string SettingsSelfUpdateCheck => LocalizationService.Instance["SettingsSelfUpdateCheck"];
+        public string SettingsNoUpdates => LocalizationService.Instance["SettingsNoUpdates"];
+        public string SettingsUpdatesFound => LocalizationService.Instance["SettingsUpdatesFound"];
+
+        // About page keys
+        public string AboutVersion => LocalizationService.Instance["AboutVersion"];
+        public string AboutRepo => LocalizationService.Instance["AboutRepo"];
+        public string AboutAttribution => LocalizationService.Instance["AboutAttribution"];
+
+        // Hero banner keys
+        public string HeroTitle => LocalizationService.Instance["HeroTitle"];
+        public string HeroMetricTracked => LocalizationService.Instance["HeroMetricTracked"];
+        public string HeroMetricUpdates => LocalizationService.Instance["HeroMetricUpdates"];
+        public string HeroMetricUpdatedToday => LocalizationService.Instance["HeroMetricUpdatedToday"];
+
+        // Quick actions
+        public string QuickCheck => LocalizationService.Instance["QuickCheck"];
+        public string QuickStatus => LocalizationService.Instance["QuickStatus"];
+
+        // Stage texts
+        public string StageChecking => LocalizationService.Instance["StageChecking"];
+        public string StageDownloading => LocalizationService.Instance["StageDownloading"];
+        public string StageReplacing => LocalizationService.Instance["StageReplacing"];
+        public string StageRestarting => LocalizationService.Instance["StageRestarting"];
+        public string StageDone => LocalizationService.Instance["StageDone"];
+        public string StageError => LocalizationService.Instance["StageError"];
+
+        // Buttons
+                public string BtnUpdateOne => LocalizationService.Instance["BtnUpdateOne"];
+                public string BtnLaunch => LocalizationService.Instance["BtnLaunch"];
+
+                // Catalog Hero
+                public string CatalogHeroTitle => LocalizationService.Instance["CatalogHeroTitle"];
+                public string CatalogMetricTotal => LocalizationService.Instance["CatalogMetricTotal"];
+                public string CatalogMetricTracked => LocalizationService.Instance["CatalogMetricTracked"];
+                public string CatalogMetricUpdates => LocalizationService.Instance["CatalogMetricUpdates"];
+                public string CatalogAddCustom => LocalizationService.Instance["CatalogAddCustom"];
+
+                // Winget Hero
+                public string WingetHeroTitle => LocalizationService.Instance["WingetHeroTitle"];
+                public string WingetMetricTotal => LocalizationService.Instance["WingetMetricTotal"];
+                public string WingetMetricUpdates => LocalizationService.Instance["WingetMetricUpdates"];
+                public string WingetMetricPending => LocalizationService.Instance["WingetMetricPending"];
+                public string WingetUpdateSelected => LocalizationService.Instance["WingetUpdateSelected"];
+
+                // Not implemented
+                public string NotImplemented => LocalizationService.Instance["notImplemented"];
+            }

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- App-specific brushes using system theme colors where available.
+         Ported from ZuiV2 Themes/Light.xaml (our own code). -->
+    <SolidColorBrush x:Key="CardBackgroundBrush" Color="{ThemeResource CardBackgroundFillColorDefault}" />
+    <SolidColorBrush x:Key="CardSecondaryBrush" Color="{ThemeResource CardBackgroundFillColorSecondary}" />
+    <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="{ThemeResource SolidBackgroundFillColorBase}" />
+    <SolidColorBrush x:Key="BorderDefaultBrush" Color="{ThemeResource ControlStrokeColorDefault}" />
+    <SolidColorBrush x:Key="BorderSubtleBrush" Color="{ThemeResource ControlStrokeColorSecondary}" />
+    <SolidColorBrush x:Key="AccentBrush" Color="{ThemeResource SystemAccentColor}" />
+    <SolidColorBrush x:Key="ErrorBrush" Color="{ThemeResource SystemFillColorCritical}" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="{ThemeResource SystemFillColorSuccess}" />
+    <!-- SystemFillColorAttention not available in all WinUI 3 builds — hardcoded -->
+    <SolidColorBrush x:Key="WarningBackgroundBrush" Color="#33FFD83E" />
+    <SolidColorBrush x:Key="WarningBorderBrush" Color="#FFFFD83E" />
+    <SolidColorBrush x:Key="WarningTextBrush" Color="{ThemeResource TextFillColorPrimary}" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{ThemeResource TextFillColorPrimary}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{ThemeResource TextFillColorSecondary}" />
+    <SolidColorBrush x:Key="TextTertiaryBrush" Color="{ThemeResource TextFillColorTertiary}" />
+    <!-- TextOnAccent must be hardcoded white — {ThemeResource} version not available in all WinUI 3 builds -->
+    <SolidColorBrush x:Key="TextOnAccentBrush" Color="#FFFFFFFF" />
+
+    <!-- Hero banner overlays (for hero cards) -->
+    <SolidColorBrush x:Key="HeroOverlayBrush" Color="{ThemeResource TextFillColorPrimary}" Opacity="0.2" />
+    <SolidColorBrush x:Key="HeroSecondaryBrush" Color="{ThemeResource TextFillColorPrimary}" Opacity="0.6" />
+    <SolidColorBrush x:Key="HeroTertiaryBrush" Color="{ThemeResource TextFillColorPrimary}" Opacity="0.8" />
+    <SolidColorBrush x:Key="SuccessSolidBrush" Color="{ThemeResource SystemFillColorSuccess}" />
+
+    <!-- Accent button style -->
+    <Style x:Key="AccentButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{ThemeResource SystemAccentColor}" />
+        <Setter Property="Foreground" Value="{StaticResource TextOnAccentBrush}" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="MinHeight" Value="36" />
+    </Style>
+
+</ResourceDictionary>

@@ -1,0 +1,10 @@
+AppWatch
+Copyright 2026 Skllfi
+
+This product includes code ported from Komi Store
+(https://github.com/komi-store/komi-store),
+licensed under the Apache License, Version 2.0
+(http://www.apache.org/licenses/LICENSE-2.0).
+
+Ported components:
+- Asset selection logic (AssetSelector, AssetArchitectureMatcher)
