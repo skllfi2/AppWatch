@@ -1,7 +1,3 @@
-// Ported from ZuiV2 Zui.Core/Services/UpdateService.cs (our own code) —
-// the detached-PowerShell replacement pattern for self-updating a portable app:
-// the script outlives this process, waits for our PID to exit, replaces files
-// (preserving data folders), and relaunches the app.
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Text;
@@ -85,6 +81,22 @@ public sealed class SelfUpdateService
         }
     }
 
+    public async Task<bool> ApplyAsync(PreparedUpdate prepared, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Launch the detached PowerShell script that will wait for this process to exit
+            // and then replace files and restart the app
+            Launch(prepared);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "self-update apply failed");
+            return false;
+        }
+    }
+
     public bool Launch(PreparedUpdate prepared)
     {
         try
@@ -147,11 +159,11 @@ public sealed class SelfUpdateService
         var preserve = new[] { "data", "logs" };
         var preserveList = string.Join(", ", preserve.Select(p => $"'{p}'"));
 
-        srcDir = srcDir.Replace("\"", "`\"");
-        dstDir = dstDir.Replace("\"", "`\"");
-        launchExe = launchExe.Replace("\"", "`\"");
-        tempRoot = tempRoot.Replace("\"", "`\"");
-        logPath = logPath.Replace("\"", "`\"");
+        srcDir = srcDir.Replace("\\", "`\\");
+        dstDir = dstDir.Replace("\\", "`\\");
+        launchExe = launchExe.Replace("\\", "`\\");
+        tempRoot = tempRoot.Replace("\\", "`\\");
+        logPath = logPath.Replace("\\", "`\\");
 
         return $@"
 $ErrorActionPreference = 'SilentlyContinue'

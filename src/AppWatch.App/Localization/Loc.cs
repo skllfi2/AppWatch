@@ -46,39 +46,43 @@ public sealed class Loc : INotifyPropertyChanged
         public string AboutPageSubtitle => LocalizationService.Instance["aboutPageSubtitle"];
 
         // Settings page keys
-                public string SettingsGeneral => LocalizationService.Instance["SettingsGeneral"];
-                public string SettingsBehavior => LocalizationService.Instance["SettingsBehavior"];
-                public string SettingsGitHub => LocalizationService.Instance["SettingsGitHub"];
-                public string SettingsLanguage => LocalizationService.Instance["SettingsLanguage"];
-                public string SettingsTheme => LocalizationService.Instance["SettingsTheme"];
-                public string SettingsThemeSystem => LocalizationService.Instance["SettingsThemeSystem"];
-                public string SettingsThemeDark => LocalizationService.Instance["SettingsThemeDark"];
-                public string SettingsThemeLight => LocalizationService.Instance["SettingsThemeLight"];
-                public string SettingsAutoCheck => LocalizationService.Instance["SettingsAutoCheck"];
-                public string SettingsAutoCheckHint => LocalizationService.Instance["SettingsAutoCheckHint"];
-                public string SettingsInterval => LocalizationService.Instance["SettingsInterval"];
-                public string SettingsHours => LocalizationService.Instance["SettingsHours"];
-                public string SettingsPatToken => LocalizationService.Instance["SettingsPatToken"];
-                public string SettingsPatHint => LocalizationService.Instance["SettingsPatHint"];
-                public string SettingsPatStatusOk => LocalizationService.Instance["SettingsPatStatusOk"];
-                public string SettingsPatStatusEmpty => LocalizationService.Instance["SettingsPatStatusEmpty"];
-                public string SettingsSave => LocalizationService.Instance["SettingsSave"];
-                public string SettingsSaved => LocalizationService.Instance["SettingsSaved"];
-                public string SettingsSelfUpdate => LocalizationService.Instance["SettingsSelfUpdate"];
-                public string SettingsSelfUpdateHint => LocalizationService.Instance["SettingsSelfUpdateHint"];
-                public string SettingsSelfUpdateCheck => LocalizationService.Instance["SettingsSelfUpdateCheck"];
-                public string SettingsNoUpdates => LocalizationService.Instance["SettingsNoUpdates"];
-                public string SettingsUpdatesFound => LocalizationService.Instance["SettingsUpdatesFound"];
-                public string SettingsUpdateStrategy => LocalizationService.Instance["SettingsUpdateStrategy"];
-                public string SettingsUpdateStrategyHint => LocalizationService.Instance["SettingsUpdateStrategyHint"];
-                public string SettingsUpdateStrategyAuto => LocalizationService.Instance["SettingsUpdateStrategyAuto"];
-                public string SettingsUpdateStrategyBuiltIn => LocalizationService.Instance["SettingsUpdateStrategyBuiltIn"];
-                public string SettingsUpdateStrategySilent => LocalizationService.Instance["SettingsUpdateStrategySilent"];
-                public string SettingsUpdateStrategyPortable => LocalizationService.Instance["SettingsUpdateStrategyPortable"];
-                public string SettingsUpdateStrategyExternal => LocalizationService.Instance["SettingsUpdateStrategyExternal"];
+                        public string SettingsGeneral => LocalizationService.Instance["SettingsGeneral"];
+                        public string SettingsBehavior => LocalizationService.Instance["SettingsBehavior"];
+                        public string SettingsGitHub => LocalizationService.Instance["SettingsGitHub"];
+                        public string SettingsLanguage => LocalizationService.Instance["SettingsLanguage"];
+                        public string SettingsTheme => LocalizationService.Instance["SettingsTheme"];
+                        public string SettingsThemeSystem => LocalizationService.Instance["SettingsThemeSystem"];
+                        public string SettingsThemeDark => LocalizationService.Instance["SettingsThemeDark"];
+                        public string SettingsThemeLight => LocalizationService.Instance["SettingsThemeLight"];
+                        public string SettingsAutoCheck => LocalizationService.Instance["SettingsAutoCheck"];
+                        public string SettingsAutoCheckHint => LocalizationService.Instance["SettingsAutoCheckHint"];
+                        public string SettingsInterval => LocalizationService.Instance["SettingsInterval"];
+                        public string SettingsHours => LocalizationService.Instance["SettingsHours"];
+                        public string SettingsPatToken => LocalizationService.Instance["SettingsPatToken"];
+                        public string SettingsPatHint => LocalizationService.Instance["SettingsPatHint"];
+                        public string SettingsPatStatusOk => LocalizationService.Instance["SettingsPatStatusOk"];
+                        public string SettingsPatStatusEmpty => LocalizationService.Instance["SettingsPatStatusEmpty"];
+                        public string SettingsSave => LocalizationService.Instance["SettingsSave"];
+                        public string SettingsSaved => LocalizationService.Instance["SettingsSaved"];
+                        public string SettingsSelfUpdate => LocalizationService.Instance["SettingsSelfUpdate"];
+                        public string SettingsSelfUpdateHint => LocalizationService.Instance["SettingsSelfUpdateHint"];
+                        public string SettingsSelfUpdateCheck => LocalizationService.Instance["SettingsSelfUpdateCheck"];
+                                        public string SettingsSelfUpdateApply => LocalizationService.Instance["SettingsSelfUpdateApply"];
+                                        public string SettingsNoUpdates => LocalizationService.Instance["SettingsNoUpdates"];
+                                        public string SettingsUpdatesFound => LocalizationService.Instance["SettingsUpdatesFound"];
+                                        public string SettingsSelfUpdateApplying => LocalizationService.Instance["SettingsSelfUpdateApplying"];
+                                        public string SettingsSelfUpdateApplied => LocalizationService.Instance["SettingsSelfUpdateApplied"];
+                                        public string SettingsSelfUpdateFailed => LocalizationService.Instance["SettingsSelfUpdateFailed"];
+                                        public string SettingsUpdateStrategy => LocalizationService.Instance["SettingsUpdateStrategy"];
+                        public string SettingsUpdateStrategyHint => LocalizationService.Instance["SettingsUpdateStrategyHint"];
+                        public string SettingsUpdateStrategyAuto => LocalizationService.Instance["SettingsUpdateStrategyAuto"];
+                        public string SettingsUpdateStrategyBuiltIn => LocalizationService.Instance["SettingsUpdateStrategyBuiltIn"];
+                        public string SettingsUpdateStrategySilent => LocalizationService.Instance["SettingsUpdateStrategySilent"];
+                        public string SettingsUpdateStrategyPortable => LocalizationService.Instance["SettingsUpdateStrategyPortable"];
+                        public string SettingsUpdateStrategyExternal => LocalizationService.Instance["SettingsUpdateStrategyExternal"];
 
-                // About page keys
-                public string AboutVersion => LocalizationService.Instance["AboutVersion"];
+                        // About page keys
+                        public string AboutVersion => LocalizationService.Instance["AboutVersion"];
         public string AboutRepo => LocalizationService.Instance["AboutRepo"];
         public string AboutAttribution => LocalizationService.Instance["AboutAttribution"];
 

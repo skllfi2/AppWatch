@@ -180,24 +180,30 @@
                         </Border>
 
                         <!-- Self-update -->
-                        <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="16">
-                            <Grid ColumnSpacing="16">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
-                                    <TextBlock Text="{x:Bind Loc.SettingsSelfUpdate, Mode=OneWay}" FontSize="14"
-                                               Foreground="{StaticResource TextPrimaryBrush}"/>
-                                    <TextBlock Text="{x:Bind Loc.SettingsSelfUpdateHint, Mode=OneWay}" FontSize="11"
-                                               Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
-                                </StackPanel>
-                                <Button Grid.Column="1" VerticalAlignment="Center" Padding="12,6" CornerRadius="6"
-                                        Background="{StaticResource HeroOverlayBrush}" BorderThickness="0"
-                                        Command="{x:Bind ViewModel.CheckSelfUpdateCommand}"
-                                        Content="{x:Bind Loc.SettingsSelfUpdateCheck, Mode=OneWay}"/>
-                            </Grid>
-                        </Border>
+                                                <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="16">
+                                                    <Grid ColumnSpacing="16">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                                            <TextBlock Text="{x:Bind Loc.SettingsSelfUpdate, Mode=OneWay}" FontSize="14"
+                                                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                            <TextBlock Text="{x:Bind Loc.SettingsSelfUpdateHint, Mode=OneWay}" FontSize="11"
+                                                                       Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                                        </StackPanel>
+                                                        <Button Grid.Column="1" VerticalAlignment="Center" Padding="12,6" CornerRadius="6"
+                                                                Background="{StaticResource HeroOverlayBrush}" BorderThickness="0"
+                                                                Command="{x:Bind ViewModel.CheckSelfUpdateCommand}"
+                                                                Content="{x:Bind Loc.SettingsSelfUpdateCheck, Mode=OneWay}"/>
+                                                        <Button Grid.Column="2" VerticalAlignment="Center" Padding="12,6" CornerRadius="6"
+                                                                Style="{StaticResource AccentButtonStyle}"
+                                                                Command="{x:Bind ViewModel.ApplySelfUpdateCommand}"
+                                                                Content="{x:Bind Loc.SettingsSelfUpdateApply, Mode=OneWay}"
+                                                                Visibility="{x:Bind ViewModel.CanApplySelfUpdate, Converter={StaticResource BoolToVisibility}, Mode=OneWay}"/>
+                                                    </Grid>
+                                                </Border>
                     </StackPanel>
                 </StackPanel>
 

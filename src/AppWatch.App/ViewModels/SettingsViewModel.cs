@@ -121,6 +121,10 @@ public partial class SettingsViewModel : ObservableObject
             StatusText = prepared is null
                 ? LocalizationService.Instance["SettingsNoUpdates"]
                 : string.Format(LocalizationService.Instance["SettingsUpdatesFound"], prepared.Version);
+            
+            // Store prepared update for later apply
+            _preparedUpdate = prepared;
+            OnPropertyChanged(nameof(CanApplySelfUpdate));
         }
         catch (Exception ex)
         {
@@ -129,6 +133,41 @@ public partial class SettingsViewModel : ObservableObject
         finally
         {
             SelfUpdateBusy = false;
+        }
+    }
+
+    private SelfUpdateService.PreparedUpdate? _preparedUpdate;
+
+    public bool CanApplySelfUpdate => _preparedUpdate is not null && !SelfUpdateBusy;
+
+    [RelayCommand(CanExecute = nameof(CanApplySelfUpdate))]
+    private async Task ApplySelfUpdateAsync(CancellationToken cancellationToken)
+    {
+        if (_preparedUpdate is null) return;
+
+        SelfUpdateBusy = true;
+        StatusText = LocalizationService.Instance["SettingsSelfUpdateApplying"];
+        try
+        {
+            var success = await _selfUpdate.ApplyAsync(_preparedUpdate!, cancellationToken);
+            if (success)
+            {
+                StatusText = LocalizationService.Instance["SettingsSelfUpdateApplied"];
+            }
+            else
+            {
+                StatusText = LocalizationService.Instance["SettingsSelfUpdateFailed"];
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusText = ex.Message;
+        }
+        finally
+        {
+            SelfUpdateBusy = false;
+            _preparedUpdate = null;
+            OnPropertyChanged(nameof(CanApplySelfUpdate));
         }
     }
 }
