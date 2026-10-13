@@ -38,11 +38,21 @@ public partial class App : Application
         private IntPtr _hwnd;
         private bool _exiting;
         private BackgroundMonitor? _backgroundMonitor;
+        private CatalogMonitor? _catalogMonitor;
 
     public App()
-    {
-        InitializeComponent();
-    }
+        {
+            // Register converters in code to avoid XamlCompiler issues
+            Resources["BoolToVisibility"] = new Converters.BoolToVisibilityConverter();
+            Resources["InverseBool"] = new Converters.InverseBoolConverter();
+            Resources["StringToBool"] = new Converters.StringToBoolConverter();
+            Resources["NotNullToVisibility"] = new Converters.NotNullToVisibilityConverter();
+            Resources["CountToVisibility"] = new Converters.CountToVisibilityConverter();
+            Resources["InverseCountToVisibility"] = new Converters.InverseCountToVisibilityConverter();
+            Resources["StringToBrushConverter"] = new Converters.StringToBrushConverter();
+
+            InitializeComponent();
+        }
 
     /// <summary>ZuiV2 pattern: pages resolve shared services through the App.</summary>
     public static T Resolve<T>() where T : notnull => (T)((App)Current).Services.GetRequiredService(typeof(T));
@@ -66,29 +76,30 @@ public partial class App : Application
             var config = configStore.Load();
 
         Services = new ServiceCollection()
-                            .AddSingleton(configStore)
-                            .AddSingleton<IConfigStore>(sp => sp.GetRequiredService<JsonConfigStore>())
-                            .AddSingleton<IGitHubClient>(_ => new GitHubApiClient(config.GitHubToken))
-                            .AddSingleton<IProcessService, ProcessService>()
-                            .AddSingleton<IAppLauncher, AppLauncher>()
-                            .AddSingleton<IElevationService, ElevationService>()
-                            .AddSingleton<FileStore>()
-                            .AddSingleton<IUpdateEngine, UpdateEngine>()
-                            .AddSingleton<WingetService>()
-                            .AddSingleton<SystemVersionResolver>()
-                            .AddSingleton<UpdateHistoryStore>()
-                            .AddSingleton<CatalogService>()
-                            .AddSingleton<AutostartService>()
-                            .AddSingleton<TrayService>()
-                            .AddSingleton<ThemeService>()
-                            .AddSingleton<SettingsViewModel>()
-                            .AddSingleton<SelfUpdateService>()
-                            .AddSingleton<IToastService, ToastService>()
-                            .AddSingleton<BackgroundMonitor>()
-                            .AddLogging(builder => builder.AddDebug())
-                            .AddSingleton(LocalizationService.Instance)
-                            .AddSingleton<MainViewModel>()
-                            .BuildServiceProvider();
+                                    .AddSingleton(configStore)
+                                    .AddSingleton<IConfigStore>(sp => sp.GetRequiredService<JsonConfigStore>())
+                                    .AddSingleton<IGitHubClient>(_ => new GitHubApiClient(config.GitHubToken))
+                                    .AddSingleton<IProcessService, ProcessService>()
+                                    .AddSingleton<IAppLauncher, AppLauncher>()
+                                    .AddSingleton<IElevationService, ElevationService>()
+                                    .AddSingleton<FileStore>()
+                                    .AddSingleton<IUpdateEngine, UpdateEngine>()
+                                    .AddSingleton<WingetService>()
+                                    .AddSingleton<SystemVersionResolver>()
+                                    .AddSingleton<UpdateHistoryStore>()
+                                    .AddSingleton<CatalogService>()
+                                    .AddSingleton<AutostartService>()
+                                    .AddSingleton<TrayService>()
+                                    .AddSingleton<ThemeService>()
+                                    .AddSingleton<SettingsViewModel>()
+                                    .AddSingleton<SelfUpdateService>()
+                                    .AddSingleton<IToastService, ToastService>()
+                                    .AddSingleton<BackgroundMonitor>()
+                                    .AddSingleton<CatalogMonitor>()
+                                    .AddLogging(builder => builder.AddDebug())
+                                    .AddSingleton(LocalizationService.Instance)
+                                    .AddSingleton<MainViewModel>()
+                                    .BuildServiceProvider();
 
                 LocalizationService.Instance.SetLanguage(config.Language);
 
@@ -113,8 +124,11 @@ public partial class App : Application
                         SingleInstance.StartListening(_ => ActivateWindow());
 
                         // Start background monitor
-                        _backgroundMonitor = Services.GetRequiredService<BackgroundMonitor>();
-                        _backgroundMonitor.Start();
+                                                _backgroundMonitor = Services.GetRequiredService<BackgroundMonitor>();
+                                                _backgroundMonitor.Start();
+
+                                                _catalogMonitor = Services.GetRequiredService<CatalogMonitor>();
+                                                _catalogMonitor.Start();
                     }
 
             private void OnWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
@@ -126,14 +140,15 @@ public partial class App : Application
             }
 
             private void ExitApplication()
-            {
-                _exiting = true;
-                _backgroundMonitor?.Stop();
-                _tray?.Destroy();
-                // WinUI 3 has no OnExit override — cleanup happens here, before Exit()
-                Log.CloseAndFlush();
-                Exit();
-            }
+                    {
+                        _exiting = true;
+                        _backgroundMonitor?.Stop();
+                        _catalogMonitor?.Stop();
+                        _tray?.Destroy();
+                        // WinUI 3 has no OnExit override — cleanup happens here, before Exit()
+                        Log.CloseAndFlush();
+                        Exit();
+                    }
 
             private async Task RunTrayCheckAsync()
             {

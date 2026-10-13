@@ -10,15 +10,6 @@
                 <ResourceDictionary Source="Styles/DesignSystem.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Converters (inline xmlns on each, ZuiV2 pattern) -->
-            <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" xmlns:converters="using:AppWatch.Converters" />
-            <converters:InverseBoolConverter x:Key="InverseBool" xmlns:converters="using:AppWatch.Converters" />
-            <converters:StringToBoolConverter x:Key="StringToBool" xmlns:converters="using:AppWatch.Converters" />
-            <converters:NotNullToVisibilityConverter x:Key="NotNullToVisibility" xmlns:converters="using:AppWatch.Converters" />
-            <converters:CountToVisibilityConverter x:Key="CountToVisibility" xmlns:converters="using:AppWatch.Converters" />
-            <converters:InverseCountToVisibilityConverter x:Key="InverseCountToVisibility" xmlns:converters="using:AppWatch.Converters" />
-            <converters:StringToBrushConverter x:Key="StringToBrushConverter" xmlns:converters="using:AppWatch.Converters" />
-
             <!-- Mica: transparent backgrounds -->
             <SolidColorBrush x:Key="NavigationViewContentBackground" Color="Transparent" />
             <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="Transparent" />
