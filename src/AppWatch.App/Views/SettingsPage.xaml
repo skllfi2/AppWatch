@@ -103,28 +103,52 @@
                         </Border>
 
                         <!-- Interval -->
-                        <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="16">
-                            <Grid ColumnSpacing="16">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
-                                    <TextBlock Text="{x:Bind Loc.SettingsInterval, Mode=OneWay}" FontSize="14"
-                                               Foreground="{StaticResource TextPrimaryBrush}"/>
-                                </StackPanel>
-                                <ComboBox Grid.Column="1" MinWidth="120" VerticalAlignment="Center"
-                                          SelectedIndex="{x:Bind ViewModel.SelectedIntervalIndex, Mode=TwoWay}">
-                                    <ComboBoxItem Content="1 ч"/>
-                                    <ComboBoxItem Content="3 ч"/>
-                                    <ComboBoxItem Content="6 ч"/>
-                                    <ComboBoxItem Content="12 ч"/>
-                                    <ComboBoxItem Content="24 ч"/>
-                                </ComboBox>
-                            </Grid>
-                        </Border>
-                    </StackPanel>
-                </StackPanel>
+                                                <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="16">
+                                                    <Grid ColumnSpacing="16">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                                            <TextBlock Text="{x:Bind Loc.SettingsInterval, Mode=OneWay}" FontSize="14"
+                                                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                        </StackPanel>
+                                                        <ComboBox Grid.Column="1" MinWidth="120" VerticalAlignment="Center"
+                                                                  SelectedIndex="{x:Bind ViewModel.SelectedIntervalIndex, Mode=TwoWay}">
+                                                            <ComboBoxItem Content="1 ч"/>
+                                                            <ComboBoxItem Content="3 ч"/>
+                                                            <ComboBoxItem Content="6 ч"/>
+                                                            <ComboBoxItem Content="12 ч"/>
+                                                            <ComboBoxItem Content="24 ч"/>
+                                                        </ComboBox>
+                                                    </Grid>
+                                                </Border>
+
+                                                <!-- Update Strategy (per-app default) -->
+                                                <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="16">
+                                                    <Grid ColumnSpacing="16">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                                            <TextBlock Text="{x:Bind Loc.SettingsUpdateStrategy, Mode=OneWay}" FontSize="14"
+                                                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                            <TextBlock Text="{x:Bind Loc.SettingsUpdateStrategyHint, Mode=OneWay}" FontSize="11"
+                                                                       Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                                        </StackPanel>
+                                                        <ComboBox Grid.Column="1" MinWidth="180" VerticalAlignment="Center"
+                                                                  SelectedIndex="{x:Bind ViewModel.SelectedUpdateStrategyIndex, Mode=TwoWay}">
+                                                            <ComboBoxItem Content="{x:Bind Loc.SettingsUpdateStrategyAuto, Mode=OneWay}"/>
+                                                            <ComboBoxItem Content="{x:Bind Loc.SettingsUpdateStrategyBuiltIn, Mode=OneWay}"/>
+                                                            <ComboBoxItem Content="{x:Bind Loc.SettingsUpdateStrategySilent, Mode=OneWay}"/>
+                                                            <ComboBoxItem Content="{x:Bind Loc.SettingsUpdateStrategyPortable, Mode=OneWay}"/>
+                                                            <ComboBoxItem Content="{x:Bind Loc.SettingsUpdateStrategyExternal, Mode=OneWay}"/>
+                                                        </ComboBox>
+                                                    </Grid>
+                                                </Border>
+                                            </StackPanel>
+                                        </StackPanel>
 
                 <!-- GitHub section -->
                 <StackPanel Spacing="8">

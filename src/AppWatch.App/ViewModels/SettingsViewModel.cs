@@ -20,6 +20,12 @@ public partial class SettingsViewModel : ObservableObject
     private readonly SelfUpdateService _selfUpdate;
     private bool _initialized;
 
+    public IReadOnlyList<int> IntervalChoices { get; } = [1, 3, 6, 12, 24];
+
+    public IReadOnlyList<UpdateStrategy> StrategyChoices { get; } =
+        [UpdateStrategy.Auto, UpdateStrategy.BuiltInUpdater, UpdateStrategy.SilentInstaller,
+         UpdateStrategy.PortableReplace, UpdateStrategy.ExternalLauncher];
+
     public SettingsViewModel(IConfigStore configStore, ThemeService theme, SelfUpdateService selfUpdate)
     {
         _configStore = configStore;
@@ -36,10 +42,11 @@ public partial class SettingsViewModel : ObservableObject
         SelectedIntervalIndex = IntervalChoices.ToList().IndexOf(_config.CheckIntervalHours);
         if (SelectedIntervalIndex < 0) SelectedIntervalIndex = IntervalChoices.ToList().IndexOf(6);
 
+        SelectedUpdateStrategyIndex = StrategyChoices.ToList().IndexOf(_config.DefaultUpdateStrategy);
+        if (SelectedUpdateStrategyIndex < 0) SelectedUpdateStrategyIndex = 0;
+
         _initialized = true;
     }
-
-    public IReadOnlyList<int> IntervalChoices { get; } = [1, 3, 6, 12, 24];
 
     [ObservableProperty]
     public partial int SelectedLanguageIndex { get; set; }
@@ -52,6 +59,9 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     public partial int SelectedIntervalIndex { get; set; }
+
+    [ObservableProperty]
+    public partial int SelectedUpdateStrategyIndex { get; set; }
 
     [ObservableProperty]
     public partial string PatToken { get; set; } = "";
@@ -73,6 +83,13 @@ public partial class SettingsViewModel : ObservableObject
         if (!_initialized) return;
         var lang = value == 0 ? "ru" : "en";
         LocalizationService.Instance.SetLanguage(lang);
+    }
+
+    partial void OnSelectedUpdateStrategyIndexChanged(int value)
+    {
+        if (!_initialized) return;
+        _config.DefaultUpdateStrategy = StrategyChoices[Math.Max(0, value)];
+        _configStore.Save(_config);
     }
 
     public string PatStatus => string.IsNullOrEmpty(_config.GitHubToken)
