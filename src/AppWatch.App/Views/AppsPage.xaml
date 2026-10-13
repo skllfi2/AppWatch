@@ -17,21 +17,17 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Content -->
         <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Spacing="16">
 
-                <!-- Hero Banner (ZuiV2 ProxyHeroBorder pattern) -->
                 <Border Style="{StaticResource AppWatchHeroBorder}">
                     <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto">
-                        <!-- Left: Title + Status cards -->
                         <StackPanel Grid.Column="0" Grid.Row="0" Spacing="12">
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <FontIcon Glyph="&#xE895;" FontSize="28" Foreground="White" VerticalAlignment="Center"/>
                                 <TextBlock Text="{x:Bind Loc.HeroTitle, Mode=OneWay}" FontSize="28" FontWeight="SemiBold"
                                            Foreground="White" VerticalAlignment="Center"/>
                             </StackPanel>
-                            <!-- Status cards row (ZuiV2: HeroOverlayBrush, CornerRadius 10, Padding 16,12) -->
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Border Background="#80000000" CornerRadius="10" Padding="16,12" MinWidth="120">
                                     <StackPanel Spacing="4">
@@ -62,7 +58,6 @@
                             </StackPanel>
                         </StackPanel>
 
-                        <!-- Right: Quick actions (ZuiV2 compact HeroOverlayBrush buttons) -->
                         <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                             <Button Command="{x:Bind ViewModel.CheckUpdatesCommand}"
                                     ToolTipService.ToolTip="{x:Bind Loc.QuickCheck, Mode=OneWay}"
@@ -86,7 +81,6 @@
                     </Grid>
                 </Border>
 
-                <!-- Tracked apps list (ZuiV2 card rows) -->
                 <StackPanel Spacing="8">
                     <StackPanel Orientation="Horizontal" Spacing="8" Margin="4,0">
                         <FontIcon Glyph="&#xE896;" FontSize="14" Foreground="{StaticResource AccentBrush}"/>
@@ -94,7 +88,6 @@
                                    Foreground="{StaticResource TextSecondaryBrush}" CharacterSpacing="40"/>
                     </StackPanel>
 
-                    <!-- Empty state (shown when no tracked apps) -->
                     <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="24"
                             Visibility="{x:Bind ViewModel.Apps.Count, Converter={StaticResource InverseCountToVisibility}, Mode=OneWay}">
                         <StackPanel Spacing="8" HorizontalAlignment="Center">
@@ -118,7 +111,6 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
-                                    <!-- Monogram -->
                                     <Border Grid.Column="0" Width="40" Height="40" CornerRadius="6"
                                             Background="{x:Bind MonogramBrush}" VerticalAlignment="Center"
                                             Margin="0,0,12,0">
@@ -126,7 +118,6 @@
                                                    Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
 
-                                    <!-- Name + version/status -->
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
                                         <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" FontSize="14"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
@@ -138,14 +129,12 @@
                                         </StackPanel>
                                     </StackPanel>
 
-                                    <!-- Progress -->
                                     <ProgressBar Grid.Column="2" VerticalAlignment="Center" Width="120" Height="6"
                                                  Minimum="0" Maximum="100"
                                                  Value="{x:Bind ProgressValue, Mode=OneWay}"
                                                  Visibility="{x:Bind Stage, Converter={StaticResource StageToVis}, Mode=OneWay}"
                                                  IsIndeterminate="False"/>
 
-                                    <!-- Actions (ZuiV2 compact buttons) -->
                                     <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                                         <Button Command="{x:Bind UpdateOneCommand}" CommandParameter="{x:Bind}"
                                                 Visibility="{x:Bind UpdateAvailable, Converter={StaticResource BoolToVisibility}, Mode=OneWay}"
@@ -172,7 +161,6 @@
                     </ListView>
                 </StackPanel>
 
-                <!-- Quick Navigation Cards (ZuiV2 pattern) -->
                 <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,12,0,0" HorizontalAlignment="Center">
                     <Button Click="NavCard_Click" Tag="catalog"
                             Padding="14,10" CornerRadius="10"
@@ -219,7 +207,6 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- Status bar (ZuiV2 bottom bar) -->
         <Border Grid.Row="1" Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="16,8" Margin="0,12,0,0">
             <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" FontSize="12"
                        Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>

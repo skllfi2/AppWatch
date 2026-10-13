@@ -16,4 +16,36 @@ public sealed class TrackedApp
     public string? PinnedVersion { get; set; }
     public string? CurrentVersion { get; set; }
     public bool Enabled { get; set; } = true;
+
+    // New: Version detection settings
+    public bool AutoDetectVersion { get; set; } = true;
+    public string? RegistryKeyName { get; set; }
+    public string? VersionExeName { get; set; }
+
+    // New: Update strategy
+    public UpdateStrategy Strategy { get; set; } = UpdateStrategy.Auto;
+}
+
+public enum UpdateStrategy
+{
+    /// <summary>Let the engine decide based on asset type and app capabilities</summary>
+    Auto = 0,
+    
+    /// <summary>Use built-in app updater (if app has self-update)</summary>
+    BuiltInUpdater,
+    
+    /// <summary>Silent installer (msi/exe with /quiet)</summary>
+    SilentInstaller,
+    
+    /// <summary>Portable archive replace (zip/7z)</summary>
+    PortableReplace,
+    
+    /// <summary>Use winget if package ID known</summary>
+    Winget,
+    
+    /// <summary>External launcher - just download and run</summary>
+    ExternalLauncher,
+    
+    /// <summary>User decides manually</summary>
+    Manual
 }

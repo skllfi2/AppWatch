@@ -25,4 +25,5 @@ public sealed record UpdateCheckResult(
     UpdateStatus Status,
     ReleaseInfo? NewRelease = null,
     ReleaseAsset? ChosenAsset = null,
-    string? Detail = null);
+    string? Detail = null,
+    UpdateStrategy Strategy = UpdateStrategy.Auto);

@@ -2,10 +2,10 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- ═══════════════════════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════════════════
          AppWatch — Windows 11 Fluent Design System
          Ported from ZuiV2 DesignSystem.xaml (our own code)
-         ═══════════════════════════════════════════════════════════════════════ -->
+         ══════════════════════════════════════════════════════════════════════ -->
 
     <!-- ── Semantic Colors ───────────────────────────────────────────────── -->
     <Color x:Key="SuccessColor">#2EA043</Color>
@@ -18,11 +18,11 @@
     <Color x:Key="ProxyHeroColor">#4A235A</Color>
 
     <!-- ── Accent Brushes ────────────────────────────────────────────────── -->
-    <SolidColorBrush x:Key="RunningBrush"  Color="{StaticResource SuccessColor}"/>
+    <SolidColorBrush x:Key="RunningBrush"  Color="#2EA043"/>
     <SolidColorBrush x:Key="StoppedBrush"  Color="#616161"/>
-    <SolidColorBrush x:Key="ErrorBrush"    Color="{StaticResource ErrorColor}"/>
-    <SolidColorBrush x:Key="WarningBrush"  Color="{StaticResource WarningColor}"/>
-    <SolidColorBrush x:Key="InfoBrush"     Color="{StaticResource InfoColor}"/>
+    <SolidColorBrush x:Key="ErrorBrush"    Color="#D83B01"/>
+    <SolidColorBrush x:Key="WarningBrush"  Color="#FFB900"/>
+    <SolidColorBrush x:Key="InfoBrush"     Color="#0078D4"/>
 
     <!-- ── Card Style ────────────────────────────────────────────────────── -->
     <Style x:Key="CardBorder" TargetType="Button">
@@ -50,8 +50,8 @@
         <Setter Property="Background">
             <Setter.Value>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#2D1B4E" Offset="0"/>
-                    <GradientStop Color="#4A2D7A" Offset="1"/>
+                    <GradientStop Color="#1A2F4A" Offset="0"/>
+                    <GradientStop Color="#2D4A6F" Offset="1"/>
                 </LinearGradientBrush>
             </Setter.Value>
         </Setter>
@@ -71,45 +71,45 @@
     </Style>
 
     <Style x:Key="AppWatchHeroBorder" TargetType="Border">
-            <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="Padding"      Value="24,20"/>
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#2D1B4E" Offset="0"/>
-                        <GradientStop Color="#4A2D7A" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Padding"      Value="24,20"/>
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#2D1B4E" Offset="0"/>
+                    <GradientStop Color="#4A2D7A" Offset="1"/>
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
-        <Style x:Key="CatalogHeroBorder" TargetType="Border">
-            <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="Padding"      Value="24,20"/>
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#1B3A5C" Offset="0"/>
-                        <GradientStop Color="#2D5A8E" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
-        </Style>
+    <Style x:Key="CatalogHeroBorder" TargetType="Border">
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Padding"      Value="24,20"/>
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#1B3A5C" Offset="0"/>
+                    <GradientStop Color="#2D5A8E" Offset="1"/>
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
-        <Style x:Key="WingetHeroBorder" TargetType="Border">
-            <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="Padding"      Value="24,20"/>
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#1B3A2D" Offset="0"/>
-                        <GradientStop Color="#2D5A3E" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
-        </Style>
+    <Style x:Key="WingetHeroBorder" TargetType="Border">
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Padding"      Value="24,20"/>
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#1B3A2D" Offset="0"/>
+                    <GradientStop Color="#2D5A3E" Offset="1"/>
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
-        <!-- ── Missing brushes used in new pages ──────────────────────────────── -->
+    <!-- ── Missing brushes used in new pages ──────────────────────────────── -->
     <SolidColorBrush x:Key="CardBorderBrush" Color="{ThemeResource CardStrokeColorDefaultBrush}"/>
     <SolidColorBrush x:Key="AccentSubtleBrush" Color="#1A0078D4"/>
 

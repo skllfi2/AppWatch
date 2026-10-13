@@ -10,6 +10,15 @@ public interface IGitHubClient
     Task DownloadFileAsync(
         string url, string destinationPath,
         IProgress<double>? progress = null, CancellationToken cancellationToken = default);
+
+    /// <summary>True when GitHub API rate limit is exhausted; wait for RateLimitResetUtc.</summary>
+    bool IsRateLimited { get; }
+
+    /// <summary>UTC timestamp when the rate limit window resets; null when unknown.</summary>
+    DateTimeOffset? RateLimitResetUtc { get; }
+
+    /// <summary>Remaining requests in the current window; null when unknown.</summary>
+    int? RemainingRequests { get; }
 }
 
 public interface IUpdateEngine

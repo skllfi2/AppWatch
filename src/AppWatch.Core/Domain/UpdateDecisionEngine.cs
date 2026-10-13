@@ -1,5 +1,6 @@
 using AppWatch.Core.Domain.AssetSelection;
 using AppWatch.Core.Domain.Models;
+using AppWatch.Core.Domain.VersionDetection;
 
 namespace AppWatch.Core.Domain;
 
@@ -33,10 +34,8 @@ public static class UpdateDecisionEngine
         if (!VersionParser.IsNewer(app.CurrentVersion, newest.TagName))
             return new(app, UpdateStatus.UpToDate);
 
-        var priority = app.AssetExtensionPriority
-            ?? (app.UpdateKind == UpdateKind.PortableZip
-                ? (IReadOnlyList<string>)[ ".zip", ".exe" ]
-                : [ ".msi", ".exe" ]);
+        var strategy = DetermineStrategy(app, newest);
+        var priority = GetAssetPriority(app, strategy);
 
         var candidates = newest.Assets
             .Select(a => new GithubAssetCandidate(a.Name, a.Size))
@@ -49,7 +48,57 @@ public static class UpdateDecisionEngine
 
         var asset = newest.Assets.First(a =>
             string.Equals(a.Name, chosen.Name, StringComparison.OrdinalIgnoreCase));
-        return new(app, UpdateStatus.UpdateAvailable, newest, asset);
+        
+        return new(app, UpdateStatus.UpdateAvailable, newest, asset, Detail: null, Strategy: strategy);
+    }
+
+    public static UpdateStrategy DetermineStrategy(TrackedApp app, ReleaseInfo release)
+    {
+        // If user specified a strategy, use it
+        if (app.Strategy != UpdateStrategy.Auto)
+            return app.Strategy;
+
+        // Auto-detect based on asset types and app configuration
+        var assets = release.Assets;
+        var hasMsi = assets.Any(a => a.Name.EndsWith(".msi", StringComparison.OrdinalIgnoreCase));
+        var hasExe = assets.Any(a => a.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && !a.Name.Contains("portable", StringComparison.OrdinalIgnoreCase));
+        var hasZip = assets.Any(a => a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) || a.Name.EndsWith(".7z", StringComparison.OrdinalIgnoreCase));
+        
+        // If app has winget package ID, prefer winget
+        if (!string.IsNullOrEmpty(app.WingetPackageId))
+            return UpdateStrategy.Winget;
+
+        // If app has built-in updater (has UpdateKind != PortableZip and has UpdateUrl), use built-in
+        if (app.UpdateKind != UpdateKind.PortableZip)
+            return UpdateStrategy.BuiltInUpdater;
+
+        // If MSI available, use silent installer
+        if (hasMsi)
+            return UpdateStrategy.SilentInstaller;
+
+        // If EXE installer available, use silent installer
+        if (hasExe)
+            return UpdateStrategy.SilentInstaller;
+
+        // If portable archive available, use portable replace
+        if (hasZip)
+            return UpdateStrategy.PortableReplace;
+
+        // Default to manual
+        return UpdateStrategy.Manual;
+    }
+
+    private static IReadOnlyList<string> GetAssetPriority(TrackedApp app, UpdateStrategy strategy)
+    {
+        return strategy switch
+        {
+            UpdateStrategy.Winget => [],
+            UpdateStrategy.BuiltInUpdater => app.AssetExtensionPriority ?? [".exe", ".msi"],
+            UpdateStrategy.SilentInstaller => [".msi", ".exe"],
+            UpdateStrategy.PortableReplace => [".zip", ".7z", ".tar.gz"],
+            UpdateStrategy.ExternalLauncher => [".exe", ".msi"],
+            _ => app.AssetExtensionPriority ?? (strategy == UpdateStrategy.PortableReplace ? [".zip", ".exe"] : [".msi", ".exe"])
+        };
     }
 
     private static ParsedVersion? TryParse(string tag) =>

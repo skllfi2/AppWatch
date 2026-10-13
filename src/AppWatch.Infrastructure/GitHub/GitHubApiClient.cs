@@ -22,6 +22,11 @@ public sealed class GitHubApiClient : IGitHubClient
     private readonly HttpClient _http;
     private readonly MemoryCache _cache = new(new MemoryCacheOptions { SizeLimit = 100 });
     private DateTimeOffset _rateLimitReset = DateTimeOffset.MinValue;
+    private int? _remainingRequests;
+
+    public bool IsRateLimited => DateTimeOffset.UtcNow < _rateLimitReset;
+    public DateTimeOffset? RateLimitResetUtc => _rateLimitReset == DateTimeOffset.MinValue ? null : _rateLimitReset;
+    public int? RemainingRequests => _remainingRequests;
 
     public GitHubApiClient(string? token = null)
     {
@@ -41,8 +46,8 @@ public sealed class GitHubApiClient : IGitHubClient
         if (!skipCache && _cache.TryGetValue<IReadOnlyList<ReleaseInfo>>(url, out var cached) && cached is not null)
             return cached;
 
-        if (IsRateLimited())
-            throw new HttpRequestException("GitHub API rate limit exceeded (cached reset)");
+        if (IsRateLimited)
+            throw new HttpRequestException($"GitHub API rate limit exceeded until {RateLimitResetUtc:HH:mm:ss}");
 
         var json = await GetStringWithRetryAsync(url, cancellationToken);
         var dtos = JsonSerializer.Deserialize<List<ReleaseDto>>(json, JsonOptions) ?? [];
@@ -158,7 +163,16 @@ public sealed class GitHubApiClient : IGitHubClient
     private void TrackRateLimit(HttpResponseMessage response)
     {
         if (!response.Headers.TryGetValues("X-RateLimit-Remaining", out var remainingValues)) return;
-        if (remainingValues.FirstOrDefault() != "0") return;
+
+        var remainingStr = remainingValues.FirstOrDefault();
+        if (int.TryParse(remainingStr, out var remaining))
+        {
+            _remainingRequests = remaining;
+            if (remaining <= 5)
+                Log.Warning("GitHub API rate limit low: {Remaining} requests remaining", remaining);
+        }
+
+        if (remainingStr != "0") return;
         if (!response.Headers.TryGetValues("X-RateLimit-Reset", out var resetValues)) return;
 
         var resetUnix = long.TryParse(resetValues.FirstOrDefault(), out var r) ? r : 0;
@@ -168,8 +182,6 @@ public sealed class GitHubApiClient : IGitHubClient
             Log.Warning("GitHub API rate limited until {Reset}", _rateLimitReset);
         }
     }
-
-    private bool IsRateLimited() => DateTimeOffset.UtcNow < _rateLimitReset;
 
     private static ReleaseInfo Map(ReleaseDto dto) => new()
     {

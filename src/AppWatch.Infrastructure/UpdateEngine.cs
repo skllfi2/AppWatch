@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using System.Security.Cryptography;
 using AppWatch.Core.Abstractions;
 using AppWatch.Core.Domain;
 using AppWatch.Core.Domain.Models;
+using AppWatch.Core.Domain.VersionDetection;
 using AppWatch.Infrastructure.System;
 using Serilog;
 
@@ -39,6 +41,23 @@ public sealed class UpdateEngine : IUpdateEngine
             if (app.InstallDirectory is null)
                 return new(app, UpdateStatus.Error, Detail: "install directory is not configured");
 
+            // Auto-detect installed version before comparing (fixes stale CurrentVersion)
+            if (app.AutoDetectVersion)
+            {
+                var detected = await VersionDetector.DetectAsync(app, cancellationToken);
+                if (detected is not null && detected.Version != app.CurrentVersion)
+                {
+                    Log.Information("version auto-detected for {App}: {Version} ({Source}), stored: {Stored}",
+                        app.Name, detected.Version, detected.Source, app.CurrentVersion ?? "none");
+                    app.CurrentVersion = detected.Version;
+                }
+            }
+
+            // Rate-limit aware: skip check entirely when the window is exhausted
+            if (_github.IsRateLimited)
+                return new(app, UpdateStatus.Error,
+                    Detail: $"rate limited until {_github.RateLimitResetUtc:HH:mm:ss} UTC");
+
             var releases = await _github.GetReleasesAsync(app.RepoOwner, app.RepoName, cancellationToken);
             return UpdateDecisionEngine.Evaluate(app, releases, ArchitectureDetector.Detect());
         }
@@ -50,60 +69,135 @@ public sealed class UpdateEngine : IUpdateEngine
     }
 
     public async Task<UpdateHistoryEntry> ApplyAsync(
-        TrackedApp app, UpdateCheckResult check,
-        IProgress<double>? progress = null, CancellationToken cancellationToken = default)
-    {
-        var from = app.CurrentVersion ?? "unknown";
-        try
+            TrackedApp app, UpdateCheckResult check,
+            IProgress<double>? progress = null, CancellationToken cancellationToken = default)
         {
-            if (check.Status != UpdateStatus.UpdateAvailable || check.NewRelease is null || check.ChosenAsset is null)
-                throw new InvalidOperationException($"nothing to apply: {check.Status}");
-            if (app.UpdateKind != UpdateKind.PortableZip)
-                throw new NotSupportedException($"update kind '{app.UpdateKind}' is not supported yet");
-            if (app.InstallDirectory is null)
-                throw new InvalidOperationException("install directory is not configured");
-
-            var installDir = app.InstallDirectory;
-            var tag = check.NewRelease.TagName;
-
-            var processName = app.ProcessName
-                ?? (app.ExecutableName is null ? null : Path.GetFileNameWithoutExtension(app.ExecutableName));
-            if (processName is not null && _process.IsRunning(processName))
+            var from = app.CurrentVersion ?? "unknown";
+            try
             {
-                Log.Information("stopping {Process} before update of {App}", processName, app.Name);
-                _process.Kill(processName);
+                if (check.Status != UpdateStatus.UpdateAvailable || check.NewRelease is null || check.ChosenAsset is null)
+                    throw new InvalidOperationException($"nothing to apply: {check.Status}");
+
+                // Determine strategy
+                var strategy = check.Strategy;
+                if (strategy == UpdateStrategy.Auto)
+                    strategy = UpdateDecisionEngine.DetermineStrategy(app, check.NewRelease!);
+
+                if (app.InstallDirectory is null)
+                    throw new InvalidOperationException("install directory is not configured");
+
+                var installDir = app.InstallDirectory;
+                var tag = check.NewRelease!.TagName;
+
+                var processName = app.ProcessName
+                    ?? (app.ExecutableName is null ? null : Path.GetFileNameWithoutExtension(app.ExecutableName));
+                if (processName is not null && _process.IsRunning(processName))
+                {
+                    Log.Information("stopping {Process} before update of {App}", processName, app.Name);
+                    _process.Kill(processName);
+                }
+
+                var installerPath = await DownloadAndVerifyAsync(check.ChosenAsset!, app.RepoName, tag, progress, cancellationToken);
+
+                UpdateHistoryEntry result = strategy switch
+                {
+                    UpdateStrategy.Winget => await ApplyWingetAsync(app, tag, cancellationToken),
+                    UpdateStrategy.BuiltInUpdater => await ApplyBuiltInUpdaterAsync(app, installerPath, cancellationToken),
+                    UpdateStrategy.SilentInstaller => await ApplySilentInstallerAsync(app, installerPath, installDir, cancellationToken),
+                    UpdateStrategy.PortableReplace => await ApplyPortableReplaceAsync(app, installerPath, installDir, tag, cancellationToken),
+                    UpdateStrategy.ExternalLauncher => await ApplyExternalLauncherAsync(app, installerPath, cancellationToken),
+                    _ => throw new NotSupportedException($"strategy '{strategy}' not supported")
+                };
+
+                if (result.Success)
+                {
+                    app.CurrentVersion = tag;
+                }
+
+                return result;
             }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "update failed for {App}", app.Name);
+                return new UpdateHistoryEntry(
+                    app.Name, from, check.NewRelease?.TagName ?? "?", DateTimeOffset.UtcNow, false, ex.Message);
+            }
+        }
 
-            var zipPath = await DownloadAndVerifyAsync(check.ChosenAsset, app.RepoName, tag, progress, cancellationToken);
+        private async Task<UpdateHistoryEntry> ApplyWingetAsync(TrackedApp app, string tag, CancellationToken ct)
+        {
+            if (string.IsNullOrEmpty(app.WingetPackageId))
+                return new UpdateHistoryEntry(app.Name, app.CurrentVersion ?? "?", tag, DateTimeOffset.UtcNow, false, "WingetPackageId not configured");
 
-            var contentRoot = _files.ExtractToStaging(zipPath, Sanitize(tag));
+            try
+            {
+                await _winget.UpgradePackageAsync(app.WingetPackageId, app.Name, null, ct);
+                return new UpdateHistoryEntry(app.Name, app.CurrentVersion ?? "?", tag, DateTimeOffset.UtcNow, true, null);
+            }
+            catch (Exception ex)
+            {
+                return new UpdateHistoryEntry(app.Name, app.CurrentVersion ?? "?", tag, DateTimeOffset.UtcNow, false, ex.Message);
+            }
+        }
+
+        private async Task<UpdateHistoryEntry> ApplyBuiltInUpdaterAsync(TrackedApp app, string installerPath, CancellationToken ct)
+        {
+            // For apps with built-in updaters, we just launch the installer
+            // The app should handle the update itself
+            if (!_elevation.RunElevated(installerPath, "/quiet /norestart"))
+                throw new InvalidOperationException("built-in updater launch declined or failed (UAC)");
+        
+            return new UpdateHistoryEntry(app.Name, app.CurrentVersion ?? "?", "built-in", DateTimeOffset.UtcNow, true, null);
+        }
+
+        private async Task<UpdateHistoryEntry> ApplySilentInstallerAsync(TrackedApp app, string installerPath, string installDir, CancellationToken ct)
+        {
+            // Determine silent install arguments based on extension
+            var args = Path.GetExtension(installerPath).ToLowerInvariant() switch
+            {
+                ".msi" => $"/i \"{installerPath}\" /quiet /norestart INSTALLDIR=\"{installDir}\"",
+                ".exe" => $"/quiet /norestart /dir=\"{installDir}\"",
+                _ => throw new NotSupportedException($"Unsupported installer type: {Path.GetExtension(installerPath)}")
+            };
+
+            if (!_elevation.RunElevated(Path.GetFileName(installerPath), args))
+                throw new InvalidOperationException("silent installer launch declined or failed (UAC)");
+
+            return new UpdateHistoryEntry(app.Name, app.CurrentVersion ?? "?", "silent-install", DateTimeOffset.UtcNow, true, null);
+        }
+
+        private async Task<UpdateHistoryEntry> ApplyPortableReplaceAsync(TrackedApp app, string installerPath, string installDir, string tag, CancellationToken ct)
+        {
+            var contentRoot = _files.ExtractToStaging(installerPath, Sanitize(tag));
             _files.ReplaceWithRollback(contentRoot, installDir);
 
             var newExe = app.ExecutableName is null ? null : Path.Combine(installDir, app.ExecutableName);
             if (newExe is not null && !File.Exists(newExe))
             {
                 _files.RestoreBackup(installDir);
-                throw new InvalidOperationException(
-                    $"executable '{app.ExecutableName}' not found in new release; old version restored");
+                throw new InvalidOperationException($"executable '{app.ExecutableName}' not found in new release; old version restored");
             }
 
             _files.DiscardBackup(installDir);
-            try { File.Delete(zipPath); } catch (IOException) { }
+            try { File.Delete(installerPath); } catch (IOException) { }
 
             if (app.LaunchAfterUpdate && newExe is not null)
                 _launcher.Launch(newExe);
 
-            Log.Information("updated {App}: {From} -> {To}", app.Name, from, tag);
-            app.CurrentVersion = tag;
-            return new UpdateHistoryEntry(app.Name, from, tag, DateTimeOffset.UtcNow, true, null);
+            return new UpdateHistoryEntry(app.Name, app.CurrentVersion ?? "?", tag, DateTimeOffset.UtcNow, true, null);
         }
-        catch (Exception ex)
+
+        private async Task<UpdateHistoryEntry> ApplyExternalLauncherAsync(TrackedApp app, string installerPath, CancellationToken ct)
         {
-            Log.Error(ex, "update failed for {App}", app.Name);
-            return new UpdateHistoryEntry(
-                app.Name, from, check.NewRelease?.TagName ?? "?", DateTimeOffset.UtcNow, false, ex.Message);
+            // Just launch the downloaded file, let user handle it
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = installerPath,
+                UseShellExecute = true
+            });
+        
+            return new UpdateHistoryEntry(app.Name, app.CurrentVersion ?? "?", "external-launcher", DateTimeOffset.UtcNow, true, null);
         }
-    }
 
     public async Task<UpdateHistoryEntry> InstallAsync(TrackedApp app, CancellationToken cancellationToken = default)
     {

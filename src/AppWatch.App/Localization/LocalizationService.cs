@@ -46,15 +46,28 @@ public sealed class LocalizationService : INotifyPropertyChanged
         foreach (var resourceName in assembly.GetManifestResourceNames()
                      .Where(n => n.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && n.EndsWith(".json")))
         {
-            var language = resourceName[prefix.Length..^".json".Length];
-            using var stream = assembly.GetManifestResourceStream(resourceName);
-            if (stream is null) continue;
-            using var document = JsonDocument.Parse(stream);
-            packs[language] = document.RootElement.EnumerateObject()
-                .ToDictionary(
-                    p => p.Name,
-                    p => p.Value.GetString() ?? p.Name,
-                    StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                var language = resourceName.Substring(prefix.Length, resourceName.Length - prefix.Length - ".json".Length);
+                using var stream = assembly.GetManifestResourceStream(resourceName);
+                if (stream is null) continue;
+                using var document = JsonDocument.Parse(stream);
+                packs[language] = document.RootElement.EnumerateObject()
+                    .ToDictionary(
+                        p => p.Name,
+                        p => p.Value.GetString() ?? p.Name,
+                        StringComparer.OrdinalIgnoreCase);
+            }
+            catch (Exception ex)
+            {
+                // Log but continue - don't crash on bad resource
+                System.Diagnostics.Debug.WriteLine($"Failed to load localization resource {resourceName}: {ex}");
+            }
+        }
+        // Ensure fallback exists
+        if (!packs.ContainsKey(FallbackLanguage))
+        {
+            packs[FallbackLanguage] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
         return packs;
     }

@@ -128,7 +128,7 @@ public class UpdateDecisionEngineTests
     [Fact]
     public void Evaluate_PortableZipPriority_PicksZipAsset()
     {
-        var app = App(a => a.CurrentVersion = "1.0.0");
+        var app = App(a => { a.CurrentVersion = "1.0.0"; a.Strategy = UpdateStrategy.PortableReplace; });
         var releases = new[]
         {
             Release("2.0.0", assets:
