@@ -389,6 +389,14 @@ namespace на `AppWatch.*`.
 3. **C11+C13+C14 (пустые состояния + монограммы + обновление по клику)** — визуальный
    характер за копейки.
 4. **D17 (Generic Host)** — сделать сразу после v0.2, пока фоновый сервис один.
+   Статус: D17 ✅ (2026-10-14): BackgroundMonitor и CatalogMonitor переведены на
+   `BackgroundService` (IHostedService) через `Microsoft.Extensions.Hosting` —
+   `AddHostedService` вместо ручных `Start()/Stop()` в App.xaml.cs. Жизненный цикл
+   теперь полностью управляется Generic Host: запуск с задержкой (30с / 2 мин),
+   периодические циклы через `await Task.Delay` с `CancellationToken`,
+   graceful shutdown по `OperationCanceledException`. Singleton-поля убраны,
+   DI регистрирует как hosted services. Пакет `Microsoft.Extensions.Hosting` уже
+   был в csproj.
 5. **B8 (зеркала)** — как только появятся жалобы «не качает», не раньше.
 6. Остальное — по мере роста: A3/A4/A5, B7/B9/B10, C12/C15/C16, D18-D20.
 

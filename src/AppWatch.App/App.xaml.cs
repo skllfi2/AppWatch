@@ -11,6 +11,7 @@ using AppWatch.Infrastructure.Config;
 using AppWatch.Infrastructure.GitHub;
 using AppWatch.Infrastructure.System;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
@@ -33,12 +34,10 @@ public partial class App : Application
     public static Views.MainWindow? MainWindow => Window as Views.MainWindow;
 
     private MainWindow? _window;
-        private TrayService? _tray;
-        private AutostartService? _autostart;
-        private IntPtr _hwnd;
-        private bool _exiting;
-        private BackgroundMonitor? _backgroundMonitor;
-        private CatalogMonitor? _catalogMonitor;
+            private TrayService? _tray;
+            private AutostartService? _autostart;
+            private IntPtr _hwnd;
+            private bool _exiting;
 
     public App()
         {
@@ -94,31 +93,31 @@ public partial class App : Application
             var config = configStore.Load();
 
         Services = new ServiceCollection()
-                                    .AddSingleton(configStore)
-                                    .AddSingleton(config)
-                                    .AddSingleton<IConfigStore>(sp => sp.GetRequiredService<JsonConfigStore>())
-                                    .AddSingleton<IGitHubClient>(_ => new GitHubApiClient(config.GitHubToken))
-                                    .AddSingleton<IProcessService, ProcessService>()
-                                    .AddSingleton<IAppLauncher, AppLauncher>()
-                                    .AddSingleton<IElevationService, ElevationService>()
-                                    .AddSingleton<FileStore>()
-                                    .AddSingleton<IUpdateEngine, UpdateEngine>()
-                                    .AddSingleton<WingetService>()
-                                    .AddSingleton<SystemVersionResolver>()
-                                    .AddSingleton<UpdateHistoryStore>()
-                                    .AddSingleton<CatalogService>()
-                                    .AddSingleton<AutostartService>()
-                                    .AddSingleton<TrayService>()
-                                    .AddSingleton<ThemeService>()
-                                    .AddSingleton<SettingsViewModel>()
-                                    .AddSingleton<SelfUpdateService>()
-                                    .AddSingleton<IToastService, ToastService>()
-                                    .AddSingleton<BackgroundMonitor>()
-                                    .AddSingleton<CatalogMonitor>()
-                                    .AddLogging(builder => builder.AddDebug())
-                                    .AddSingleton(LocalizationService.Instance)
-                                    .AddSingleton<MainViewModel>()
-                                    .BuildServiceProvider();
+                                            .AddSingleton(configStore)
+                                            .AddSingleton(config)
+                                            .AddSingleton<IConfigStore>(sp => sp.GetRequiredService<JsonConfigStore>())
+                                            .AddSingleton<IGitHubClient>(_ => new GitHubApiClient(config.GitHubToken))
+                                            .AddSingleton<IProcessService, ProcessService>()
+                                            .AddSingleton<IAppLauncher, AppLauncher>()
+                                            .AddSingleton<IElevationService, ElevationService>()
+                                            .AddSingleton<FileStore>()
+                                            .AddSingleton<IUpdateEngine, UpdateEngine>()
+                                            .AddSingleton<WingetService>()
+                                            .AddSingleton<SystemVersionResolver>()
+                                            .AddSingleton<UpdateHistoryStore>()
+                                            .AddSingleton<CatalogService>()
+                                            .AddSingleton<AutostartService>()
+                                            .AddSingleton<TrayService>()
+                                            .AddSingleton<ThemeService>()
+                                            .AddSingleton<SettingsViewModel>()
+                                            .AddSingleton<SelfUpdateService>()
+                                            .AddSingleton<IToastService, ToastService>()
+                                            .AddHostedService<BackgroundMonitor>()
+                                            .AddHostedService<CatalogMonitor>()
+                                            .AddLogging(builder => builder.AddDebug())
+                                            .AddSingleton(LocalizationService.Instance)
+                                            .AddSingleton<MainViewModel>()
+                                            .BuildServiceProvider();
 
                 LocalizationService.Instance.SetLanguage(config.Language);
 
@@ -138,17 +137,10 @@ public partial class App : Application
                     () => _autostart?.IsEnabled == true);
 
                 if (!StartHidden)
-                            _window.Activate();
+                                            _window.Activate();
 
-                        SingleInstance.StartListening(_ => ActivateWindow());
-
-                        // Start background monitor
-                                                _backgroundMonitor = Services.GetRequiredService<BackgroundMonitor>();
-                                                _backgroundMonitor.Start();
-
-                                                _catalogMonitor = Services.GetRequiredService<CatalogMonitor>();
-                                                _catalogMonitor.Start();
-                    }
+                                        SingleInstance.StartListening(_ => ActivateWindow());
+                                    }
 
             private void OnWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
             {
@@ -159,15 +151,13 @@ public partial class App : Application
             }
 
             private void ExitApplication()
-                    {
-                        _exiting = true;
-                        _backgroundMonitor?.Stop();
-                        _catalogMonitor?.Stop();
-                        _tray?.Destroy();
-                        // WinUI 3 has no OnExit override — cleanup happens here, before Exit()
-                        Log.CloseAndFlush();
-                        Exit();
-                    }
+                                {
+                                    _exiting = true;
+                                    _tray?.Destroy();
+                                    // WinUI 3 has no OnExit override — cleanup happens here, before Exit()
+                                    Log.CloseAndFlush();
+                                    Exit();
+                                }
 
             private async Task RunTrayCheckAsync()
             {
