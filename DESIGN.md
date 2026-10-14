@@ -319,10 +319,20 @@ namespace на `AppWatch.*`.
    (SQLitePCLRaw.lib.e_sqlite3 в csproj).
 3. **Экспорт/импорт списка приложений** (bundle): config.json → файл → перенос на другую
    машину. Идея — UniGetUI backup/import (MIT). Также «Copy as winget/URL list».
+   Статус: A3 ✅ (2026-10-14): SettingsViewModel.ExportAppsAsync (FileSavePicker → bundle JSON
+   с теми же опциями сериализации, что конфиг) / ImportAppsAsync (FileOpenPicker → дедуп по
+   owner/repo → мерж в конфиг + MainViewModel.Apps + AppsTrackedCount) / CopyAppsList
+   (winget id | github URL → буфер). Секция «Экспорт и импорт» на SettingsPage, 3 кнопки.
 4. **Расписание с джиттером**: проверка не ровно в 6 ч (все клиенты разом бьют GitHub API),
    а ±10% случайно. Одна строка в планировщике, эффект на rate limits заметный.
+   Статус: A4 ✅ (2026-10-14): `CheckSchedule.WithJitter` (Core, 3 unit-теста: границы ±10%,
+   разброс, passthrough для нуля) — мультипликативный джиттер; BackgroundMonitor и
+   CatalogMonitor прогоняют каждый расчёт next-run через него.
 5. **Балун/тост при завершении пакетного обновления** (не на каждый чих, а по итогу):
    «Обновлено 3, ошибок 1: <имя>» — TrayService balloon API уже есть.
+   Статус: A5 ✅ (2026-10-14): UpdateAllAsync собирает счётчики успехов/ошибок и показывает
+   ОДИН балун итога («Обновлено: N» / «Обновлено: N, ошибок: M: <имена>») через
+   TrayService.ShowBalloon — только если что-то реально выполнялось.
 
 ### B. Надёжность движка (страховка от поломки чужих обновлений)
 
