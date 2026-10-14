@@ -365,6 +365,10 @@ namespace на `AppWatch.*`.
     миграция на таблицу с индексами. Не сейчас.
 19. **Отмена операций**: CancellationToken по кнопке «Стоп» на hero-баннере при пакетном
     обновлении. Уже частично поддержано (CancellationToken в командах VM).
+   Статус: D19 ✅ (2026-10-14): `MainViewModel.IsUpdateAllRunning` + `CancellationTokenSource`
+   для `UpdateAllAsync`; `StopUpdateAllCommand` отменяет токен. В AppsPage hero — кнопка
+   «Обновить всё» скрывается при запуске, появляется красная «Стоп» (иконка ⏹, `BtnStop`).
+   Локализация Stop/BtnStop (en/ru). Конвертер `InverseBoolToVisibility` добавлен.
 20. **Мелкая сетка-подготовка**: schemaVersion 2 (для PinnedVersion и настроек ур. A1),
     IConfigStore.SaveDesyncSafe (atomic write temp+rename), отображение next-run-time в UI.
    Статус: D20 ✅ (2026-10-14): schemaVersion=2 в AppConfig + миграция v1→v2 (HealthCheckSeconds,

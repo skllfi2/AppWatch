@@ -144,5 +144,7 @@
     "HistorySection": "Последние операции",
     "HistoryEmpty": "Обновлений ещё не было. Обновите что-нибудь — запись появится здесь.",
     "HistorySuccess": "Успешно",
-    "HistoryFailed": "Ошибка"
+    "HistoryFailed": "Ошибка",
+    "Stop": "Остановить",
+    "BtnStop": "Остановить"
 }

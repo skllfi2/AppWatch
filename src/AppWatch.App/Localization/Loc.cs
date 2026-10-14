@@ -21,9 +21,11 @@ public sealed class Loc : INotifyPropertyChanged
     public string this[string key] => LocalizationService.Instance[key];
 
     public string WindowTitle => LocalizationService.Instance["windowTitle"];
-    public string CheckUpdates => LocalizationService.Instance["checkUpdates"];
-    public string UpdateAll => LocalizationService.Instance["updateAll"];
-    public string TrackedApps => LocalizationService.Instance["trackedApps"];
+            public string CheckUpdates => LocalizationService.Instance["checkUpdates"];
+            public string UpdateAll => LocalizationService.Instance["updateAll"];
+            public string Stop => LocalizationService.Instance["Stop"];
+            public string BtnStop => LocalizationService.Instance["BtnStop"];
+            public string TrackedApps => LocalizationService.Instance["trackedApps"];
 
         public string NoTrackedApps => LocalizationService.Instance["NoTrackedApps"];
     public string Catalog => LocalizationService.Instance["catalog"];

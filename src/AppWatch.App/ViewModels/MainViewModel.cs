@@ -102,9 +102,14 @@ public partial class MainViewModel : ObservableObject
         public partial int WingetUpdatesAvailable { get; set; }
 
         [ObservableProperty]
-        public partial int WingetPendingUpdates { get; set; }
+                public partial int WingetPendingUpdates { get; set; }
 
-        public string HeroTitle => LocalizationService.Instance["HeroTitle"];
+                [ObservableProperty]
+                public partial bool IsUpdateAllRunning { get; set; }
+
+                private CancellationTokenSource? _updateAllCts;
+
+                public string HeroTitle => LocalizationService.Instance["HeroTitle"];
         public string HeroMetricTracked => string.Format(LocalizationService.Instance["HeroMetricTracked"], AppsTrackedCount);
         public string HeroMetricUpdates => string.Format(LocalizationService.Instance["HeroMetricUpdates"], UpdatesAvailableCount);
         public string HeroMetricUpdatedToday => string.Format(LocalizationService.Instance["HeroMetricUpdatedToday"], UpdatedTodayCount);
@@ -225,44 +230,65 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task UpdateAllAsync(CancellationToken cancellationToken)
-    {
-        foreach (var item in Apps.Where(a => a.App.UpdateKind != UpdateKind.WingetPackage))
+        private async Task UpdateAllAsync(CancellationToken cancellationToken)
         {
-            item.Stage = UpdateStage.Checking;
-            var check = await _engine.CheckAsync(item.App, cancellationToken);
-            item.StatusText = Describe(check.Status);
-            item.UpdateAvailable = check.Status == UpdateStatus.UpdateAvailable;
-            if (check.Status != UpdateStatus.UpdateAvailable)
+            _updateAllCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            IsUpdateAllRunning = true;
+
+            try
             {
-                item.Stage = check.Status == UpdateStatus.Error ? UpdateStage.Error : UpdateStage.Done;
-                continue;
+                foreach (var item in Apps.Where(a => a.App.UpdateKind != UpdateKind.WingetPackage))
+                {
+                    if (_updateAllCts.Token.IsCancellationRequested)
+                        break;
+
+                    item.Stage = UpdateStage.Checking;
+                    var check = await _engine.CheckAsync(item.App, _updateAllCts.Token);
+                    item.StatusText = Describe(check.Status);
+                    item.UpdateAvailable = check.Status == UpdateStatus.UpdateAvailable;
+                    if (check.Status != UpdateStatus.UpdateAvailable)
+                    {
+                        item.Stage = check.Status == UpdateStatus.Error ? UpdateStage.Error : UpdateStage.Done;
+                        continue;
+                    }
+
+                    StatusText = _loc.Format("Updating", item.Name);
+                    item.Stage = UpdateStage.Downloading;
+                    item.ProgressValue = 0;
+                    var download = new Progress<double>(p => item.ProgressValue = p);
+                    var history = await _engine.ApplyAsync(item.App, check, download, _updateAllCts.Token);
+                    _history.Append(history);
+                    if (history.Success)
+                    {
+                        item.Stage = UpdateStage.Done;
+                        item.UpdateAvailable = false;
+                        item.ReportVersionChanged();
+                        UpdatedTodayCount++;
+                    }
+                    else
+                    {
+                        item.Stage = UpdateStage.Error;
+                    }
+                    item.StatusText = history.Success ? _loc["Updated"] : _loc["UpdateFailed"];
+                }
+            }
+            finally
+            {
+                IsUpdateAllRunning = false;
+                _updateAllCts?.Dispose();
+                _updateAllCts = null;
             }
 
-            StatusText = _loc.Format("Updating", item.Name);
-            item.Stage = UpdateStage.Downloading;
-            item.ProgressValue = 0;
-            var download = new Progress<double>(p => item.ProgressValue = p);
-            var history = await _engine.ApplyAsync(item.App, check, download, cancellationToken);
-            _history.Append(history);
-            if (history.Success)
-            {
-                item.Stage = UpdateStage.Done;
-                item.UpdateAvailable = false;
-                item.ReportVersionChanged();
-                UpdatedTodayCount++;
-            }
-            else
-            {
-                item.Stage = UpdateStage.Error;
-            }
-            item.StatusText = history.Success ? _loc["Updated"] : _loc["UpdateFailed"];
+            UpdatesAvailableCount = Apps.Count(a => a.UpdateAvailable);
+            _configStore.Save(_config);
+            StatusText = _loc["CheckDone"];
         }
 
-        UpdatesAvailableCount = Apps.Count(a => a.UpdateAvailable);
-        _configStore.Save(_config);
-        StatusText = _loc["CheckDone"];
-    }
+        [RelayCommand]
+        private void StopUpdateAll()
+        {
+            _updateAllCts?.Cancel();
+        }
 
     [RelayCommand]
     private async Task UpdateOneAsync(TrackedAppItem? item, CancellationToken cancellationToken)
