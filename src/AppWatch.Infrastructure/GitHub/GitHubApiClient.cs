@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using AppWatch.Core.Abstractions;
+using AppWatch.Core.Domain;
 using AppWatch.Core.Domain.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Serilog;
@@ -21,6 +22,7 @@ public sealed class GitHubApiClient : IGitHubClient
 
     private readonly HttpClient _http;
     private readonly MemoryCache _cache = new(new MemoryCacheOptions { SizeLimit = 100 });
+    private readonly IReadOnlyList<string> _downloadMirrors;
     private DateTimeOffset _rateLimitReset = DateTimeOffset.MinValue;
     private int? _remainingRequests;
 
@@ -28,7 +30,7 @@ public sealed class GitHubApiClient : IGitHubClient
     public DateTimeOffset? RateLimitResetUtc => _rateLimitReset == DateTimeOffset.MinValue ? null : _rateLimitReset;
     public int? RemainingRequests => _remainingRequests;
 
-    public GitHubApiClient(string? token = null)
+    public GitHubApiClient(string? token = null, IEnumerable<string>? downloadMirrors = null)
     {
         _http = new HttpClient();
         _http.DefaultRequestHeaders.UserAgent.ParseAdd("AppWatch/0.1");
@@ -36,6 +38,7 @@ public sealed class GitHubApiClient : IGitHubClient
             new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         if (!string.IsNullOrWhiteSpace(token))
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        _downloadMirrors = downloadMirrors?.ToList() ?? [];
     }
 
     public async Task<IReadOnlyList<ReleaseInfo>> GetReleasesAsync(
@@ -69,58 +72,84 @@ public sealed class GitHubApiClient : IGitHubClient
         var directory = Path.GetDirectoryName(destinationPath);
         if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
 
-        for (var attempt = 1; ; attempt++)
+        // B8: rotate github.com → mirror 1 → mirror 2; the .part resume file is
+        // shared across candidates (mirrors serve the identical asset bytes).
+        var candidates = DownloadMirrors.Candidates(url, _downloadMirrors);
+        Exception? lastError = null;
+
+        foreach (var candidate in candidates)
         {
-            try
+            for (var attempt = 1; attempt <= MaxAttempts; attempt++)
             {
-                using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                var existing = File.Exists(partPath) ? new FileInfo(partPath).Length : 0;
-                if (existing > 0)
-                    request.Headers.Range = new RangeHeaderValue(existing, null);
-
-                using var response = await _http.SendAsync(
-                    request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-                response.EnsureSuccessStatusCode();
-
-                // a server that ignores Range answers 200 with the full body — restart from scratch
-                var append = existing > 0 && response.StatusCode == HttpStatusCode.PartialContent;
-                long baseOffset = append ? existing : 0;
-                if (existing > 0 && !append) File.Delete(partPath);
-
-                var total = (response.Content.Headers.ContentLength ?? 0) + baseOffset;
-                await using var source = await response.Content.ReadAsStreamAsync(cancellationToken);
-                await using var target = new FileStream(
-                    partPath, append ? FileMode.Append : FileMode.Create, FileAccess.Write);
-
-                var buffer = new byte[81920];
-                long written = baseOffset;
-                int read;
-                while ((read = await source.ReadAsync(buffer, cancellationToken)) > 0)
+                try
                 {
-                    await target.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
-                    written += read;
-                    if (total > 0) progress?.Report(written * 100.0 / total);
+                    await DownloadFromAsync(candidate, partPath, progress, cancellationToken);
+                    File.Move(partPath, destinationPath, overwrite: true);
+                    return;
                 }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable)
+                {
+                    // stale/oversized .part — drop it and retry this source from scratch
+                    if (File.Exists(partPath)) File.Delete(partPath);
+                    lastError = ex;
+                    if (attempt >= MaxAttempts) break;
+                    await Task.Delay(TimeSpan.FromSeconds(attempt * 2), cancellationToken);
+                }
+                catch (Exception ex) when (ex is HttpRequestException or IOException or OperationCanceledException)
+                {
+                    lastError = ex;
+                    if (attempt >= MaxAttempts) break;
+                    await Task.Delay(TimeSpan.FromSeconds(attempt * 2), cancellationToken);
+                }
+            }
 
-                File.Move(partPath, destinationPath, overwrite: true);
-                return;
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                throw;
-            }
-            catch (HttpRequestException ex) when (attempt < MaxAttempts && ex.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable)
-            {
-                if (File.Exists(partPath)) File.Delete(partPath);
-                await Task.Delay(TimeSpan.FromSeconds(attempt * 2), cancellationToken);
-            }
-            catch (Exception ex) when (
-                attempt < MaxAttempts && ex is HttpRequestException or IOException or OperationCanceledException)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(attempt * 2), cancellationToken);
-            }
+            if (!ReferenceEquals(candidate, candidates[^1]))
+                Log.Warning("download via {Host} failed after {Attempts} attempts; rotating to next source",
+                    HostOf(candidate), MaxAttempts);
+        }
+
+        throw lastError ?? new HttpRequestException("download failed: no source available");
+    }
+
+    private async Task DownloadFromAsync(
+        string url, string partPath, IProgress<double>? progress, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        var existing = File.Exists(partPath) ? new FileInfo(partPath).Length : 0;
+        if (existing > 0)
+            request.Headers.Range = new RangeHeaderValue(existing, null);
+
+        using var response = await _http.SendAsync(
+            request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        // a server that ignores Range answers 200 with the full body — restart from scratch
+        var append = existing > 0 && response.StatusCode == HttpStatusCode.PartialContent;
+        long baseOffset = append ? existing : 0;
+        if (existing > 0 && !append) File.Delete(partPath);
+
+        var total = (response.Content.Headers.ContentLength ?? 0) + baseOffset;
+        await using var source = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using var target = new FileStream(
+            partPath, append ? FileMode.Append : FileMode.Create, FileAccess.Write);
+
+        var buffer = new byte[81920];
+        long written = baseOffset;
+        int read;
+        while ((read = await source.ReadAsync(buffer, cancellationToken)) > 0)
+        {
+            await target.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+            written += read;
+            if (total > 0) progress?.Report(written * 100.0 / total);
         }
     }
+
+    private static string HostOf(string url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var uri) ? uri.Host : "unknown-host";
 
     private async Task<string> GetStringWithRetryAsync(string url, CancellationToken cancellationToken)
     {

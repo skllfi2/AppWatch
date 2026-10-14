@@ -16,4 +16,11 @@ public sealed class AppConfig
     // D20: background monitor next-run timestamps (UTC) for UI display
     public DateTimeOffset? BackgroundCheckNextRunUtc { get; set; }
     public DateTimeOffset? CatalogCheckNextRunUtc { get; set; }
+
+    /// <summary>
+    /// B8: ghproxy-style mirror prefixes tried (in order) when a direct github.com
+    /// release download fails. Mirror serves the full GitHub URL as a path suffix.
+    /// Verified working 2026-10-14 (Range/206 supported by both).
+    /// </summary>
+    public List<string> DownloadMirrors { get; set; } = ["https://ghfast.top/", "https://ghproxy.net/"];
 }

@@ -97,7 +97,7 @@ public partial class App : Application
                                             .AddSingleton(configStore)
                                             .AddSingleton(config)
                                             .AddSingleton<IConfigStore>(sp => sp.GetRequiredService<JsonConfigStore>())
-                                            .AddSingleton<IGitHubClient>(_ => new GitHubApiClient(config.GitHubToken))
+                                            .AddSingleton<IGitHubClient>(_ => new GitHubApiClient(config.GitHubToken, config.DownloadMirrors))
                                             .AddSingleton<IProcessService, ProcessService>()
                                             .AddSingleton<IAppLauncher, AppLauncher>()
                                             .AddSingleton<IElevationService, ElevationService>()
