@@ -8,6 +8,8 @@ public sealed class AppConfig
     public bool AutoCheckEnabled { get; set; } = true;
     public bool AutoApplyUpdates { get; set; } = false;
     public int CheckIntervalHours { get; set; } = 6;
+    /// <summary>B6: how long a freshly updated app must stay running before the update is committed.</summary>
+    public int HealthCheckSeconds { get; set; } = UpdateHealthCheck.DefaultWindowSeconds;
     public UpdateStrategy DefaultUpdateStrategy { get; set; } = UpdateStrategy.Auto;
     public string? InstallRoot { get; set; }
     public List<TrackedApp> TrackedApps { get; set; } = [];

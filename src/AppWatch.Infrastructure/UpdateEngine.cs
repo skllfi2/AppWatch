@@ -17,10 +17,11 @@ public sealed class UpdateEngine : IUpdateEngine
     private readonly IElevationService _elevation;
     private readonly WingetService _winget;
     private readonly FileStore _files;
+    private readonly AppConfig _config;
 
     public UpdateEngine(
         IGitHubClient github, IProcessService process, IAppLauncher launcher,
-        IElevationService elevation, WingetService winget, FileStore files)
+        IElevationService elevation, WingetService winget, FileStore files, AppConfig config)
     {
         _github = github;
         _process = process;
@@ -28,6 +29,7 @@ public sealed class UpdateEngine : IUpdateEngine
         _elevation = elevation;
         _winget = winget;
         _files = files;
+        _config = config;
     }
 
     public async Task<UpdateCheckResult> CheckAsync(TrackedApp app, CancellationToken cancellationToken = default)
@@ -178,11 +180,33 @@ public sealed class UpdateEngine : IUpdateEngine
                 throw new InvalidOperationException($"executable '{app.ExecutableName}' not found in new release; old version restored");
             }
 
+            var processName = app.ProcessName
+                ?? (app.ExecutableName is null ? null : Path.GetFileNameWithoutExtension(app.ExecutableName));
+
+            // B6: health-check the new build BEFORE committing — launch it and require it to
+            // stay alive for the configured window. Only then is the old version discarded.
+            var health = await UpdateHealthCheck.VerifyStartupAsync(
+                newExe, processName, _process, _launcher,
+                windowSeconds: _config.HealthCheckSeconds, cancellationToken: ct);
+
+            if (!health.Healthy)
+            {
+                _files.RestoreBackup(installDir);
+                var reason = $"health check failed: {health.Reason}; previous version restored";
+                Log.Warning("update of {App} rolled back: {Reason}", app.Name, health.Reason);
+                // restore the user's running state when they expect the app to run
+                if (app.LaunchAfterUpdate && newExe is not null && File.Exists(newExe))
+                    try { _launcher.Launch(newExe); } catch { /* best effort */ }
+                return new UpdateHistoryEntry(app.Name, app.CurrentVersion ?? "?", tag, DateTimeOffset.UtcNow, false, reason);
+            }
+
+            // commit: the old version is only deleted after a healthy start
             _files.DiscardBackup(installDir);
             try { File.Delete(installerPath); } catch (IOException) { }
 
-            if (app.LaunchAfterUpdate && newExe is not null)
-                _launcher.Launch(newExe);
+            // the health check launched the app; keep it running only when asked
+            if (!app.LaunchAfterUpdate && processName is not null)
+                try { _process.Kill(processName); } catch { /* best effort */ }
 
             return new UpdateHistoryEntry(app.Name, app.CurrentVersion ?? "?", tag, DateTimeOffset.UtcNow, true, null);
         }

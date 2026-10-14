@@ -95,6 +95,7 @@ public partial class App : Application
 
         Services = new ServiceCollection()
                                     .AddSingleton(configStore)
+                                    .AddSingleton(config)
                                     .AddSingleton<IConfigStore>(sp => sp.GetRequiredService<JsonConfigStore>())
                                     .AddSingleton<IGitHubClient>(_ => new GitHubApiClient(config.GitHubToken))
                                     .AddSingleton<IProcessService, ProcessService>()

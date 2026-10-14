@@ -378,6 +378,14 @@ namespace на `AppWatch.*`.
    PinnedVersion-поле) — в AddEditAppDialog (чистый C#); UI «закрепить/пропустить версию» из
    карточки — не сделан.
 2. **B6 (health-check + auto-rollback)** — доверие к тихим обновлениям, ядро продукта.
+   Статус: B6 ✅ (2026-10-14): `UpdateHealthCheck.VerifyStartupAsync` (Core, чистая политика,
+   injectable delay — 5 unit-тестов) — новая сборка запускается и должна прожить окно
+   `AppConfig.HealthCheckSeconds` (default 6) ДО commit'а. PortableReplace-путь движка:
+   replace → health-check → healthy ? DiscardBackup (commit) : RestoreBackup (rollback)
+   + запись в историю с причиной «health check failed: …» + relaunch старой версии при
+   LaunchAfterUpdate. При !LaunchAfterUpdate проверочный процесс гасится после commit'а.
+   Для стратегий-инсталляторов (silent/builtin/winget) откат остаётся на стороне
+   установщика — наш rollback только для portable-replace.
 3. **C11+C13+C14 (пустые состояния + монограммы + обновление по клику)** — визуальный
    характер за копейки.
 4. **D17 (Generic Host)** — сделать сразу после v0.2, пока фоновый сервис один.
