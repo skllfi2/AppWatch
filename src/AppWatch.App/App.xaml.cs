@@ -42,14 +42,21 @@ public partial class App : Application
 
     public App()
         {
-            // Register converters in code to avoid XamlCompiler issues
-            Resources["BoolToVisibility"] = new Converters.BoolToVisibilityConverter();
-            Resources["InverseBool"] = new Converters.InverseBoolConverter();
-            Resources["StringToBool"] = new Converters.StringToBoolConverter();
-            Resources["NotNullToVisibility"] = new Converters.NotNullToVisibilityConverter();
-            Resources["CountToVisibility"] = new Converters.CountToVisibilityConverter();
-            Resources["InverseCountToVisibility"] = new Converters.InverseCountToVisibilityConverter();
-            Resources["StringToBrushConverter"] = new Converters.StringToBrushConverter();
+            // Surface XAML-dispatched exceptions to crash.log before the stowed crash kills us
+            UnhandledException += (_, e) =>
+            {
+                try
+                {
+                    var p = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        "AppWatch", "logs", "crash.log");
+                    Directory.CreateDirectory(Path.GetDirectoryName(p)!);
+                    File.AppendAllText(p,
+                        $"[{DateTime.Now}] XAML Unhandled: {e.Exception.GetType().Name}: {e.Message}\n" +
+                        $"{e.Exception.StackTrace}\n");
+                }
+                catch { /* nothing more we can do */ }
+            };
 
             InitializeComponent();
         }
@@ -59,6 +66,17 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
+            // Register converters AFTER XAML app init (Application.Resources throws
+            // COMException when touched from the App constructor in unpackaged mode),
+            // but BEFORE the first page loads (StaticResource lookups happen then).
+            Resources["BoolToVisibility"] = new Converters.BoolToVisibilityConverter();
+            Resources["InverseBool"] = new Converters.InverseBoolConverter();
+            Resources["StringToBool"] = new Converters.StringToBoolConverter();
+            Resources["NotNullToVisibility"] = new Converters.NotNullToVisibilityConverter();
+            Resources["CountToVisibility"] = new Converters.CountToVisibilityConverter();
+            Resources["InverseCountToVisibility"] = new Converters.InverseCountToVisibilityConverter();
+            Resources["StringToBrushConverter"] = new Converters.StringToBrushConverter();
+
             var appData = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AppWatch");
             Log.Logger = new LoggerConfiguration()

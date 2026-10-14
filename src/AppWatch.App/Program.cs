@@ -25,14 +25,36 @@ public static class Program
             "AppWatch", "logs", "crash.log");
         try
         {
+            // Unpackaged app: load the WindowsAppSDK framework package explicitly.
+            // Without this the first WinRT activation dies natively (combase E_FAIL 0x8000ffff).
+            if (!Microsoft.Windows.ApplicationModel.DynamicDependency.Bootstrap.TryInitialize(
+                    Microsoft.WindowsAppSDK.Release.MajorMinor,
+                    out _))
+            {
+                throw new InvalidOperationException(
+                    "WindowsAppSDK bootstrap failed: is the WindowsAppRuntime framework package installed?");
+            }
+
             WinRT.ComWrappersSupport.InitializeComWrappers();
 
             Microsoft.UI.Xaml.Application.Start(_ =>
             {
-                var context = new Microsoft.UI.Dispatching.DispatcherQueueSynchronizationContext(
-                    Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
-                System.Threading.SynchronizationContext.SetSynchronizationContext(context);
-                new App();
+                try
+                {
+                    var context = new Microsoft.UI.Dispatching.DispatcherQueueSynchronizationContext(
+                        Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
+                    System.Threading.SynchronizationContext.SetSynchronizationContext(context);
+                    new App();
+                }
+                catch (Exception ex)
+                {
+                    // Stowed exceptions kill the process without unwinding to Main's catch —
+                    // write the real cause here, inside the callback.
+                    Directory.CreateDirectory(Path.GetDirectoryName(crashLogPath)!);
+                    File.WriteAllText(crashLogPath + ".inner",
+                        $"[{DateTime.Now}] FATAL (Start callback): {ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}\n");
+                    throw;
+                }
             });
         }
         catch (Exception ex)

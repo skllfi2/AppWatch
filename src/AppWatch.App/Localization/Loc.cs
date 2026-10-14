@@ -109,7 +109,14 @@ public sealed class Loc : INotifyPropertyChanged
                                 public string LaunchAfterUpdate => LocalizationService.Instance["LaunchAfterUpdate"];
                                 public string IgnorePreReleases => LocalizationService.Instance["IgnorePreReleases"];
                                 public string AutoDetectVersion => LocalizationService.Instance["AutoDetectVersion"];
-                                public string Cancel => LocalizationService.Instance["Cancel"];
+                                                                public string Cancel => LocalizationService.Instance["Cancel"];
+                                                                public string NavHistory => LocalizationService.Instance["NavHistory"];
+                                                                public string HistoryPageTitle => LocalizationService.Instance["HistoryPageTitle"];
+                                                                public string HistoryPageSubtitle => LocalizationService.Instance["HistoryPageSubtitle"];
+                                                                public string HistorySection => LocalizationService.Instance["HistorySection"];
+                                                                public string HistoryEmpty => LocalizationService.Instance["HistoryEmpty"];
+                                                                public string HistorySuccess => LocalizationService.Instance["HistorySuccess"];
+                                                                public string HistoryFailed => LocalizationService.Instance["HistoryFailed"];
 
                                 // About page keys
                                 public string AboutVersion => LocalizationService.Instance["AboutVersion"];
@@ -151,7 +158,7 @@ public sealed class Loc : INotifyPropertyChanged
                 public string WingetMetricTotal => LocalizationService.Instance["WingetMetricTotal"];
                 public string WingetMetricUpdates => LocalizationService.Instance["WingetMetricUpdates"];
                 public string WingetMetricPending => LocalizationService.Instance["WingetMetricPending"];
-                public string WingetUpdateSelected => LocalizationService.Instance["WingetUpdateSelected"];
+                public string WingetUpdateSelected => LocalizationService.Instance["wingetUpdateSelected"];
 
                 // Not implemented
                 public string NotImplemented => LocalizationService.Instance["notImplemented"];

@@ -28,13 +28,14 @@ public sealed partial class AppsPage : Page
         if (sender is Button { Tag: string tag })
         {
             var pageType = tag switch
-            {
-                "catalog" => typeof(CatalogPage),
-                "winget" => typeof(WingetPage),
-                "settings" => typeof(SettingsPage),
-                "about" => typeof(AboutPage),
-                _ => null,
-            };
+                        {
+                            "catalog" => typeof(CatalogPage),
+                            "winget" => typeof(WingetPage),
+                            "history" => typeof(HistoryPage),
+                            "settings" => typeof(SettingsPage),
+                            "about" => typeof(AboutPage),
+                            _ => null,
+                        };
             if (pageType is not null)
                 App.MainWindow!.NavigateTo(pageType);
         }

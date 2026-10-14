@@ -244,6 +244,7 @@ public partial class MainViewModel : ObservableObject
             item.ProgressValue = 0;
             var download = new Progress<double>(p => item.ProgressValue = p);
             var history = await _engine.ApplyAsync(item.App, check, download, cancellationToken);
+            _history.Append(history);
             if (history.Success)
             {
                 item.Stage = UpdateStage.Done;
@@ -282,6 +283,7 @@ public partial class MainViewModel : ObservableObject
         item.ProgressValue = 0;
         var download = new Progress<double>(p => item.ProgressValue = p);
         var history = await _engine.ApplyAsync(item.App, check, download, cancellationToken);
+        _history.Append(history);
         if (history.Success)
         {
             item.Stage = UpdateStage.Done;
@@ -395,6 +397,7 @@ public partial class MainViewModel : ObservableObject
             item.ProgressValue = 0;
             var download = new Progress<double>(p => item.ProgressValue = p);
             var history = await _engine.ApplyAsync(item.App, check, download);
+            _history.Append(history);
             if (history.Success)
             {
                 item.Stage = UpdateStage.Done;
