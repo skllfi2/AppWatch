@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AppWatch.Catalog;
 using AppWatch.Core.Abstractions;
+using AppWatch.Core.Domain;
 using AppWatch.Core.Domain.Models;
 using AppWatch.Infrastructure;
 using Microsoft.Extensions.Hosting;
@@ -130,6 +131,8 @@ public sealed class CatalogMonitor : BackgroundService, ICatalogMonitor
                 if (!stoppingToken.IsCancellationRequested)
                 {
                     var config = _configStore.Load();
+                    // A4: ±10% jitter — see CheckSchedule
+                    nextDelay = CheckSchedule.WithJitter(nextDelay);
                     config.CatalogCheckNextRunUtc = DateTimeOffset.UtcNow.Add(nextDelay);
                     _configStore.Save(config);
                     await Task.Delay(nextDelay, stoppingToken);

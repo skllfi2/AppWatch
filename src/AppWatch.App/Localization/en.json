@@ -160,5 +160,15 @@
     "RollbackEmpty": "No archived versions for this app yet.",
     "RollbackHint": "The current version is archived too, so you can roll forward later. The app process will be stopped.",
     "RollbackDone": "Rolled back",
-    "AllowUnsignedInstaller": "Allow unsigned installers (no signature check)"
+    "AllowUnsignedInstaller": "Allow unsigned installers (no signature check)",
+    "SettingsExportImport": "Export & import",
+    "ExportApps": "Export list",
+    "ImportApps": "Import list",
+    "CopyAppsList": "Copy as winget/URL",
+    "ExportDone": "List exported",
+    "ImportDone": "Imported: {0}",
+    "ImportEmpty": "No new apps in the file (duplicates skipped)",
+    "CopyListDone": "Copied {0} entries",
+    "BatchSummaryOk": "Updated: {0}",
+    "BatchSummaryMixed": "Updated: {0}, failed: {1}: {2}"
 }

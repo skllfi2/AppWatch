@@ -133,6 +133,8 @@ public sealed class BackgroundMonitor : BackgroundService
                         // Reuse the cycle's config instance: this persist ALSO keeps the
                         // LastCheckStatus mutations from the loop (B9) — no reload here.
                         config ??= _configStore.Load();
+                        // A4: jitter the next run by ±10% so the client fleet desynchronizes
+                        nextDelay = CheckSchedule.WithJitter(nextDelay);
                         config.BackgroundCheckNextRunUtc = DateTimeOffset.UtcNow.Add(nextDelay);
                         _configStore.Save(config);
                         await Task.Delay(nextDelay, stoppingToken);

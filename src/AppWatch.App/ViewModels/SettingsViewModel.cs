@@ -5,6 +5,9 @@ using AppWatch.Localization;
 using AppWatch.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Windows.Storage.Pickers;
 
 namespace AppWatch.ViewModels;
 
@@ -162,6 +165,84 @@ public partial class SettingsViewModel : ObservableObject
     private SelfUpdateService.PreparedUpdate? _preparedUpdate;
 
     public bool CanApplySelfUpdate => _preparedUpdate is not null && !SelfUpdateBusy;
+
+    // === A3: export / import the app list ===
+
+    private static readonly JsonSerializerOptions BundleOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+    };
+
+    [RelayCommand]
+    private async Task ExportAppsAsync(CancellationToken cancellationToken)
+    {
+        var picker = new FileSavePicker { SuggestedFileName = $"appwatch-apps-{DateTime.Now:yyyyMMdd}" };
+        picker.FileTypeChoices.Add("AppWatch bundle", [".json"]);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker,
+            WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow));
+        var file = await picker.PickSaveFileAsync();
+        if (file is null) return;
+
+        await File.WriteAllTextAsync(file.Path,
+            JsonSerializer.Serialize(_config.TrackedApps, BundleOptions), cancellationToken);
+        StatusText = LocalizationService.Instance["ExportDone"];
+    }
+
+    [RelayCommand]
+    private async Task ImportAppsAsync(CancellationToken cancellationToken)
+    {
+        var picker = new FileOpenPicker
+        {
+            SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+        };
+        picker.FileTypeFilter.Add(".json");
+        WinRT.Interop.InitializeWithWindow.Initialize(picker,
+            WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow));
+        var file = await picker.PickSingleFileAsync();
+        if (file is null) return;
+
+        var imported = JsonSerializer.Deserialize<List<TrackedApp>>(
+            await File.ReadAllTextAsync(file.Path, cancellationToken), BundleOptions) ?? [];
+
+        var main = App.Resolve<MainViewModel>();
+        var added = 0;
+        foreach (var app in imported)
+        {
+            if (string.IsNullOrWhiteSpace(app.RepoName)) continue;
+            if (_config.TrackedApps.Any(a => a.RepoOwner == app.RepoOwner && a.RepoName == app.RepoName))
+                continue; // dedupe by owner/repo
+
+            _config.TrackedApps.Add(app);
+            main.Apps.Add(new TrackedAppItem(app));
+            added++;
+        }
+
+        if (added > 0)
+        {
+            _configStore.Save(_config);
+            main.AppsTrackedCount = main.Apps.Count;
+        }
+        StatusText = added > 0
+            ? string.Format(LocalizationService.Instance["ImportDone"], added)
+            : LocalizationService.Instance["ImportEmpty"];
+    }
+
+    [RelayCommand]
+    private void CopyAppsList()
+    {
+        var lines = _config.TrackedApps.Select(a =>
+            !string.IsNullOrWhiteSpace(a.WingetPackageId) ? a.WingetPackageId
+            : $"https://github.com/{a.RepoOwner}/{a.RepoName}").Distinct().ToList();
+
+        var text = string.Join(Environment.NewLine, lines);
+        var package = new global::Windows.ApplicationModel.DataTransfer.DataPackage();
+        package.SetText(text);
+        global::Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(package);
+        StatusText = string.Format(LocalizationService.Instance["CopyListDone"], lines.Count);
+    }
 
     [RelayCommand(CanExecute = nameof(CanApplySelfUpdate))]
     private async Task ApplySelfUpdateAsync(CancellationToken cancellationToken)

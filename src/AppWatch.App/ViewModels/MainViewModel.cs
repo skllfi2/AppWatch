@@ -278,6 +278,10 @@ public partial class MainViewModel : ObservableObject
             _updateAllCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             IsUpdateAllRunning = true;
 
+            // A5: batch summary counters — one balloon with the outcome, not a toast per app
+            var okCount = 0;
+            var failedNames = new List<string>();
+
             try
             {
                 foreach (var item in Apps.Where(a => a.App.UpdateKind != UpdateKind.WingetPackage))
@@ -307,10 +311,12 @@ public partial class MainViewModel : ObservableObject
                         item.UpdateAvailable = false;
                         item.ReportVersionChanged();
                         UpdatedTodayCount++;
+                        okCount++;
                     }
                     else
                     {
                         item.Stage = UpdateStage.Error;
+                        failedNames.Add(item.Name);
                     }
                     item.StatusText = history.Success ? _loc["Updated"] : _loc["UpdateFailed"];
                 }
@@ -325,6 +331,17 @@ public partial class MainViewModel : ObservableObject
             UpdatesAvailableCount = Apps.Count(a => a.UpdateAvailable);
             _configStore.Save(_config);
             StatusText = _loc["CheckDone"];
+
+            // A5: tray balloon with the batch outcome (only when something actually ran)
+            if (okCount > 0 || failedNames.Count > 0)
+            {
+                var summary = failedNames.Count == 0
+                    ? string.Format(_loc["BatchSummaryOk"], okCount)
+                    : string.Format(_loc["BatchSummaryMixed"], okCount, failedNames.Count,
+                        string.Join(", ", failedNames));
+                try { App.Resolve<AppWatch.Platform.TrayService>().ShowBalloon("AppWatch", summary); }
+                catch { /* tray not ready — ignore */ }
+            }
         }
 
         [RelayCommand]
