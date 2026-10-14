@@ -358,6 +358,14 @@ namespace на `AppWatch.*`.
    2026-10-14; gh-proxy.com дал 403, не включён). Редактируется в config.json без UI.
 9. **Rate-limit-aware фоновая проверка**: буст priorities — сначала apps с available update
    known, новинки — по остаточному принципу.
+   Статус: B9 ✅ (2026-10-14): `BackgroundCheckOrder.Prioritize` (Core, 4 unit-теста) —
+   tier-1: известное доступное обновление (LastCheckStatus == UpdateAvailable), tier-2:
+   проверенные ранее (up-to-date/error/pinned), tier-3: новинки (null) — стабильный порядок
+   внутри тира. `TrackedApp.LastCheckStatus/LastCheckUtc` персистятся в config.json
+   (BackgroundMonitor пишет после каждой проверки; finally переиспользует экземпляр конфига
+   цикла — ранее reload затирал мутации; попутно исправлена двойная задержка в
+   early-continue ветках disabled/rate-limited). MainViewModel.CheckUpdatesAsync — тот же
+   порядок + сохранение статусов (ручная проверка обновляет приоритеты фона).
 10. **Хранилище старых версий (version cache)**: при обновлении не удалять сразу, а
     складывать в `%LOCALAPPDATA%\AppWatch\Versions\<app>\` с автопаржкой до N версий —
     мгновенный ручной откат из UI («Откатиться на 1.2.5» в MenuFlyout).

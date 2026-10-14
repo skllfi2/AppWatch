@@ -244,13 +244,23 @@ public partial class MainViewModel : ObservableObject
     private async Task CheckUpdatesAsync(CancellationToken cancellationToken)
     {
         StatusText = _loc["Checking"];
-        foreach (var item in Apps)
+        // B9: known-pending updates first — same priority as the background cycle
+        foreach (var item in BackgroundCheckOrder.Prioritize(Apps.Select(a => a.App)))
         {
-            item.Stage = UpdateStage.Checking;
-            var result = await _engine.CheckAsync(item.App, cancellationToken);
-            item.StatusText = Describe(result.Status);
-            item.UpdateAvailable = result.Status == UpdateStatus.UpdateAvailable;
-            item.Stage = result.Status switch
+            // map back to the item VM (Apps order preserved)
+            var vm = Apps.FirstOrDefault(a => ReferenceEquals(a.App, item));
+            if (vm is null) continue;
+
+            vm.Stage = UpdateStage.Checking;
+            var result = await _engine.CheckAsync(item, cancellationToken);
+
+            // B9: persist the verdict for the next background cycle's priority
+            item.LastCheckStatus = result.Status;
+            item.LastCheckUtc = DateTimeOffset.UtcNow;
+
+            vm.StatusText = Describe(result.Status);
+            vm.UpdateAvailable = result.Status == UpdateStatus.UpdateAvailable;
+            vm.Stage = result.Status switch
             {
                 UpdateStatus.Error => UpdateStage.Error,
                 UpdateStatus.UpdateAvailable => UpdateStage.Idle,
@@ -258,6 +268,7 @@ public partial class MainViewModel : ObservableObject
             };
         }
         UpdatesAvailableCount = Apps.Count(a => a.UpdateAvailable);
+        _configStore.Save(_config);   // B9: persist LastCheckStatus for background priority
         StatusText = _loc["CheckDone"];
     }
 

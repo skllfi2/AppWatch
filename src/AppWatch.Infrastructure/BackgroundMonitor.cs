@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AppWatch.Core.Abstractions;
+using AppWatch.Core.Domain;
 using AppWatch.Core.Domain.Models;
 using AppWatch.Infrastructure.Config;
 using Microsoft.Extensions.Hosting;
@@ -45,15 +46,14 @@ public sealed class BackgroundMonitor : BackgroundService
             while (!stoppingToken.IsCancellationRequested)
             {
                 var nextDelay = TimeSpan.FromHours(1);
+                AppConfig? config = null;
                 try
                 {
-                    var config = _configStore.Load();
+                    config = _configStore.Load();
                     if (!config.AutoCheckEnabled || config.TrackedApps.Count == 0)
                     {
+                        // finally persists next-run and waits — no double delay here
                         nextDelay = TimeSpan.FromHours(Math.Max(1, config.CheckIntervalHours));
-                        config.BackgroundCheckNextRunUtc = DateTimeOffset.UtcNow.Add(nextDelay);
-                        _configStore.Save(config);
-                        await Task.Delay(nextDelay, stoppingToken);
                         continue;
                     }
 
@@ -64,18 +64,18 @@ public sealed class BackgroundMonitor : BackgroundService
                         _logger.LogWarning("Background check deferred: rate limited, reset in {Minutes:F0} min",
                             resetIn.TotalMinutes);
                         nextDelay = resetIn + TimeSpan.FromMinutes(1);
-                        config.BackgroundCheckNextRunUtc = DateTimeOffset.UtcNow.Add(nextDelay);
-                        _configStore.Save(config);
-                        await Task.Delay(nextDelay, stoppingToken);
                         continue;
                     }
 
                     _logger.LogInformation("Background check started");
                     int updatesFound = 0;
 
-                    foreach (var app in config.TrackedApps)
+                    // B9: known-pending updates first, then settled apps, новинки last —
+                    // when the rate-limit headroom runs out, the actionable apps are done.
+                    var ordered = BackgroundCheckOrder.Prioritize(config.TrackedApps.Where(a => a.Enabled));
+
+                    foreach (var app in ordered)
                     {
-                        if (!app.Enabled) continue;
                         if (stoppingToken.IsCancellationRequested) break;
 
                         // Stop the loop when we're burning the last requests; leave headroom for user-initiated checks
@@ -87,6 +87,11 @@ public sealed class BackgroundMonitor : BackgroundService
                         }
 
                         var result = await _engine.CheckAsync(app, stoppingToken);
+
+                        // B9: persist the verdict — it drives the next cycle's priority
+                        app.LastCheckStatus = result.Status;
+                        app.LastCheckUtc = DateTimeOffset.UtcNow;
+
                         if (result.Status == UpdateStatus.UpdateAvailable)
                         {
                             updatesFound++;
@@ -125,12 +130,14 @@ public sealed class BackgroundMonitor : BackgroundService
                 {
                     if (!stoppingToken.IsCancellationRequested)
                     {
-                        var config = _configStore.Load();
+                        // Reuse the cycle's config instance: this persist ALSO keeps the
+                        // LastCheckStatus mutations from the loop (B9) — no reload here.
+                        config ??= _configStore.Load();
                         config.BackgroundCheckNextRunUtc = DateTimeOffset.UtcNow.Add(nextDelay);
                         _configStore.Save(config);
                         await Task.Delay(nextDelay, stoppingToken);
                     }
                 }
             }
-        }
-    }
+            }
+            }

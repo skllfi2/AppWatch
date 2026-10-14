@@ -14,6 +14,12 @@ public sealed class TrackedApp
 
     /// <summary>B7: explicit per-app consent to run unsigned installers (most small GitHub tools ship unsigned).</summary>
     public bool AllowUnsignedInstaller { get; set; }
+
+    /// <summary>B9: outcome of the last update check (persisted — drives background check priority).</summary>
+    public UpdateStatus? LastCheckStatus { get; set; }
+
+    /// <summary>B9: when the app was last checked (UTC).</summary>
+    public DateTimeOffset? LastCheckUtc { get; set; }
     public IReadOnlyList<string>? AssetExtensionPriority { get; set; }
     public bool IgnorePreReleases { get; set; } = true;
     public string? PinnedVersion { get; set; }
