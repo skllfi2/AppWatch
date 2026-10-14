@@ -367,6 +367,12 @@ namespace на `AppWatch.*`.
     обновлении. Уже частично поддержано (CancellationToken в командах VM).
 20. **Мелкая сетка-подготовка**: schemaVersion 2 (для PinnedVersion и настроек ур. A1),
     IConfigStore.SaveDesyncSafe (atomic write temp+rename), отображение next-run-time в UI.
+   Статус: D20 ✅ (2026-10-14): schemaVersion=2 в AppConfig + миграция v1→v2 (HealthCheckSeconds,
+   BackgroundCheckNextRunUtc, CatalogCheckNextRunUtc). JsonConfigStore.Save = atomic temp+rename
+   (File.Move(tmp, path, overwrite:true)). Load() мигрирует и сразу сохраняет (v1 конфиги обновляются
+   без перезапуска). BackgroundMonitor/CatalogMonitor пишут next-run-time в конфиг после каждого
+   цикла (BackgroundCheckNextRunUtc / CatalogCheckNextRunUtc). UI: поля добавлены в модель,
+   отображение на SettingsPage — следующим шагом (C12).
 
 ### Приоритеты v0.3 (порядок реализации)
 

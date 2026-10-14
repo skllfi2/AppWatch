@@ -21,17 +21,20 @@ public sealed class CatalogMonitor : BackgroundService, ICatalogMonitor
 {
     private readonly CatalogService _catalog;
     private readonly IGitHubClient _github;
+    private readonly IConfigStore _configStore;
     private readonly IToastService _toast;
     private readonly ILogger<CatalogMonitor> _logger;
 
     public CatalogMonitor(
         CatalogService catalog,
         IGitHubClient github,
+        IConfigStore configStore,
         IToastService toast,
         ILogger<CatalogMonitor> logger)
     {
         _catalog = catalog;
         _github = github;
+        _configStore = configStore;
         _toast = toast;
         _logger = logger;
     }
@@ -51,6 +54,9 @@ public sealed class CatalogMonitor : BackgroundService, ICatalogMonitor
                     var resetIn = (_github.RateLimitResetUtc - DateTimeOffset.UtcNow) ?? TimeSpan.FromHours(1);
                     _logger.LogWarning("Catalog check deferred: rate limited, reset in {Minutes:F0} min", resetIn.TotalMinutes);
                     nextDelay = resetIn + TimeSpan.FromMinutes(1);
+                    var config = _configStore.Load();
+                    config.CatalogCheckNextRunUtc = DateTimeOffset.UtcNow.Add(nextDelay);
+                    _configStore.Save(config);
                     await Task.Delay(nextDelay, stoppingToken);
                     continue;
                 }
@@ -123,6 +129,9 @@ public sealed class CatalogMonitor : BackgroundService, ICatalogMonitor
             {
                 if (!stoppingToken.IsCancellationRequested)
                 {
+                    var config = _configStore.Load();
+                    config.CatalogCheckNextRunUtc = DateTimeOffset.UtcNow.Add(nextDelay);
+                    _configStore.Save(config);
                     await Task.Delay(nextDelay, stoppingToken);
                 }
             }

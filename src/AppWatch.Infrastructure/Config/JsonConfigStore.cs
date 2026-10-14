@@ -29,16 +29,31 @@ public sealed class JsonConfigStore : IConfigStore
     {
         if (!File.Exists(_path)) return new AppConfig();
         var config = JsonSerializer.Deserialize<AppConfig>(File.ReadAllText(_path), Options) ?? new AppConfig();
-        Migrate(config);
+        var migrated = Migrate(config);
+        if (migrated)
+            Save(config);
         return config;
     }
 
-    public void Save(AppConfig config) =>
-        File.WriteAllText(_path, JsonSerializer.Serialize(config, Options));
+    public void Save(AppConfig config)
+    {
+        // D20: atomic write — temp file + rename (avoids torn writes on crash)
+        var tmp = _path + ".tmp";
+        var json = JsonSerializer.Serialize(config, Options);
+        File.WriteAllText(tmp, json);
+        File.Move(tmp, _path, overwrite: true);
+    }
 
-    private static void Migrate(AppConfig config)
+    private static bool Migrate(AppConfig config)
     {
         // migrations run oldest-first; each bumps SchemaVersion
-        // if (config.SchemaVersion < 2) { ...; config.SchemaVersion = 2; }
+        if (config.SchemaVersion < 2)
+        {
+            // Schema v2: added HealthCheckSeconds, BackgroundCheckNextRunUtc, CatalogCheckNextRunUtc
+            config.HealthCheckSeconds = 6; // UpdateHealthCheck.DefaultWindowSeconds
+            config.SchemaVersion = 2;
+            return true;
+        }
+        return false;
     }
 }
