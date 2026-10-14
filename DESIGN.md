@@ -474,3 +474,59 @@ namespace на `AppWatch.*`.
 - Мультипакетные менеджеры (Scoop/Chocolatey) — расширение вширь до того, как закрепимся
   в глубине winget+GitHub, размывает фокус.
 
+---
+
+## v0.4 — Публикация и дистрибуция (план 2026-10-15)
+
+Цель: замкнуть фундамент п.8 (CI/CD с `vpk pack` «с первой версии → self-update работает
+сразу») и п.9 (NOTICE). v0.3 закрыт полностью (A1-A5, B6-B10, C11-C14, D17-D20 — все ✅);
+v0.4 выводит проект из «работает у меня» в «можно ставить кому угодно».
+
+### Приоритеты v0.4 (порядок реализации)
+
+1. **P1 — CI/CD конвейер (GitHub Actions)** — без него self-update мёртв и каждое
+   обновление руками. `.github/workflows/ci.yml`:
+   - `on: push` (main) → build x64 Release + тесты (97+) — быстрая проверка;
+   - `on: push tag v*` → build → test → `vpk pack` (Velopack) → Release с ассетами
+     `AppWatch-win-x64-Portable.zip` (portable: exe + dll, SelfContained) и
+     `RELEASES.json` + дельта-nupkg от прошлой версии (Velopack требует историю);
+   - версия в csproj синхронизируется из тега (`-p:Version=${tag#v}` на build), тег = единый
+     источник версии;
+   - `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1` в env шага build — XamlCompiler-рецепт из
+     скилла (локаль раннера EN, но наследуем нашу проверенную связку).
+2. **P2 — self-update замыкание**: прогнать SelfUpdateService против реального CI-релиза
+   (имя ассета, тег-версия, SHA256); VelopackApp.Run() уже в Program.Main (до Bootstrap —
+   сверить порядок с unpackaged-цепочкой: бутстрап до Velopack недопустим, после — ок);
+   наш же B7-гейт не блокирует self-update (SelfUpdateService не запускает скачанный файл
+   как инсталлер — сам следит за заменой файлов).
+3. **P3 — NOTICE + репо-гигиена**: NOTICE (Apache-2.0 komi-store: AssetSelector,
+   WingetOutputParser), README с установкой, .gitignore чистый, LICENSE копия в zip.
+4. **P4 — A1-доделка — per-app правила из карточки** (закрывает «A1 частично»):
+   `TrackedApp.SkippedVersion` + `UpdateDecisionEngine.Evaluate` игнорирует skipped-тег
+   (аналог PinnedVersion); MenuFlyout на карточке AppsPage: «Закрепить текущую» /
+   «Пропустить эту версию» / «Сбросить правила» — команды на TrackedAppItem, сохранение
+   в config.
+5. **P5 — Battle.net-hide** (открытая задача с первого дня): Battle.net прячет UI —
+   VersionDetector special case (версия из `%PROGRAMDATA%\Battle.net` Agent-файлов /
+   тайтл-процесса), задокументировать в VersionDetector с комментарием почему не реестр.
+6. **P6 — winget-пакет AppWatch**: манифест в `microsoft/winget-pkgs` (portable zip →
+   InstallerType: zip) — только после первого тегового релиза из P1; AppWatch появляется в
+   `winget search`, а наш же движок обновляет его как обычный winget-пакет.
+
+### Не-цели v0.4
+
+- Автоматическая публикация в Store (MSIX-упаковка) — unpackaged уже работает, MSIX
+  вернёт старую цепочку проблем (Developer Mode, виртуализация AppData).
+- Подпись кода (EV-сертификат) — дорого и не нужно для портативного распределения;
+  SelfUpdateService верифицирует SHA256, digest уже в движке.
+- Linux/macOS — вне фокуса Windows-only проекта.
+
+### Критерии готовности v0.4
+
+- Тег `vX.Y.Z` в git → через ~10 минут живой GitHub Release с рабочими ассетами.
+- `SelfUpdateService.PrepareAsync` находит релиз, качает, верифицирует, применяет,
+  перезапускает — на свежем CI-релизе.
+- Карточка приложения: pin/skip/reset работают, перезапуск сохраняет.
+- Battle.net показывает установленную версию в карточке.
+
+
