@@ -71,6 +71,10 @@ public sealed class Loc : INotifyPropertyChanged
                                 public string SettingsSaved => LocalizationService.Instance["SettingsSaved"];
                                 public string SettingsSelfUpdate => LocalizationService.Instance["SettingsSelfUpdate"];
                                 public string SettingsSelfUpdateHint => LocalizationService.Instance["SettingsSelfUpdateHint"];
+                                public string SettingsScheduleSection => LocalizationService.Instance["SettingsScheduleSection"];
+                                public string SettingsNextBackgroundCheck => LocalizationService.Instance["SettingsNextBackgroundCheck"];
+                                public string SettingsNextCatalogCheck => LocalizationService.Instance["SettingsNextCatalogCheck"];
+                                public string SettingsScheduleNone => LocalizationService.Instance["SettingsScheduleNone"];
                                 public string SettingsSelfUpdateCheck => LocalizationService.Instance["SettingsSelfUpdateCheck"];
                                 public string SettingsSelfUpdateApply => LocalizationService.Instance["SettingsSelfUpdateApply"];
                                 public string SettingsNoUpdates => LocalizationService.Instance["SettingsNoUpdates"];

@@ -149,5 +149,9 @@
     "BtnStop": "Stop",
     "CatalogEmpty": "Catalog is empty or failed to load",
     "WingetNoUpdates": "No winget updates available — scan to check",
-    "WingetNotAvailable": "winget is not available on this system"
+    "WingetNotAvailable": "winget is not available on this system",
+    "SettingsScheduleSection": "Background monitors",
+    "SettingsNextBackgroundCheck": "Next apps check",
+    "SettingsNextCatalogCheck": "Next catalog check",
+    "SettingsScheduleNone": "not scheduled yet"
 }

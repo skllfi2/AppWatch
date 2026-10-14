@@ -72,6 +72,29 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     public partial bool SelfUpdateBusy { get; set; }
 
+    [ObservableProperty]
+    public partial string NextBackgroundCheckText { get; set; } = "";
+
+    [ObservableProperty]
+    public partial string NextCatalogCheckText { get; set; } = "";
+
+    /// <summary>
+    /// C12: re-read config from disk (BackgroundMonitor/CatalogMonitor persist their
+    /// next-run timestamps there) and format both schedule labels. Called on every
+    /// navigation to the settings page so cached pages never show stale times.
+    /// </summary>
+    public void RefreshScheduleInfo()
+    {
+        var fresh = _configStore.Load();
+        var none = LocalizationService.Instance["SettingsScheduleNone"];
+        NextBackgroundCheckText = fresh.BackgroundCheckNextRunUtc is { } t
+            ? t.LocalDateTime.ToString("dd.MM.yyyy HH:mm")
+            : none;
+        NextCatalogCheckText = fresh.CatalogCheckNextRunUtc is { } c
+            ? c.LocalDateTime.ToString("dd.MM.yyyy HH:mm")
+            : none;
+    }
+
     partial void OnSelectedThemeIndexChanged(int value)
     {
         if (!_initialized) return;

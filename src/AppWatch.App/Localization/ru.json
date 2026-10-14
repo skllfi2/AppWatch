@@ -149,5 +149,9 @@
     "BtnStop": "Остановить",
     "CatalogEmpty": "Каталог пуст или не загрузился",
     "WingetNoUpdates": "Обновлений winget нет — запустите сканирование",
-    "WingetNotAvailable": "winget недоступен в системе"
+    "WingetNotAvailable": "winget недоступен в системе",
+    "SettingsScheduleSection": "Фоновые проверки",
+    "SettingsNextBackgroundCheck": "Следующая проверка приложений",
+    "SettingsNextCatalogCheck": "Следующая проверка каталога",
+    "SettingsScheduleNone": "пока не запланировано"
 }

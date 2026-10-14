@@ -377,6 +377,11 @@ namespace на `AppWatch.*`.
    без перезапуска). BackgroundMonitor/CatalogMonitor пишут next-run-time в конфиг после каждого
    цикла (BackgroundCheckNextRunUtc / CatalogCheckNextRunUtc). UI: поля добавлены в модель,
    отображение на SettingsPage — следующим шагом (C12).
+   C12 ✅ (2026-10-14): секция «Фоновые проверки» на SettingsPage (ZuiV2 SettingRow) —
+   «Следующая проверка приложений» и «Следующая проверка каталога» со временем (dd.MM.yyyy HH:mm)
+   или «пока не запланировано». SettingsViewModel.RefreshScheduleInfo() перечитывает конфиг с
+   диска; вызывается из конструктора страницы и OnNavigatedTo (кэш не даёт устаревших значений).
+   Проверено UIA: секция рендерится, fallback-текст корректен.
 
 ### Приоритеты v0.3 (порядок реализации)
 
