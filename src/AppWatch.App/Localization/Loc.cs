@@ -29,7 +29,10 @@ public sealed class Loc : INotifyPropertyChanged
 
         public string NoTrackedApps => LocalizationService.Instance["NoTrackedApps"];
     public string Catalog => LocalizationService.Instance["catalog"];
-    public string CatalogHint => LocalizationService.Instance["catalogHint"];
+            public string CatalogHint => LocalizationService.Instance["catalogHint"];
+            public string CatalogEmpty => LocalizationService.Instance["CatalogEmpty"];
+            public string WingetNoUpdates => LocalizationService.Instance["WingetNoUpdates"];
+            public string WingetNotAvailable => LocalizationService.Instance["WingetNotAvailable"];
     public string WingetUpdates => LocalizationService.Instance["wingetUpdates"];
     public string WingetGoTo => LocalizationService.Instance["wingetGoTo"];
     public string WingetScan => LocalizationService.Instance["wingetScan"];

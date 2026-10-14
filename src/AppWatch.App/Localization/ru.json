@@ -146,5 +146,8 @@
     "HistorySuccess": "Успешно",
     "HistoryFailed": "Ошибка",
     "Stop": "Остановить",
-    "BtnStop": "Остановить"
+    "BtnStop": "Остановить",
+    "CatalogEmpty": "Каталог пуст или не загрузился",
+    "WingetNoUpdates": "Обновлений winget нет — запустите сканирование",
+    "WingetNotAvailable": "winget недоступен в системе"
 }

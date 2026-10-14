@@ -146,5 +146,8 @@
     "HistorySuccess": "Success",
     "HistoryFailed": "Failed",
     "Stop": "Stop",
-    "BtnStop": "Stop"
+    "BtnStop": "Stop",
+    "CatalogEmpty": "Catalog is empty or failed to load",
+    "WingetNoUpdates": "No winget updates available — scan to check",
+    "WingetNotAvailable": "winget is not available on this system"
 }

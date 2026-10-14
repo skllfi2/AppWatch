@@ -77,15 +77,15 @@
                     </ListView>
 
                     <!-- Empty state -->
-                    <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="24"
-                          Visibility="{x:Bind ViewModel.CatalogApps.Count, Converter={StaticResource InverseCountToVisibility}, Mode=OneWay}">
-                        <StackPanel Spacing="8" HorizontalAlignment="Center">
-                            <FontIcon Glyph="&#xE8F1;" FontSize="24" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center"/>
-                            <TextBlock Text="{x:Bind Loc.NoTrackedApps, Mode=OneWay}" FontSize="12"
-                                       Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"
-                                       HorizontalAlignment="Center" TextAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
+                                        <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="24"
+                                              Visibility="{x:Bind ViewModel.CatalogApps.Count, Converter={StaticResource InverseCountToVisibility}, Mode=OneWay}">
+                                            <StackPanel Spacing="8" HorizontalAlignment="Center">
+                                                <FontIcon Glyph="&#xE8F1;" FontSize="24" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="{x:Bind Loc.CatalogEmpty, Mode=OneWay}" FontSize="12"
+                                                           Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"
+                                                           HorizontalAlignment="Center" TextAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
 
                 </StackPanel>
 
