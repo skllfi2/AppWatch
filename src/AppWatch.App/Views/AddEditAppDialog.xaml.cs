@@ -117,6 +117,17 @@ public sealed class AddEditAppDialog : ContentDialog
         options.Children.Add(autoDetectCheck);
         panel.Children.Add(options);
 
+        // B7: per-app consent for unsigned installers (separate row — security-relevant)
+        var unsignedCheck = new CheckBox
+        {
+            Content = loc["AllowUnsignedInstaller"],
+            IsChecked = _viewModel.AllowUnsignedInstaller,
+            Margin = new Thickness(0, 4, 0, 0),
+        };
+        unsignedCheck.Checked += (_, _) => _viewModel.AllowUnsignedInstaller = true;
+        unsignedCheck.Unchecked += (_, _) => _viewModel.AllowUnsignedInstaller = false;
+        panel.Children.Add(unsignedCheck);
+
         UpdateVisibility(_viewModel.SelectedUpdateKindIndex);
 
         return new ScrollViewer

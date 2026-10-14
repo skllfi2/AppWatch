@@ -102,6 +102,8 @@ public partial class App : Application
                                             .AddSingleton<IAppLauncher, AppLauncher>()
                                             .AddSingleton<IElevationService, ElevationService>()
                                             .AddSingleton<FileStore>()
+                                            .AddSingleton<InstallerTrustService>()
+                                            .AddSingleton<VersionStore>(sp => new VersionStore(config.VersionCacheCount))
                                             .AddSingleton<IUpdateEngine, UpdateEngine>()
                                             .AddSingleton<WingetService>()
                                             .AddSingleton<SystemVersionResolver>()

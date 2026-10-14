@@ -174,6 +174,16 @@
                                                                                                                             <TextBlock Text="{x:Bind BtnEdit}" FontSize="11" Foreground="{StaticResource HeroTertiaryBrush}"/>
                                                                                                                         </StackPanel>
                                                                                                                     </Button>
+                                                                            <Button Command="{x:Bind RollbackAppCommand}" CommandParameter="{x:Bind}"
+                                                                                    Visibility="{x:Bind RollbackAvailable, Converter={StaticResource BoolToVisibility}, Mode=OneWay}"
+                                                                                    Padding="12,6" CornerRadius="6"
+                                                                                    Background="{StaticResource HeroOverlayBrush}" BorderThickness="0"
+                                                                                    ToolTipService.ToolTip="{x:Bind BtnRollback}">
+                                                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                                    <FontIcon Glyph="&#xE7A6;" FontSize="12" Foreground="{StaticResource HeroTertiaryBrush}"/>
+                                                                                    <TextBlock Text="{x:Bind BtnRollback}" FontSize="11" Foreground="{StaticResource HeroTertiaryBrush}"/>
+                                                                                </StackPanel>
+                                                                            </Button>
                                                                         </StackPanel>
                                 </Grid>
                             </DataTemplate>

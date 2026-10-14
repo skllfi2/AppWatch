@@ -153,5 +153,12 @@
     "SettingsScheduleSection": "Background monitors",
     "SettingsNextBackgroundCheck": "Next apps check",
     "SettingsNextCatalogCheck": "Next catalog check",
-    "SettingsScheduleNone": "not scheduled yet"
+    "SettingsScheduleNone": "not scheduled yet",
+    "BtnRollback": "Rollback",
+    "RollbackDialogTitle": "Rollback {0}",
+    "RollbackDo": "Roll back",
+    "RollbackEmpty": "No archived versions for this app yet.",
+    "RollbackHint": "The current version is archived too, so you can roll forward later. The app process will be stopped.",
+    "RollbackDone": "Rolled back",
+    "AllowUnsignedInstaller": "Allow unsigned installers (no signature check)"
 }

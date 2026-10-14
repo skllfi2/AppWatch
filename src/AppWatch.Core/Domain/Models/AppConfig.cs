@@ -23,4 +23,7 @@ public sealed class AppConfig
     /// Verified working 2026-10-14 (Range/206 supported by both).
     /// </summary>
     public List<string> DownloadMirrors { get; set; } = ["https://ghfast.top/", "https://ghproxy.net/"];
+
+    /// <summary>B10: how many old versions to keep per app in the version cache (newest first).</summary>
+    public int VersionCacheCount { get; set; } = 3;
 }

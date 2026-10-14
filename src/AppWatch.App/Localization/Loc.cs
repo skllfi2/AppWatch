@@ -154,6 +154,13 @@ public sealed class Loc : INotifyPropertyChanged
                         public string BtnUpdateOne => LocalizationService.Instance["BtnUpdateOne"];
                         public string BtnLaunch => LocalizationService.Instance["BtnLaunch"];
                         public string BtnEdit => LocalizationService.Instance["BtnEdit"];
+                                public string BtnRollback => LocalizationService.Instance["BtnRollback"];
+                                public string RollbackDialogTitle => LocalizationService.Instance["RollbackDialogTitle"];
+                                public string RollbackDo => LocalizationService.Instance["RollbackDo"];
+                                public string RollbackEmpty => LocalizationService.Instance["RollbackEmpty"];
+                                public string RollbackHint => LocalizationService.Instance["RollbackHint"];
+                                public string RollbackDone => LocalizationService.Instance["RollbackDone"];
+                                public string AllowUnsignedInstaller => LocalizationService.Instance["AllowUnsignedInstaller"];
 
                         // Catalog Hero
                 public string CatalogHeroTitle => LocalizationService.Instance["CatalogHeroTitle"];

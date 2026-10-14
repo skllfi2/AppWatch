@@ -41,6 +41,7 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
         WingetPackageId = _app.WingetPackageId ?? "";
         LaunchAfterUpdate = _app.LaunchAfterUpdate;
         IgnorePreReleases = _app.IgnorePreReleases;
+        AllowUnsignedInstaller = _app.AllowUnsignedInstaller;
         AutoDetectVersion = _app.AutoDetectVersion;
     }
 
@@ -81,6 +82,10 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
     [ObservableProperty]
     public partial bool LaunchAfterUpdate { get; set; } = true;
 
+    /// <summary>B7: per-app consent to run unsigned installers.</summary>
+    [ObservableProperty]
+    public partial bool AllowUnsignedInstaller { get; set; }
+
     [ObservableProperty]
     public partial bool IgnorePreReleases { get; set; } = true;
 
@@ -116,6 +121,7 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
         _app.WingetPackageId = string.IsNullOrWhiteSpace(WingetPackageId) ? null : WingetPackageId.Trim();
         _app.LaunchAfterUpdate = LaunchAfterUpdate;
         _app.IgnorePreReleases = IgnorePreReleases;
+        _app.AllowUnsignedInstaller = AllowUnsignedInstaller;
         _app.AutoDetectVersion = AutoDetectVersion;
         return _app;
     }

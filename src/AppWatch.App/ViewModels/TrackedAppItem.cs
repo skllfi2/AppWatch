@@ -97,6 +97,7 @@ public partial class TrackedAppItem : ObservableObject
         OnPropertyChanged(nameof(StatusBrush));
         OnPropertyChanged(nameof(BtnUpdateOne));
         OnPropertyChanged(nameof(BtnLaunch));
+        OnPropertyChanged(nameof(RollbackAvailable));
     }
 
     /// <summary>Localized "Update" button label (resolved per-item to keep x:Bind inside DataTemplate valid).</summary>
@@ -114,6 +115,16 @@ public partial class TrackedAppItem : ObservableObject
 
     /// <summary>Localized "Edit" button label.</summary>
     public string BtnEdit => LocalizationService.Instance["BtnEdit"];
+
+    /// <summary>Localized "Rollback" button label (B10).</summary>
+    public string BtnRollback => LocalizationService.Instance["BtnRollback"];
+
+    /// <summary>B10: true when the version cache holds at least one older snapshot for this app.</summary>
+    public bool RollbackAvailable =>
+        App.InstallDirectory is not null
+        && global::AppWatch.App.Resolve<Infrastructure.System.VersionStore>().Any(App.Name);
+
+    public IRelayCommand RollbackAppCommand => global::AppWatch.App.Resolve<MainViewModel>().RollbackAppCommand;
 
     private static Brush MakeBrush(byte r, byte g, byte b) =>
         new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, r, g, b));

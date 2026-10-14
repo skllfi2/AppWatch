@@ -25,6 +25,7 @@ public partial class MainViewModel : ObservableObject
     private readonly CatalogService _catalog;
     private readonly UpdateHistoryStore _history;
     private readonly IAppLauncher _launcher;
+    private readonly IProcessService _process;
     private readonly LocalizationService _loc;
     private readonly AppConfig _config;
     private readonly SystemVersionResolver _systemVersion;
@@ -32,7 +33,7 @@ public partial class MainViewModel : ObservableObject
     public MainViewModel(
         IConfigStore configStore, IUpdateEngine engine, WingetService winget,
         CatalogService catalog, UpdateHistoryStore history, IAppLauncher launcher,
-        LocalizationService loc, SystemVersionResolver systemVersion)
+        LocalizationService loc, SystemVersionResolver systemVersion, IProcessService process)
     {
         _configStore = configStore;
         _engine = engine;
@@ -40,6 +41,7 @@ public partial class MainViewModel : ObservableObject
         _catalog = catalog;
         _history = history;
         _launcher = launcher;
+        _process = process;
         _loc = loc;
         _systemVersion = systemVersion;
         _config = configStore.Load();
@@ -175,6 +177,36 @@ public partial class MainViewModel : ObservableObject
                         item.Refresh();
                         StatusText = _loc["SettingsSaved"];
                     }
+                }
+
+                // === B10: version cache rollback ===
+
+                [RelayCommand]
+                private async Task RollbackAppAsync(TrackedAppItem? item)
+                {
+                    if (item is null || item.App.InstallDirectory is null) return;
+
+                    var dialog = new RollbackVersionDialog(item.App);
+                    dialog.XamlRoot = App.MainWindow!.Content.XamlRoot;
+                    if (await dialog.ShowAsync() != ContentDialogResult.Primary || dialog.SelectedEntry is null)
+                        return;
+
+                    var target = dialog.SelectedEntry;
+                    var app = item.App;
+                    var processName = app.ProcessName
+                        ?? (app.ExecutableName is null ? null : Path.GetFileNameWithoutExtension(app.ExecutableName));
+                    if (processName is not null && _process.IsRunning(processName))
+                        _process.Kill(processName);
+
+                    var versions = App.Resolve<Infrastructure.System.VersionStore>();
+                    versions.RollbackTo(app.InstallDirectory!, app.Name, target);
+
+                    app.CurrentVersion = target.Label;
+                    _configStore.Save(_config);
+                    item.Refresh();
+                    item.Stage = UpdateStage.Done;
+                    item.StatusText = _loc["RollbackDone"];
+                    StatusText = _loc["RollbackDone"];
                 }
 
     private string InstallRoot => _config.InstallRoot

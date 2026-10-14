@@ -153,5 +153,12 @@
     "SettingsScheduleSection": "Фоновые проверки",
     "SettingsNextBackgroundCheck": "Следующая проверка приложений",
     "SettingsNextCatalogCheck": "Следующая проверка каталога",
-    "SettingsScheduleNone": "пока не запланировано"
+    "SettingsScheduleNone": "пока не запланировано",
+    "BtnRollback": "Откат",
+    "RollbackDialogTitle": "Откат {0}",
+    "RollbackDo": "Откатиться",
+    "RollbackEmpty": "Архивных версий для этого приложения пока нет.",
+    "RollbackHint": "Текущая версия тоже сохранится в архив — можно вернуться вперёд. Процесс приложения будет остановлен.",
+    "RollbackDone": "Откат выполнен",
+    "AllowUnsignedInstaller": "Разрешить неподписанные установщики (без проверки подписи)"
 }

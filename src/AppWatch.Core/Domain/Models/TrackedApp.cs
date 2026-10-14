@@ -11,6 +11,9 @@ public sealed class TrackedApp
     public string? WingetPackageId { get; set; }
     public string? ProcessName { get; set; }
     public bool LaunchAfterUpdate { get; set; }
+
+    /// <summary>B7: explicit per-app consent to run unsigned installers (most small GitHub tools ship unsigned).</summary>
+    public bool AllowUnsignedInstaller { get; set; }
     public IReadOnlyList<string>? AssetExtensionPriority { get; set; }
     public bool IgnorePreReleases { get; set; } = true;
     public string? PinnedVersion { get; set; }

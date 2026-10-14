@@ -18,10 +18,13 @@ public sealed class UpdateEngine : IUpdateEngine
     private readonly WingetService _winget;
     private readonly FileStore _files;
     private readonly AppConfig _config;
+    private readonly InstallerTrustService _trust;
+    private readonly VersionStore _versions;
 
     public UpdateEngine(
         IGitHubClient github, IProcessService process, IAppLauncher launcher,
-        IElevationService elevation, WingetService winget, FileStore files, AppConfig config)
+        IElevationService elevation, WingetService winget, FileStore files, AppConfig config,
+        InstallerTrustService trust, VersionStore versions)
     {
         _github = github;
         _process = process;
@@ -30,6 +33,8 @@ public sealed class UpdateEngine : IUpdateEngine
         _winget = winget;
         _files = files;
         _config = config;
+        _trust = trust;
+        _versions = versions;
     }
 
     public async Task<UpdateCheckResult> CheckAsync(TrackedApp app, CancellationToken cancellationToken = default)
@@ -100,6 +105,20 @@ public sealed class UpdateEngine : IUpdateEngine
                 }
 
                 var installerPath = await DownloadAndVerifyAsync(check.ChosenAsset!, app.RepoName, tag, progress, cancellationToken);
+
+                // B7: signature gate BEFORE any installer/launcher strategy runs the file.
+                // PortableReplace doesn't launch the download, so it skips the gate.
+                if (strategy is UpdateStrategy.SilentInstaller
+                                      or UpdateStrategy.BuiltInUpdater
+                                      or UpdateStrategy.ExternalLauncher)
+                {
+                    var trust = _trust.Verify(installerPath);
+                    if (!InstallerTrustPolicy.CanRun(trust, app.AllowUnsignedInstaller))
+                        throw new InvalidOperationException(
+                            $"refused to run: {InstallerTrustPolicy.RefusalReason(trust)}");
+                    if (trust is InstallerTrustLevel.Unsigned or InstallerTrustLevel.InvalidSignature)
+                        Log.Warning("launching {Trust} installer for {App} with per-app consent", trust, app.Name);
+                }
 
                 UpdateHistoryEntry result = strategy switch
                 {
@@ -200,8 +219,9 @@ public sealed class UpdateEngine : IUpdateEngine
                 return new UpdateHistoryEntry(app.Name, app.CurrentVersion ?? "?", tag, DateTimeOffset.UtcNow, false, reason);
             }
 
-            // commit: the old version is only deleted after a healthy start
-            _files.DiscardBackup(installDir);
+            // commit: archive the old version instead of deleting it (B10 — version cache,
+            // instant rollback from UI); only after a healthy start
+            _versions.ArchiveBackup(installDir, app.Name, app.CurrentVersion);
             try { File.Delete(installerPath); } catch (IOException) { }
 
             // the health check launched the app; keep it running only when asked

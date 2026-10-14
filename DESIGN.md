@@ -333,6 +333,19 @@ namespace на `AppWatch.*`.
 7. **Проверка подписи инсталлятора + SmartScreen-подсказка**: перед запуском .exe/.msi —
    WinVerifyTrust; без подписи — явный диалог согласия. Уже частично в DESIGN.md п.2
    «Безопасность обновлений», довести до конца.
+   Статус: B7 ✅ (2026-10-14): `InstallerTrustPolicy` (Core, 9 unit-тестов): TrustedSignature →
+   запуск; Unsigned/UnsupportedFile → только с явным per-app согласием
+   (`TrackedApp.AllowUnsignedInstaller`, чекбокс в AddEditAppDialog — большинство мелких
+   GitHub-инструментов не подписано, без согласия приложение стало бы unusable);
+   InvalidSignature → никогда не запускается. `InstallerTrustService` (Infrastructure):
+   `Get-AuthenticodeSignature` через процесс (та же WinVerifyTrust-механика, проверена на
+   реальных файлах: embedded-подписанный dotnet.exe → Trusted, наша сборка → Unsigned,
+   catalog-подписанный notepad → Trusted; прямой P/Invoke WinVerifyTrust на этой машине
+   стабильно отдаёт TRUST_E_SYSTEM_ERROR 0x800B0003 на любом файле — ловушка задокументирована
+   в скилле). UpdateEngine: гейт после скачивания ДО запуска стратегий SilentInstaller/
+   BuiltInUpdater/ExternalLauncher (PortableReplace не запускает файл — без гейта);
+   отказ пишется в историю с причиной. «Диалог согласия» = осознанный чекбокс per-app
+   (безопаснее навязчивого попапа на каждое обновление).
 8. **Зеркала скачивания** (design уже описывает): ghproxy/зеркала для сетей, где GitHub
    режется — актуально для RU-пользователей. Ротация: github.com → зеркало 1 → зеркало 2.
    Статус: B8 ✅ (2026-10-14): `DownloadMirrors` (Core, чистая политика — 10 unit-тестов):
@@ -346,8 +359,16 @@ namespace на `AppWatch.*`.
 9. **Rate-limit-aware фоновая проверка**: буст priorities — сначала apps с available update
    known, новинки — по остаточному принципу.
 10. **Хранилище старых версий (version cache)**: при обновлении не удалять сразу, а
-   складывать в `%LOCALAPPDATA%\AppWatch\Versions\<app>\` с автопаржкой до N версий —
-   мгновенный ручной откат из UI («Откатиться на 1.2.5» в MenuFlyout).
+    складывать в `%LOCALAPPDATA%\AppWatch\Versions\<app>\` с автопаржкой до N версий —
+    мгновенный ручной откат из UI («Откатиться на 1.2.5» в MenuFlyout).
+   Статус: B10 ✅ (2026-10-14): `VersionArchive` (Core, чистая политика — 4 unit-теста:
+   newest-first порядок + prune до N) + `VersionStore` (Infrastructure): Archive (commit
+   в UpdateEngine теперь архивирует installDir.old вместо удаления), List (newest-first),
+   RollbackTo (текущая версия тоже архивируется — roll-forward возможен; выбранный снапшот
+   переносится в install dir; процесс гасится перед откатом). AppConfig.VersionCacheCount
+   (default 3). UI: кнопка «Откат» (E7A6) на карточке AppsPage — видна только когда кэш
+   не пуст; RollbackVersionDialog (чистый C#) со списком версий+дат; RollbackAppAsync в
+   MainViewModel (IProcessService добавлен в DI-цепочку VM).
 
 ### C. UX-детали
 
