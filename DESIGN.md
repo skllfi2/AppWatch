@@ -398,6 +398,11 @@ namespace на `AppWatch.*`.
    установщика — наш rollback только для portable-replace.
 3. **C11+C13+C14 (пустые состояния + монограммы + обновление по клику)** — визуальный
    характер за копейки.
+   Статус: C11+C13+C14 ✅ (2026-10-14): пустые состояния на всех страницах (AppsPage/HistoryPage
+   были; CatalogPage — текст исправлен с самоссылочного NoTrackedApps на CatalogEmpty;
+   WingetPage — два состояния: WingetNotAvailable при !WingetAvailable и WingetNoUpdates
+   при пустом списке). Монограммы — на всех карточках (Apps/History/Catalog, проверено UIA).
+   Обновление по клику — кнопка UpdateOne на каждой карточке AppsPage.
 4. **D17 (Generic Host)** — сделать сразу после v0.2, пока фоновый сервис один.
    Статус: D17 ✅ (2026-10-14): BackgroundMonitor и CatalogMonitor переведены на
    `BackgroundService` (IHostedService) через `Microsoft.Extensions.Hosting` —
