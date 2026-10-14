@@ -85,6 +85,20 @@ public partial class TrackedAppItem : ObservableObject
 
     public void ReportVersionChanged() => OnPropertyChanged(nameof(Version));
 
+    public void Refresh()
+    {
+        OnPropertyChanged(nameof(Name));
+        OnPropertyChanged(nameof(Version));
+        OnPropertyChanged(nameof(Monogram));
+        OnPropertyChanged(nameof(MonogramBrush));
+        OnPropertyChanged(nameof(HasLaunchInfo));
+        OnPropertyChanged(nameof(IsStageProgress));
+        OnPropertyChanged(nameof(StageText));
+        OnPropertyChanged(nameof(StatusBrush));
+        OnPropertyChanged(nameof(BtnUpdateOne));
+        OnPropertyChanged(nameof(BtnLaunch));
+    }
+
     /// <summary>Localized "Update" button label (resolved per-item to keep x:Bind inside DataTemplate valid).</summary>
     public string BtnUpdateOne => LocalizationService.Instance["BtnUpdateOne"];
 
@@ -95,6 +109,11 @@ public partial class TrackedAppItem : ObservableObject
     public IRelayCommand UpdateOneCommand => global::AppWatch.App.Resolve<MainViewModel>().UpdateOneCommand;
 
     public IRelayCommand LaunchAppCommand => global::AppWatch.App.Resolve<MainViewModel>().LaunchAppCommand;
+
+    public IRelayCommand EditAppCommand => global::AppWatch.App.Resolve<MainViewModel>().EditAppCommand;
+
+    /// <summary>Localized "Edit" button label.</summary>
+    public string BtnEdit => LocalizationService.Instance["BtnEdit"];
 
     private static Brush MakeBrush(byte r, byte g, byte b) =>
         new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, r, g, b));

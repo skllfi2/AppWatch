@@ -136,25 +136,34 @@
                                                  IsIndeterminate="False"/>
 
                                     <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                        <Button Command="{x:Bind UpdateOneCommand}" CommandParameter="{x:Bind}"
-                                                Visibility="{x:Bind UpdateAvailable, Converter={StaticResource BoolToVisibility}, Mode=OneWay}"
-                                                Padding="12,6" CornerRadius="6"
-                                                Background="{StaticResource HeroOverlayBrush}" BorderThickness="0">
-                                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                                <FontIcon Glyph="&#xE896;" FontSize="12" Foreground="{StaticResource HeroTertiaryBrush}"/>
-                                                <TextBlock Text="{x:Bind BtnUpdateOne}" FontSize="11" Foreground="{StaticResource HeroTertiaryBrush}"/>
-                                            </StackPanel>
-                                        </Button>
-                                        <Button Command="{x:Bind LaunchAppCommand}" CommandParameter="{x:Bind}"
-                                                Visibility="{x:Bind HasLaunchInfo, Converter={StaticResource BoolToVisibility}, Mode=OneWay}"
-                                                Padding="12,6" CornerRadius="6"
-                                                Background="{StaticResource HeroOverlayBrush}" BorderThickness="0">
-                                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                                <FontIcon Glyph="&#xE768;" FontSize="12" Foreground="{StaticResource HeroTertiaryBrush}"/>
-                                                <TextBlock Text="{x:Bind BtnLaunch}" FontSize="11" Foreground="{StaticResource HeroTertiaryBrush}"/>
-                                            </StackPanel>
-                                        </Button>
-                                    </StackPanel>
+                                                                            <Button Command="{x:Bind UpdateOneCommand}" CommandParameter="{x:Bind}"
+                                                                                    Visibility="{x:Bind UpdateAvailable, Converter={StaticResource BoolToVisibility}, Mode=OneWay}"
+                                                                                    Padding="12,6" CornerRadius="6"
+                                                                                    Background="{StaticResource HeroOverlayBrush}" BorderThickness="0">
+                                                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                                    <FontIcon Glyph="&#xE896;" FontSize="12" Foreground="{StaticResource HeroTertiaryBrush}"/>
+                                                                                    <TextBlock Text="{x:Bind BtnUpdateOne}" FontSize="11" Foreground="{StaticResource HeroTertiaryBrush}"/>
+                                                                                </StackPanel>
+                                                                            </Button>
+                                                                            <Button Command="{x:Bind LaunchAppCommand}" CommandParameter="{x:Bind}"
+                                                                                    Visibility="{x:Bind HasLaunchInfo, Converter={StaticResource BoolToVisibility}, Mode=OneWay}"
+                                                                                    Padding="12,6" CornerRadius="6"
+                                                                                    Background="{StaticResource HeroOverlayBrush}" BorderThickness="0">
+                                                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                                    <FontIcon Glyph="&#xE768;" FontSize="12" Foreground="{StaticResource HeroTertiaryBrush}"/>
+                                                                                    <TextBlock Text="{x:Bind BtnLaunch}" FontSize="11" Foreground="{StaticResource HeroTertiaryBrush}"/>
+                                                                                </StackPanel>
+                                                                            </Button>
+                                                                            <Button Command="{x:Bind EditAppCommand}" CommandParameter="{x:Bind}"
+                                                                                                                            Padding="12,6" CornerRadius="6"
+                                                                                                                            Background="{StaticResource HeroOverlayBrush}" BorderThickness="0"
+                                                                                                                            ToolTipService.ToolTip="{x:Bind BtnEdit}">
+                                                                                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                                                                            <FontIcon Glyph="&#xE70F;" FontSize="12" Foreground="{StaticResource HeroTertiaryBrush}"/>
+                                                                                                                            <TextBlock Text="{x:Bind BtnEdit}" FontSize="11" Foreground="{StaticResource HeroTertiaryBrush}"/>
+                                                                                                                        </StackPanel>
+                                                                                                                    </Button>
+                                                                        </StackPanel>
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>

@@ -6,9 +6,13 @@ using AppWatch.Localization;
 using AppWatch.Core.Abstractions;
 using AppWatch.Core.Domain.Models;
 using AppWatch.Infrastructure;
+using AppWatch.Views;  // for AddEditAppDialog
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Windows.Storage.Pickers;
 using Serilog;
 
 namespace AppWatch.ViewModels;
@@ -132,11 +136,41 @@ public partial class MainViewModel : ObservableObject
             public string InstallButtonText => _loc["install"];
 
         [RelayCommand]
-        private void AddCustomApp()
-        {
-            // TODO: Show dialog to add custom app to catalog
-            StatusText = _loc["notImplemented"];
-        }
+                private async Task AddCustomAppAsync()
+                {
+                    var dialog = new AddEditAppDialog();
+                    dialog.XamlRoot = App.MainWindow!.Content.XamlRoot;
+                    var result = await dialog.ShowAsync();
+                    if (result == ContentDialogResult.Primary)
+                    {
+                        var app = dialog.ViewModel.ToTrackedApp();
+                        var installRoot = Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                            "AppWatch", "Apps", app.RepoName);
+                        app.InstallDirectory = installRoot;
+                        _config.TrackedApps.Add(app);
+                        _configStore.Save(_config);
+                        Apps.Add(new TrackedAppItem(app));
+                        AppsTrackedCount = Apps.Count;
+                        StatusText = _loc["installed"];
+                    }
+                }
+
+                [RelayCommand]
+                private async Task EditAppAsync(TrackedAppItem? item)
+                {
+                    if (item is null) return;
+                    var dialog = new AddEditAppDialog(item.App);
+                    dialog.XamlRoot = App.MainWindow!.Content.XamlRoot;
+                    var result = await dialog.ShowAsync();
+                    if (result == ContentDialogResult.Primary)
+                    {
+                        dialog.ViewModel.ToTrackedApp();
+                        _configStore.Save(_config);
+                        item.Refresh();
+                        StatusText = _loc["SettingsSaved"];
+                    }
+                }
 
     private string InstallRoot => _config.InstallRoot
         ?? Path.Combine(
