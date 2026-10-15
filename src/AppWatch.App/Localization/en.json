@@ -18,6 +18,7 @@
     "checking": "Checking...",
     "checkDone": "Done",
     "updating": "Updating {0}...",
+    "launchFileMissing": "File not found: {0}. Reinstall the app from the catalog.",
     "updated": "Updated",
     "updateFailed": "Update failed",
     "error": "Error",

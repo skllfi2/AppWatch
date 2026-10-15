@@ -391,7 +391,16 @@ public partial class MainViewModel : ObservableObject
     private void LaunchApp(TrackedAppItem? item)
     {
         if (item?.App.InstallDirectory is null || item.App.ExecutableName is null) return;
-        _launcher.Launch(Path.Combine(item.App.InstallDirectory, item.App.ExecutableName));
+        var path = Path.Combine(item.App.InstallDirectory, item.App.ExecutableName);
+        // P0 follow-up: launching a non-existent exe (e.g. installer-kind left our
+        // install dir empty) crashed with a raw Win32Exception into the debugger —
+        // guard with a clear status instead.
+        if (!File.Exists(path))
+        {
+            StatusText = _loc.Format("launchFileMissing", path);
+            return;
+        }
+        _launcher.Launch(path);
     }
 
     [RelayCommand]

@@ -68,8 +68,13 @@ public static class UpdateDecisionEngine
         if (!string.IsNullOrEmpty(app.WingetPackageId))
             return UpdateStrategy.Winget;
 
-        // If app has built-in updater (has UpdateKind != PortableZip and has UpdateUrl), use built-in
-        if (app.UpdateKind != UpdateKind.PortableZip)
+        // Single-file portable releases (e.g. optimizerDuck bare .exe) replace the
+        // install directory the same way archives do — no extraction, health-check exe.
+        if (app.UpdateKind == UpdateKind.PortableExe)
+            return UpdateStrategy.PortableReplace;
+
+        // If app has built-in updater (has UpdateKind != PortableZip/PortableExe and has UpdateUrl), use built-in
+        if (app.UpdateKind is not (UpdateKind.PortableZip or UpdateKind.PortableExe))
             return UpdateStrategy.BuiltInUpdater;
 
         // If MSI available, use silent installer
@@ -95,7 +100,9 @@ public static class UpdateDecisionEngine
             UpdateStrategy.Winget => [],
             UpdateStrategy.BuiltInUpdater => app.AssetExtensionPriority ?? [".exe", ".msi"],
             UpdateStrategy.SilentInstaller => [".msi", ".exe"],
-            UpdateStrategy.PortableReplace => [".zip", ".7z", ".tar.gz"],
+            UpdateStrategy.PortableReplace => app.UpdateKind == UpdateKind.PortableExe
+                ? [".exe", ".zip"]
+                : [".zip", ".7z", ".tar.gz"],
             UpdateStrategy.ExternalLauncher => [".exe", ".msi"],
             _ => app.AssetExtensionPriority ?? (strategy == UpdateStrategy.PortableReplace ? [".zip", ".exe"] : [".msi", ".exe"])
         };

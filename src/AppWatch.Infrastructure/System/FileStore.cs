@@ -14,10 +14,23 @@ public sealed class FileStore
                 $"SHA-256 mismatch: expected {expectedSha256.ToLowerInvariant()}, got {actual}");
     }
 
-    public string ExtractToStaging(string zipPath, string tag)
+    public string ExtractToStaging(string zipPath, string tag, string? targetFileName = null)
     {
         var staging = Path.Combine(Path.GetTempPath(), $"appwatch-extract-{tag}");
         if (Directory.Exists(staging)) Directory.Delete(staging, true);
+
+        // P0 follow-up ("просто exe"): single-file releases (optimizerDuck bare .exe)
+        // are staged as-is — a copy of the file inside an otherwise empty staging dir,
+        // so ReplaceWithRollback keeps working uniformly on directories. The file is
+        // renamed to the app's ExecutableName when configured (release asset names carry
+        // arch/version suffixes the card's Launch button doesn't know about).
+        if (!AppWatch.Core.Domain.AssetContent.IsArchive(zipPath))
+        {
+            Directory.CreateDirectory(staging);
+            File.Copy(zipPath, Path.Combine(staging, targetFileName ?? Path.GetFileName(zipPath)));
+            return staging;
+        }
+
         ZipFile.ExtractToDirectory(zipPath, staging);
 
         // release zips often wrap content in a single root folder — treat it as the content root

@@ -195,7 +195,7 @@ public sealed class UpdateEngine : IUpdateEngine
 
         private async Task<UpdateHistoryEntry> ApplyPortableReplaceAsync(TrackedApp app, string installerPath, string installDir, string tag, CancellationToken ct)
         {
-            var contentRoot = _files.ExtractToStaging(installerPath, Sanitize(tag));
+            var contentRoot = _files.ExtractToStaging(installerPath, Sanitize(tag), app.ExecutableName);
             _files.ReplaceWithRollback(contentRoot, installDir);
 
             var newExe = app.ExecutableName is null ? null : Path.Combine(installDir, app.ExecutableName);
@@ -277,7 +277,7 @@ public sealed class UpdateEngine : IUpdateEngine
                         throw new InvalidOperationException("installer launch declined or failed (UAC)");
                     break;
                 }
-                case UpdateKind.PortableZip:
+                case UpdateKind.PortableZip or UpdateKind.PortableExe:
                 {
                     if (app.InstallDirectory is null)
                         throw new InvalidOperationException("install directory is not configured");
@@ -287,7 +287,8 @@ public sealed class UpdateEngine : IUpdateEngine
                     var zipPath = await DownloadAndVerifyAsync(
                         check.ChosenAsset, app.RepoName, check.NewRelease.TagName,
                         progress: null, cancellationToken: cancellationToken);
-                    var contentRoot = _files.ExtractToStaging(zipPath, Sanitize(check.NewRelease.TagName));
+                    var contentRoot = _files.ExtractToStaging(zipPath, Sanitize(check.NewRelease.TagName),
+                        app.ExecutableName);
                     // P0 live-fix: Directory.Move does not create intermediates (%LOCALAPPDATA%\AppWatch\Apps).
                     var installParent = Path.GetDirectoryName(app.InstallDirectory);
                     if (!string.IsNullOrEmpty(installParent)) Directory.CreateDirectory(installParent);
@@ -324,6 +325,15 @@ public sealed class UpdateEngine : IUpdateEngine
             await _files.VerifyDigestAsync(path, digest);
         else
             Log.Warning("no digest published for {Asset}; skipping integrity verification", asset.Name);
+
+        // P0 follow-up: strip Mark-of-the-Web AFTER integrity verification — the download
+        // is now trusted (hash matches the GitHub digest), so Windows SmartScreen must not
+        // ambush the user on the first launch. Equivalent of right-click → Unblock.
+        // Single-file portable exes carry the zone ADS straight into the install dir;
+        // archive entries never inherit it (that's why zip-portables launch cleanly).
+        try { File.Delete(path + ":Zone.Identifier"); }
+        catch (IOException) { /* no ADS present */ }
+        catch (UnauthorizedAccessException) { /* best effort */ }
 
         return path;
     }
