@@ -589,4 +589,41 @@ history.json, кэш версий в %LOCALAPPDATA%\AppWatch\Versions):
 Долгосрочное решение (элевация только для health-check через COM/планировщик) — в
 бэклоге; текущее поведение — внятный отказ с причиной.
 
+### W1–W4 — winget search & install «Установить из winget» (2026-10-15, завершено)
+
+Закрывает исходный бриф: «установить нужные программы, не напрягаясь... winget+GitHub».
+Раньше winget был только для обновлений; теперь — полноценная установка любого пакета
+из Community Repository (ищи → ставь → автотрек).
+
+- **W1**: `WingetService.SearchAsync` + `WingetOutputParser.ParseSearch` — локале-независимый
+  anchor-scan парсер (4-колоночная name-match таблица, 5-колоночная с колонкой
+  «Совпадение»). Регрессионные тесты на живых фикстурах (`winget search notepad`,
+  `wiztree`, `telegram` — RU locale v1.29): 7 тестов + 113 общих. Парсер работает
+  структурно: source = последний токен, Id = первый id-образный токен, за которым
+  следует версия, затем либо source (4-кол), либо "Tag:"-маркер (5-кол).
+- **W2**: WingetPage секция «Установить из winget» — TextBox поиск + AccentButton
+  «Искать», результаты ListView карточками (monogram + name/id/version/source + Install).
+  Пустые результаты → иконка + «Ничего не найдено». ProgressBar indeterminate при поиске.
+  DataTemplate `WingetSearchItem` с прокси-командой к MainViewModel.
+- **W3**: успешная установка автотрекает пакет (`UpdateKind.WingetPackage`,
+  `WingetPackageId`) — существующий движок обновлений теперь следит за ним.
+- **W4**: graceful-пути ошибок:
+  - already-installed (0x8A150041) → «Уже установлено — добавлено в отслеживаемые»
+  - install failure → winget's message на карточке (`Squash` helper) вместо краша
+  - machine-scope-only пакеты (WizTree `requireAdministrator`) в headless-контексте
+    падают с кодом 2 (UAC auto-cancelled), в UI пользователе — штатный UAC-диалог
+
+**Атрибуции (MIT, атрибуция в NOTICE):**
+- UniGetUI (MIT, https://github.com/Devolutions/UniGetUI) — winget CLI invocation
+  patterns, search parsing, install arg sets, user/machine scope strategy with UAC retry.
+
+**Live proof (2026-10-15):**
+- Search «telegram» → 24 cards → Install on Telegram Desktop (already installed) →
+  'Установлено и добавлено в отслеживаемые' → dashboard Tracked:4 with Telegram card.
+- Search «wiztree» → 1 card → Install → UAC exit code 2 in headless (user would see
+  UAC) → graceful 'Сбой установки с кодом выхода: 2' on card.
+- Dashboard now shows 'Отслеживается: 4' with Telegram Desktop card.
+
+Tests: 120/120.
+
 

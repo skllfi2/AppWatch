@@ -8,3 +8,11 @@ licensed under the Apache License, Version 2.0
 
 Ported components:
 - Asset selection logic (AssetSelector, AssetArchitectureMatcher)
+
+This product includes ideas and patterns from UniGetUI
+(https://github.com/Devolutions/UniGetUI), originally by Martí Climent,
+now maintained by Devolutions under the MIT License.
+- winget CLI invocation patterns and argument sets
+- Search result parsing approach (table-based, locale-independent)
+- Update kind auto-detection logic (auto/built-in/silent/portable/external)
+- User-scope vs machine-scope install strategy with UAC retry logic
