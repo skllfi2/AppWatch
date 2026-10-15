@@ -107,14 +107,34 @@ public sealed class WingetService
         return null;
     }
 
-    public async Task<string> InstallAsync(string packageId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<WingetSearchResult>> SearchAsync(
+        string query, CancellationToken cancellationToken = default)
     {
         if (!IsAvailable)
             throw new InvalidOperationException("winget is not available");
-        return await RunWingetAsync(
-            $"install --id \"{packageId}\" --exact --silent --accept-source-agreements --accept-package-agreements",
+        if (string.IsNullOrWhiteSpace(query))
+            return [];
+        var output = await RunWingetAsync(
+            $"search \"{query.Trim()}\" --accept-source-agreements --disable-interactivity",
             cancellationToken);
+        return WingetOutputParser.ParseSearch(output);
     }
+
+    /// <summary>Exit code: winget reports "already installed" (APPINSTALLER_CLI_ERROR_PACKAGE_ALREADY_INSTALLED).</summary>
+    public const int AlreadyInstalledExitCode = unchecked((int)0x8A150041);
+
+    public async Task<(int ExitCode, string Output)> InstallAsync(
+        string packageId, CancellationToken cancellationToken = default)
+    {
+        if (!IsAvailable)
+            throw new InvalidOperationException("winget is not available");
+        var output = await RunWingetAsync(
+            $"install --id \"{packageId}\" --exact --silent --accept-source-agreements --accept-package-agreements --disable-interactivity",
+            cancellationToken);
+        return (LastExitCode, output);
+    }
+
+    private int LastExitCode { get; set; }
 
     private async Task<string> RunWingetAsync(string arguments, CancellationToken cancellationToken)
     {
@@ -133,6 +153,7 @@ public sealed class WingetService
             ?? throw new InvalidOperationException("failed to start winget");
         var output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
         await process.WaitForExitAsync(cancellationToken);
+        LastExitCode = process.ExitCode;
         Log.Information("winget '{Arguments}' finished with exit code {ExitCode}", arguments, process.ExitCode);
         return output;
     }

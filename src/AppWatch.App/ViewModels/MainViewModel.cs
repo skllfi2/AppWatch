@@ -240,6 +240,102 @@ public partial class MainViewModel : ObservableObject
         StatusText = _loc["checkDone"];
     }
 
+    // === W1–W3: winget search & install ("Установить из winget") ===
+
+    [ObservableProperty]
+    public partial string WingetSearchQuery { get; set; } = "";
+
+    [ObservableProperty]
+    public partial bool IsWingetSearching { get; set; }
+
+    public ObservableCollection<WingetSearchItem> WingetSearchResults { get; } = [];
+
+    /// <summary>True after a search that returned nothing (drives the "no results" hint).</summary>
+    [ObservableProperty]
+    public partial bool WingetSearchNoResults { get; set; }
+
+    [RelayCommand]
+    private async Task SearchWingetAsync(CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(WingetSearchQuery)) return;
+        IsWingetSearching = true;
+        WingetSearchNoResults = false;
+        StatusText = _loc["wingetSearching"];
+        try
+        {
+            var results = await _winget.SearchAsync(WingetSearchQuery, cancellationToken);
+            WingetSearchResults.Clear();
+            foreach (var r in results)
+                WingetSearchResults.Add(new WingetSearchItem(r));
+            WingetSearchNoResults = results.Count == 0;
+            StatusText = results.Count == 0 ? _loc["wingetSearchNoResults"] : _loc["checkDone"];
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"{_loc["error"]}: {ex.Message}";
+        }
+        finally
+        {
+            IsWingetSearching = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task InstallWingetPackageAsync(WingetSearchItem? item, CancellationToken cancellationToken)
+    {
+        if (item is null || item.IsInstalling || item.Installed) return;
+        item.IsInstalling = true;
+        item.StatusText = _loc["wingetInstalling"];
+        StatusText = _loc.Format("updating", item.Name);
+        try
+        {
+            var (exitCode, output) = await _winget.InstallAsync(item.Id, cancellationToken);
+            if (exitCode == 0 || exitCode == Infrastructure.WingetService.AlreadyInstalledExitCode)
+            {
+                // W3: track the package so the existing update engine keeps it fresh
+                if (_config.TrackedApps.All(a => a.WingetPackageId != item.Id))
+                {
+                    var app = new TrackedApp
+                    {
+                        Name = item.Name,
+                        // winget packages have no GitHub repo; the winget path never
+                        // touches RepoOwner/RepoName (CheckAsync short-circuits on kind)
+                        RepoOwner = "",
+                        RepoName = "",
+                        UpdateKind = UpdateKind.WingetPackage,
+                        WingetPackageId = item.Id,
+                        CurrentVersion = item.Version,
+                        Enabled = true,
+                        IgnorePreReleases = true,
+                    };
+                    _config.TrackedApps.Add(app);
+                    _configStore.Save(_config);
+                    Apps.Add(new TrackedAppItem(app));
+                    AppsTrackedCount = Apps.Count;
+                }
+                item.Installed = true;
+                item.StatusText = exitCode == 0
+                    ? _loc["wingetInstalled"]
+                    : _loc["wingetAlreadyInstalled"];
+                StatusText = item.StatusText;
+            }
+            else
+            {
+                item.StatusText = $"{_loc["wingetInstallFailed"]}: {WingetOutputParser.Squash(output)}";
+                StatusText = item.StatusText;
+            }
+        }
+        catch (Exception ex)
+        {
+            item.StatusText = $"{_loc["wingetInstallFailed"]}: {ex.Message}";
+            StatusText = item.StatusText;
+        }
+        finally
+        {
+            item.IsInstalling = false;
+        }
+    }
+
     [RelayCommand]
     private async Task CheckUpdatesAsync(CancellationToken cancellationToken)
     {

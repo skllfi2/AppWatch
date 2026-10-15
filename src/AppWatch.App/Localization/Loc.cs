@@ -108,6 +108,10 @@ public sealed class Loc : INotifyPropertyChanged
                                 public string UpdateKindPortableZip => LocalizationService.Instance["UpdateKindPortableZip"];
                                 public string UpdateKindInstaller => LocalizationService.Instance["UpdateKindInstaller"];
                                 public string UpdateKindWingetPackage => LocalizationService.Instance["UpdateKindWingetPackage"];
+                                public string WingetSearchSection => LocalizationService.Instance["wingetSearchSection"];
+                                public string WingetSearchPlaceholder => LocalizationService.Instance["wingetSearchPlaceholder"];
+                                public string WingetSearch => LocalizationService.Instance["wingetSearch"];
+                                public string WingetSearchNoResults => LocalizationService.Instance["wingetSearchNoResults"];
                                                         public string UpdateStrategy => LocalizationService.Instance["UpdateStrategy"];
                                                         public string UpdateStrategyAuto => LocalizationService.Instance["SettingsUpdateStrategyAuto"];
                                                         public string UpdateStrategyBuiltIn => LocalizationService.Instance["SettingsUpdateStrategyBuiltIn"];

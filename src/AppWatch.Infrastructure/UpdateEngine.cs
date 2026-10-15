@@ -260,7 +260,10 @@ public sealed class UpdateEngine : IUpdateEngine
                 {
                     if (app.WingetPackageId is null)
                         throw new InvalidOperationException("winget package id is not configured");
-                    await _winget.InstallAsync(app.WingetPackageId, cancellationToken);
+                    var (exitCode, output) = await _winget.InstallAsync(app.WingetPackageId, cancellationToken);
+                    if (exitCode != 0 && exitCode != WingetService.AlreadyInstalledExitCode)
+                        throw new InvalidOperationException(
+                            $"winget install failed (exit code 0x{exitCode:X8}): {WingetOutputParser.Squash(output)}");
                     break;
                 }
                 case UpdateKind.Installer:

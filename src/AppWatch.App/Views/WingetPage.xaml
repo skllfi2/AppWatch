@@ -87,6 +87,93 @@
                     <!-- Status bar -->
                     <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" Opacity="0.7" />
 
+                    <!-- W2: Install from winget (search + card list, ZuiV2 section pattern) -->
+                    <StackPanel Spacing="8" Margin="0,16,0,0">
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="4,0">
+                            <FontIcon Glyph="&#xE721;" FontSize="14" Foreground="{StaticResource AccentBrush}"/>
+                            <TextBlock Text="{x:Bind Loc.WingetSearchSection, Mode=OneWay}" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextSecondaryBrush}" CharacterSpacing="40"/>
+                        </StackPanel>
+
+                        <!-- Search row -->
+                        <Grid ColumnSpacing="8" Background="{StaticResource CardBackgroundBrush}"
+                              BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                              CornerRadius="8" Padding="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{x:Bind ViewModel.WingetSearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     PlaceholderText="{x:Bind Loc.WingetSearchPlaceholder, Mode=OneWay}"
+                                     Background="Transparent" BorderThickness="0" CornerRadius="6" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Command="{x:Bind ViewModel.SearchWingetCommand}"
+                                    Style="{StaticResource AccentButtonStyle}" Padding="16,8" CornerRadius="6"
+                                    IsEnabled="{x:Bind ViewModel.IsWingetSearching, Converter={StaticResource InverseBool}, Mode=OneWay}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE721;" FontSize="12"/>
+                                    <TextBlock Text="{x:Bind Loc.WingetSearch, Mode=OneWay}"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <!-- Searching progress -->
+                        <ProgressBar Visibility="{x:Bind ViewModel.IsWingetSearching, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"
+                                     IsIndeterminate="True" CornerRadius="3"/>
+
+                        <!-- Results -->
+                        <ListView ItemsSource="{x:Bind ViewModel.WingetSearchResults, Mode=OneWay}" SelectionMode="None">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="vm:WingetSearchItem">
+                                    <Grid Padding="12" ColumnSpacing="12" Margin="0,0,0,8"
+                                          Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                          BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                          BorderThickness="1" CornerRadius="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="2*" />
+                                            <ColumnDefinition Width="1*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="32" Height="32" CornerRadius="16"
+                                                Background="{StaticResource HeroOverlayBrush}" VerticalAlignment="Center">
+                                            <TextBlock Text="{x:Bind Monogram}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       FontSize="13" FontWeight="SemiBold"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                            <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{x:Bind Id}" Opacity="0.6" FontSize="11"/>
+                                            <TextBlock Text="{x:Bind StatusText, Mode=OneWay}" FontSize="11"
+                                                       Foreground="{StaticResource AccentBrush}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
+                                            <TextBlock Text="{x:Bind Version}" Opacity="0.8" HorizontalAlignment="Right"/>
+                                            <TextBlock Text="{x:Bind Source}" Opacity="0.5" FontSize="11" HorizontalAlignment="Right"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="3" Command="{x:Bind InstallWingetCommand}" CommandParameter="{x:Bind}"
+                                                VerticalAlignment="Center" Padding="12,6" CornerRadius="6"
+                                                Background="{StaticResource HeroOverlayBrush}" BorderThickness="0"
+                                                IsEnabled="{x:Bind CanInstall, Mode=OneWay}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <FontIcon Glyph="&#xE896;" FontSize="12" Foreground="{StaticResource HeroTertiaryBrush}"/>
+                                                <TextBlock Text="{x:Bind BtnInstall}" FontSize="11" Foreground="{StaticResource HeroTertiaryBrush}"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+
+                        <!-- No results after search -->
+                        <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="16"
+                                Visibility="{x:Bind ViewModel.WingetSearchNoResults, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                <FontIcon Glyph="&#xE721;" FontSize="14" Foreground="{StaticResource AccentBrush}"/>
+                                <TextBlock Text="{x:Bind Loc.WingetSearchNoResults, Mode=OneWay}" FontSize="12"
+                                           Foreground="{StaticResource TextSecondaryBrush}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>

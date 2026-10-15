@@ -4,11 +4,14 @@ namespace AppWatch.Core.Domain;
 
 public sealed record WingetPackageUpdate(string Name, string Id, string CurrentVersion, string AvailableVersion);
 
+public sealed record WingetSearchResult(string Name, string Id, string Version, string Source);
+
 public static class WingetOutputParser
 {
     private static readonly Regex Percent = new(@"(\d{1,3})\s*%");
     private static readonly Regex IdPattern = new(@"^[A-Za-z0-9][A-Za-z0-9._+-]*$");
     private static readonly Regex VersionPattern = new(@"^(Unknown|[0-9][0-9A-Za-z.+-]*)$");
+    private static readonly Regex SourcePattern = new(@"^[A-Za-z][A-Za-z0-9.-]*$");
 
     /// <summary>
     /// Parses the table of `winget upgrade` output. Locale-independent: no reliance on
@@ -71,6 +74,83 @@ public static class WingetOutputParser
             return null;
 
         return new WingetPackageUpdate(name, id, current, available);
+    }
+
+    /// <summary>
+    /// Parses the table of `winget search` output. Locale-independent, structural:
+    /// the source is the last token; the Id is the FIRST id-shaped token scanning from
+    /// the left that is followed by a version-shaped token, then either directly the
+    /// source (4-column name-match table) or a "Tag:"-style match marker (5-column
+    /// table). Everything before the Id anchor is the display name (may contain
+    /// spaces); everything between the version and the source is the match column and
+    /// is ignored. Rows that don't fit either shape (preamble, progress, summary,
+    /// error text) are skipped.
+    /// </summary>
+    public static IReadOnlyList<WingetSearchResult> ParseSearch(string output)
+    {
+        var text = output.Replace("\0", string.Empty);
+        var results = new List<WingetSearchResult>();
+        var tableStarted = false;
+
+        foreach (var rawLine in text.Split('\n'))
+        {
+            var line = rawLine.TrimEnd('\r');
+            if (line.Trim().Length == 0) continue;
+
+            if (!tableStarted)
+            {
+                if (line.Contains("---")) tableStarted = true;
+                continue;
+            }
+
+            var parsed = ParseSearchRow(line);
+            if (parsed is not null)
+                results.Add(parsed);
+        }
+        return results;
+    }
+
+    private static WingetSearchResult? ParseSearchRow(string line)
+    {
+        var tokens = line.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (tokens.Length < 4) return null;
+        if (!SourcePattern.IsMatch(tokens[^1])) return null;
+
+        for (var i = 1; i < tokens.Length - 2; i++)
+        {
+            if (!IdPattern.IsMatch(tokens[i])) continue;
+            if (!VersionPattern.IsMatch(tokens[i + 1])) continue;
+
+            // 4-column shape: [name..., id, version, source]
+            if (i + 2 == tokens.Length - 1)
+                return Build(i);
+            // 5-column shape: [name..., id, version, "Tag:"/“Moniker:”, match-value..., source]
+            if (tokens[i + 2].EndsWith(':'))
+                return Build(i);
+            // plausible Id but wrong shape — keep scanning (multi-word names)
+        }
+        return null;
+
+        WingetSearchResult Build(int idIndex) =>
+            new(
+                string.Join(' ', tokens[..idIndex]),
+                tokens[idIndex],
+                tokens[idIndex + 1],
+                tokens[^1]);
+    }
+
+    /// <summary>Single-line squash of a winget output for error messages: strips
+    /// NULs/blank lines and keeps the tail of the meaningful text.</summary>
+    public static string Squash(string output)
+    {
+        var text = output.Replace("\0", string.Empty);
+        var meaningful = text.Split('\n')
+            .Select(l => l.TrimEnd('\r').Trim())
+            .Where(l => l.Length > 0 && !l.Contains("---") && !l.Contains('%'))
+            .ToArray();
+        return meaningful.Length == 0
+            ? string.Empty
+            : meaningful[^1].Length > 200 ? meaningful[^1][^200..] : meaningful[^1];
     }
 
     /// <summary>Extracts a percentage from a winget progress line; null when the line has none.</summary>
