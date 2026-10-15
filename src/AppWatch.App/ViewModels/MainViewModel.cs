@@ -309,7 +309,7 @@ public partial class MainViewModel : ObservableObject
                     {
                         item.Stage = UpdateStage.Done;
                         item.UpdateAvailable = false;
-                        item.ReportVersionChanged();
+                        item.Refresh(); // raises Version AND RollbackAvailable (B10 button appears after first update)
                         UpdatedTodayCount++;
                         okCount++;
                     }
@@ -374,7 +374,7 @@ public partial class MainViewModel : ObservableObject
         {
             item.Stage = UpdateStage.Done;
             item.UpdateAvailable = false;
-            item.ReportVersionChanged();
+            item.Refresh(); // raises Version AND RollbackAvailable (B10 button appears after first update)
             UpdatedTodayCount++;
         }
         else
@@ -488,7 +488,7 @@ public partial class MainViewModel : ObservableObject
             {
                 item.Stage = UpdateStage.Done;
                 item.UpdateAvailable = false;
-                item.ReportVersionChanged();
+                item.Refresh(); // raises Version AND RollbackAvailable (B10 button appears after first update)
                 UpdatedTodayCount++;
             }
             else

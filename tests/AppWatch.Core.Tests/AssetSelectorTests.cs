@@ -23,6 +23,36 @@ public class AssetSelectorTests
         Assert.Equal("app.msi", chosen?.Name);
     }
 
+    // P0 live-fix regression: a markerless asset name (GitHub convention: no arch marker
+    // = works everywhere) must NOT be treated as foreign. Real-world case: Flowseal
+    // zapret-discord-youtube-1.10.3.{zip,tar.gz,rar} — all markerless, all were dropped
+    // by the engine's ArchRank>0 filter (install failed with NoMatchingAsset).
+    [Fact]
+    public void MatchArchitecture_MarkerlessName_IsUniversal()
+    {
+        Assert.IsType<AssetArchitectureMatcher.UniversalMatch>(
+            AssetArchitectureMatcher.MatchArchitecture("zapret-discord-youtube-1.10.3.zip"));
+        Assert.IsType<AssetArchitectureMatcher.UniversalMatch>(
+            AssetArchitectureMatcher.MatchArchitecture("optimizerDuck-v1.0.rar"));
+    }
+
+    [Fact]
+    public void ArchRank_MarkerlessName_HasPositiveRank()
+    {
+        Assert.True(AssetSelector.ArchRank("zapret-discord-youtube-1.10.3.zip", X64) > 0);
+        Assert.True(AssetSelector.ArchRank("optimizerDuck-v1.0.tar.gz", Arm64) > 0);
+    }
+
+    [Fact]
+    public void MatchArchitecture_ForeignArchStillDetected()
+    {
+        // Explicitly foreign markers must stay incompatible (inverse of the fix above).
+        Assert.IsType<AssetArchitectureMatcher.KnownMatch>(
+            AssetArchitectureMatcher.MatchArchitecture("app-arm64.zip"));
+        Assert.Equal(0, AssetSelector.ArchRank("app-arm64.zip", X64));
+        Assert.Equal(0, AssetSelector.ArchRank("app-x64.zip", Arm64));
+    }
+
     [Fact]
     public void Choose_PortablePriority_PrefersZip()
     {

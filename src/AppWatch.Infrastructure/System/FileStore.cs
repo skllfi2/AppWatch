@@ -27,6 +27,10 @@ public sealed class FileStore
 
     public void ReplaceWithRollback(string contentRoot, string installDirectory)
     {
+        // P0 live-fix: Directory.Move does not create intermediate directories —
+        // %LOCALAPPDATA%\AppWatch\Apps may not exist on first install/update.
+        var parent = Path.GetDirectoryName(installDirectory);
+        if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent);
         var backup = installDirectory + ".old";
         if (Directory.Exists(backup)) Directory.Delete(backup, true);
         if (Directory.Exists(installDirectory)) Directory.Move(installDirectory, backup);

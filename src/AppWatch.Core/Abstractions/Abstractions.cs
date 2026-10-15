@@ -32,7 +32,11 @@ public interface IUpdateEngine
 public interface IProcessService
 {
     bool IsRunning(string processName);
-    void Kill(string processName);
+    /// <summary>
+    /// Best-effort kill by name. Returns false when at least one process survived
+    /// (e.g. an elevated process cannot be opened from a non-elevated AppWatch).
+    /// </summary>
+    bool Kill(string processName);
 }
 
 public interface IAppLauncher

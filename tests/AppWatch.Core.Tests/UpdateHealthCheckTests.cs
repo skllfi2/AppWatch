@@ -22,7 +22,11 @@ public sealed class FakeProcessService : IProcessService
         return _last;
     }
 
-    public void Kill(string processName) => KillCount++;
+    public bool Kill(string processName)
+    {
+        KillCount++;
+        return true;
+    }
 }
 
 public sealed class RecordingLauncher : IAppLauncher

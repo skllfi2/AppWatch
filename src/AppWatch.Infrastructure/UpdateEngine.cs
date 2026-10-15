@@ -101,7 +101,13 @@ public sealed class UpdateEngine : IUpdateEngine
                 if (processName is not null && _process.IsRunning(processName))
                 {
                     Log.Information("stopping {Process} before update of {App}", processName, app.Name);
-                    _process.Kill(processName);
+                    // P0 live-fix: an elevated target (e.g. user's own winws DPI-bypass) cannot
+                    // be killed from non-elevated AppWatch — abort BEFORE touching any files
+                    // so the old version stays intact, with a reason the UI can show.
+                    if (!_process.Kill(processName))
+                        throw new InvalidOperationException(
+                            $"не удалось остановить процесс «{processName}» — вероятно, он запущен от администратора. " +
+                            "Остановите его вручную или запустите AppWatch от администратора.");
                 }
 
                 var installerPath = await DownloadAndVerifyAsync(check.ChosenAsset!, app.RepoName, tag, progress, cancellationToken);
@@ -282,6 +288,9 @@ public sealed class UpdateEngine : IUpdateEngine
                         check.ChosenAsset, app.RepoName, check.NewRelease.TagName,
                         progress: null, cancellationToken: cancellationToken);
                     var contentRoot = _files.ExtractToStaging(zipPath, Sanitize(check.NewRelease.TagName));
+                    // P0 live-fix: Directory.Move does not create intermediates (%LOCALAPPDATA%\AppWatch\Apps).
+                    var installParent = Path.GetDirectoryName(app.InstallDirectory);
+                    if (!string.IsNullOrEmpty(installParent)) Directory.CreateDirectory(installParent);
                     if (Directory.Exists(app.InstallDirectory)) Directory.Delete(app.InstallDirectory, true);
                     Directory.Move(contentRoot, app.InstallDirectory);
                     try { File.Delete(zipPath); } catch (IOException) { }

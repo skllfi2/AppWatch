@@ -24,7 +24,10 @@ public static class AssetArchitectureMatcher
         if (ArmRegex.IsMatch(name)) return new KnownMatch(SystemArchitecture.Arm);
         if (X64Regex.IsMatch(name)) return new KnownMatch(SystemArchitecture.X86_64);
         if (X86Regex.IsMatch(name)) return new KnownMatch(SystemArchitecture.X86);
-        return new ForeignMatch();
+        // P0 live-fix: GitHub convention — a name with NO arch marker (e.g.
+        // "zapret-discord-youtube-1.10.3.zip") is universal, not foreign. Treating it
+        // as ForeignMatch dropped every markerless asset in the engine filter.
+        return new UniversalMatch();
     }
 
     private static Regex Boundary(params string[] tokens) =>

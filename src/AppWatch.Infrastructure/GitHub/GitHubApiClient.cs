@@ -33,6 +33,10 @@ public sealed class GitHubApiClient : IGitHubClient
     public GitHubApiClient(string? token = null, IEnumerable<string>? downloadMirrors = null)
     {
         _http = new HttpClient();
+        // P0 live-fix: the API calls use RELATIVE urls (repos/{owner}/{repo}/releases) —
+        // without BaseAddress every call died with "request URI must be absolute"
+        // (the GitHub path of the app never actually worked until this line).
+        _http.BaseAddress = new Uri("https://api.github.com/");
         _http.DefaultRequestHeaders.UserAgent.ParseAdd("AppWatch/0.1");
         _http.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));

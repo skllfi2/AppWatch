@@ -482,36 +482,29 @@ namespace на `AppWatch.*`.
 сразу») и п.9 (NOTICE). v0.3 закрыт полностью (A1-A5, B6-B10, C11-C14, D17-D20 — все ✅);
 v0.4 выводит проект из «работает у меня» в «можно ставить кому угодно».
 
-### Приоритеты v0.4 (порядок реализации)
+### Приоритеты v0.4 (порядок реализации; пересмотр 2026-10-15 — сначала живое доказательство ценности, дистрибуция после)
 
-1. **P1 — CI/CD конвейер (GitHub Actions)** — без него self-update мёртв и каждое
-   обновление руками. `.github/workflows/ci.yml`:
-   - `on: push` (main) → build x64 Release + тесты (97+) — быстрая проверка;
-   - `on: push tag v*` → build → test → `vpk pack` (Velopack) → Release с ассетами
-     `AppWatch-win-x64-Portable.zip` (portable: exe + dll, SelfContained) и
-     `RELEASES.json` + дельта-nupkg от прошлой версии (Velopack требует историю);
-   - версия в csproj синхронизируется из тега (`-p:Version=${tag#v}` на build), тег = единый
-     источник версии;
-   - `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1` в env шага build — XamlCompiler-рецепт из
-     скилла (локаль раннера EN, но наследуем нашу проверенную связку).
-2. **P2 — self-update замыкание**: прогнать SelfUpdateService против реального CI-релиза
-   (имя ассета, тег-версия, SHA256); VelopackApp.Run() уже в Program.Main (до Bootstrap —
-   сверить порядок с unpackaged-цепочкой: бутстрап до Velopack недопустим, после — ок);
-   наш же B7-гейт не блокирует self-update (SelfUpdateService не запускает скачанный файл
-   как инсталлер — сам следит за заменой файлов).
-3. **P3 — NOTICE + репо-гигиена**: NOTICE (Apache-2.0 komi-store: AssetSelector,
-   WingetOutputParser), README с установкой, .gitignore чистый, LICENSE копия в zip.
-4. **P4 — A1-доделка — per-app правила из карточки** (закрывает «A1 частично»):
-   `TrackedApp.SkippedVersion` + `UpdateDecisionEngine.Evaluate` игнорирует skipped-тег
-   (аналог PinnedVersion); MenuFlyout на карточке AppsPage: «Закрепить текущую» /
-   «Пропустить эту версию» / «Сбросить правила» — команды на TrackedAppItem, сохранение
-   в config.
-5. **P5 — Battle.net-hide** (открытая задача с первого дня): Battle.net прячет UI —
-   VersionDetector special case (версия из `%PROGRAMDATA%\Battle.net` Agent-файлов /
-   тайтл-процесса), задокументировать в VersionDetector с комментарием почему не реестр.
-6. **P6 — winget-пакет AppWatch**: манифест в `microsoft/winget-pkgs` (portable zip →
-   InstallerType: zip) — только после первого тегового релиза из P1; AppWatch появляется в
-   `winget search`, а наш же движок обновляет его как обычный winget-пакет.
+1. **P0 — живое end-to-end доказательство**: приложение должно РЕАЛЬНО обновлять реальные
+   приложения ежедневно, а не существовать в вакууме. Полигон — живые записи каталога
+   (zapret-семейство обновляется еженедельно, GPU-Z, PowerToys): установка из каталога
+   через UI → первый check → cycle обновления (check → download → health-check → commit →
+   version cache) → откат из UI → запись в истории. Критерий: tracked apps ≠ 0, движок
+   пережил реальный релизный цикл на живом приложении.
+2. **P1 — каталог как точка отсчёта**: расширить до 10–15 живых RU-актуальных
+   GitHub-проектов (часто обновляемые: DPI-обходы, утилиты, оптимизаторы), polish
+   установки одним кликом (прогресс, статус, обработка неудач).
+3. **P2 — A1-доделка, per-app правила из карточки**: `TrackedApp.SkippedVersion` +
+   `UpdateDecisionEngine.Evaluate` игнорирует skipped-тег; MenuFlyout на карточке
+   AppsPage: «Закрепить текущую» / «Пропустить эту версию» / «Сбросить правила».
+4. **P3 — Battle.net-hide** (хитрый кейс — витрина «движок справляется с кем угодно»):
+   спец-детектор версии в VersionDetector (Battle.net прячет UI — реестр не вариант).
+5. **P4 — CI/CD + self-update** (дистрибуция — после доказательства ценности):
+   `.github/workflows/ci.yml` (push → build+тесты; тег v* → build → test → vpk pack →
+   Release: portable zip + RELEASES.json + дельты), версия из тега,
+   `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1` в env билда; SelfUpdateService против
+   реального CI-релиза; NOTICE (Apache-2.0 komi-store) + README.
+6. **P5 — winget-пакет AppWatch**: манифест в `microsoft/winget-pkgs` после первого
+   тегового релиза.
 
 ### Не-цели v0.4
 
