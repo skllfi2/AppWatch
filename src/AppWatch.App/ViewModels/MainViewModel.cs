@@ -51,13 +51,13 @@ public partial class MainViewModel : ObservableObject
             Apps.Add(new TrackedAppItem(app));
 
         foreach (var entry in _catalog.Entries)
-                {
-                    var tracked = _config.TrackedApps.Any(
-                        a => a.RepoOwner == entry.RepoOwner && a.RepoName == entry.RepoName);
-                    CatalogApps.Add(new CatalogItem(entry, tracked));
-                }
+                        {
+                            var tracked = _config.TrackedApps.Any(
+                                a => a.RepoOwner == entry.RepoOwner && a.RepoName == entry.RepoName);
+                            CatalogApps.Add(new CatalogItem(entry, tracked));
+                        }
 
-                // Initialize catalog metrics
+                        // Initialize catalog metrics
                 CatalogTotalCount = CatalogApps.Count;
                 CatalogTrackedCount = CatalogApps.Count(c => c.IsTracked);
                 CatalogUpdatesAvailable = CatalogApps.Count(c => c.UpdateAvailable);
