@@ -9,13 +9,16 @@ public sealed record ParsedVersion(long Major, long Minor, long Patch, long Revi
 public static class VersionParser
 {
     public static bool TryParse(string? raw, out ParsedVersion? version)
-    {
-        version = null;
-        if (string.IsNullOrWhiteSpace(raw)) return false;
+        {
+            version = null;
+            if (string.IsNullOrWhiteSpace(raw)) return false;
 
-        var s = raw.Trim().TrimStart('v', 'V');
-        var plus = s.IndexOf('+');
-        if (plus >= 0) s = s[..plus];
+            var s = raw.Trim().TrimStart('v', 'V');
+            // Strip common non-numeric prefixes (e.g. "release-", "v", "version-")
+            if (s.StartsWith("release-", StringComparison.OrdinalIgnoreCase))
+                s = s["release-".Length..];
+            var plus = s.IndexOf('+');
+            if (plus >= 0) s = s[..plus];
 
         string? preRelease = null;
         var dash = s.IndexOf('-');

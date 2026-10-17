@@ -1,6 +1,7 @@
 using AppWatch.Core.Domain.AssetSelection;
 using AppWatch.Core.Domain.Models;
 using AppWatch.Core.Domain.VersionDetection;
+using System.Text.RegularExpressions;
 
 namespace AppWatch.Core.Domain;
 
@@ -44,7 +45,7 @@ public static class UpdateDecisionEngine
 
         var candidates = newest.Assets
             .Select(a => new GithubAssetCandidate(a.Name, a.Size))
-            .Where(c => AssetSelector.ArchRank(c.Name, arch) > 0)
+            .Where(c => AssetSelector.ArchRank(c.Name, arch) > 0 && IsWindowsCompatibleAsset(c.Name))
             .ToList();
 
         var chosen = AssetSelector.Choose(candidates, arch, priority);
@@ -58,45 +59,49 @@ public static class UpdateDecisionEngine
     }
 
     public static UpdateStrategy DetermineStrategy(TrackedApp app, ReleaseInfo release)
-    {
-        // If user specified a strategy, use it
-        if (app.Strategy != UpdateStrategy.Auto)
-            return app.Strategy;
+        {
+            // If user specified a strategy, use it
+            if (app.Strategy != UpdateStrategy.Auto)
+                return app.Strategy;
 
-        // Auto-detect based on asset types and app configuration
-        var assets = release.Assets;
-        var hasMsi = assets.Any(a => a.Name.EndsWith(".msi", StringComparison.OrdinalIgnoreCase));
-        var hasExe = assets.Any(a => a.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && !a.Name.Contains("portable", StringComparison.OrdinalIgnoreCase));
-        var hasZip = assets.Any(a => a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) || a.Name.EndsWith(".7z", StringComparison.OrdinalIgnoreCase));
-        
-        // If app has winget package ID, prefer winget
-        if (!string.IsNullOrEmpty(app.WingetPackageId))
-            return UpdateStrategy.Winget;
+            // Auto-detect based on asset types and app configuration
+            var assets = release.Assets;
+            var hasMsi = assets.Any(a => a.Name.EndsWith(".msi", StringComparison.OrdinalIgnoreCase));
+            var hasExe = assets.Any(a => a.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && !a.Name.Contains("portable", StringComparison.OrdinalIgnoreCase));
+            var hasZip = assets.Any(a => a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) || a.Name.EndsWith(".7z", StringComparison.OrdinalIgnoreCase));
 
-        // Single-file portable releases (e.g. optimizerDuck bare .exe) replace the
-        // install directory the same way archives do — no extraction, health-check exe.
-        if (app.UpdateKind == UpdateKind.PortableExe)
-            return UpdateStrategy.PortableReplace;
+            // If app has winget package ID, prefer winget
+            if (!string.IsNullOrEmpty(app.WingetPackageId))
+                return UpdateStrategy.Winget;
 
-        // If app has built-in updater (has UpdateKind != PortableZip/PortableExe and has UpdateUrl), use built-in
-        if (app.UpdateKind is not (UpdateKind.PortableZip or UpdateKind.PortableExe))
-            return UpdateStrategy.BuiltInUpdater;
+            // Single-file portable releases (e.g. optimizerDuck bare .exe) replace the
+            // install directory the same way archives do — no extraction, health-check exe.
+            if (app.UpdateKind == UpdateKind.PortableExe)
+                return UpdateStrategy.PortableReplace;
 
-        // If MSI available, use silent installer
-        if (hasMsi)
-            return UpdateStrategy.SilentInstaller;
+            // If app is configured as portable zip, prefer portable replace (respects catalog intent)
+            if (app.UpdateKind == UpdateKind.PortableZip && hasZip)
+                return UpdateStrategy.PortableReplace;
 
-        // If EXE installer available, use silent installer
-        if (hasExe)
-            return UpdateStrategy.SilentInstaller;
+            // If app has built-in updater (has UpdateKind != PortableZip/PortableExe and has UpdateUrl), use built-in
+            if (app.UpdateKind is not (UpdateKind.PortableZip or UpdateKind.PortableExe))
+                return UpdateStrategy.BuiltInUpdater;
 
-        // If portable archive available, use portable replace
-        if (hasZip)
-            return UpdateStrategy.PortableReplace;
+            // If MSI available, use silent installer
+            if (hasMsi)
+                return UpdateStrategy.SilentInstaller;
 
-        // Default to manual
-        return UpdateStrategy.Manual;
-    }
+            // If EXE installer available, use silent installer
+            if (hasExe)
+                return UpdateStrategy.SilentInstaller;
+
+            // If portable archive available, use portable replace
+            if (hasZip)
+                return UpdateStrategy.PortableReplace;
+
+            // Default to manual
+            return UpdateStrategy.Manual;
+        }
 
     private static IReadOnlyList<string> GetAssetPriority(TrackedApp app, UpdateStrategy strategy)
     {
@@ -115,4 +120,16 @@ public static class UpdateDecisionEngine
 
     private static ParsedVersion? TryParse(string tag) =>
         VersionParser.TryParse(tag, out var v) ? v : null;
+
+    // Platform filter: exclude known non-Windows asset extensions for Windows targets
+    private static readonly Regex NonWindowsExtensionRegex = new(
+        @"\.(deb|rpm|apk|flatpak|snap|AppImage|dmg|pkg|run|tar\.gz|tar\.xz|tar\.zst|tar\.bz2|sh|bin)(\?.*)?$",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static bool IsWindowsCompatibleAsset(string assetName)
+    {
+        // Assets with no recognized extension are assumed potentially compatible
+        // Explicitly exclude known non-Windows package formats
+        return !NonWindowsExtensionRegex.IsMatch(assetName);
+    }
 }
