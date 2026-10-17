@@ -22,8 +22,9 @@ public static class UpdateDecisionEngine
 
         if (app.PinnedVersion is not null)
         {
-            var latestName = ordered.Count > 0 ? ordered[0].Release.TagName : "none";
-            return new(app, UpdateStatus.Pinned,
+            var latest = ordered.Count > 0 ? ordered[0].Release : null;
+            var latestName = latest?.TagName ?? "none";
+            return new(app, UpdateStatus.Pinned, latest,
                 Detail: $"pinned to {app.PinnedVersion} (latest available: {latestName})");
         }
 
