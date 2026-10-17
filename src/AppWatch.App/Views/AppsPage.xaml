@@ -135,7 +135,7 @@
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <Ellipse Width="10" Height="10" Fill="{x:Bind StatusBrush}" VerticalAlignment="Center"
                                                      ToolTipService.ToolTip="{x:Bind StageText}"/>
-                                            <TextBlock Text="{x:Bind Version}" Opacity="0.7" FontSize="12"/>
+                                            <TextBlock Text="{x:Bind Version, Mode=OneWay}" Opacity="0.7" FontSize="12"/>
                                             <TextBlock Text="{x:Bind StatusText, Mode=OneWay}" Opacity="0.7" FontSize="12"/>
                                             <!-- A1: pin/skip rule badge -->
                                             <Border CornerRadius="4" Padding="6,1" Background="#33FFFFFF"

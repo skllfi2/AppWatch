@@ -402,6 +402,7 @@ public partial class MainViewModel : ObservableObject
             vm.StatusText = Describe(result.Status);
             vm.UpdateAvailable = result.Status == UpdateStatus.UpdateAvailable;
             vm.LatestTag = result.NewRelease?.TagName; // A1: for "skip this version"
+            vm.ReportVersionChanged(); // P3: auto-detect may have updated CurrentVersion during the check
             vm.Stage = result.Status switch
             {
                 UpdateStatus.Error => UpdateStage.Error,

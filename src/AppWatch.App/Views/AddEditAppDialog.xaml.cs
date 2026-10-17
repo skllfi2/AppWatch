@@ -37,11 +37,14 @@ public sealed class AddEditAppDialog : ContentDialog
         panel.Children.Add(Field(loc["RepoOwner"], TextBox("RepoOwner", "owner")));
         panel.Children.Add(Field(loc["RepoName"], TextBox("RepoName", "repo")));
 
-        // Update Kind combo
+        // Update Kind combo — items follow the UpdateKind enum order 1:1
+        // (fixes pre-existing bug: winget label at index 2 saved as Installer enum)
         var kindCombo = new ComboBox { MinWidth = 320, SelectedIndex = _viewModel.SelectedUpdateKindIndex };
         kindCombo.Items.Add(new ComboBoxItem { Content = loc["UpdateKindPortableZip"] });
+        kindCombo.Items.Add(new ComboBoxItem { Content = loc["UpdateKindPortableExe"] });
         kindCombo.Items.Add(new ComboBoxItem { Content = loc["UpdateKindInstaller"] });
         kindCombo.Items.Add(new ComboBoxItem { Content = loc["UpdateKindWingetPackage"] });
+        kindCombo.Items.Add(new ComboBoxItem { Content = loc["UpdateKindExternal"] });
         kindCombo.SelectionChanged += (_, _) =>
         {
             _viewModel.SelectedUpdateKindIndex = kindCombo.SelectedIndex;
@@ -73,6 +76,12 @@ public sealed class AddEditAppDialog : ContentDialog
         // Winget package id (visible only for winget)
         _wingetPanel = Field(loc["WingetPackageId"], TextBox("WingetPackageId", "Microsoft.PowerToys"));
         panel.Children.Add(_wingetPanel);
+
+        // P3: version file fields (visible only for External kind — Battle.net case)
+        _versionFilePanel = new StackPanel { Spacing = 14 };
+        _versionFilePanel.Children.Add(Field(loc["VersionFilePath"], TextBox("VersionFilePath", loc["VersionFilePathPlaceholder"])));
+        _versionFilePanel.Children.Add(Field(loc["VersionFileRegex"], TextBox("VersionFileRegex", loc["VersionFileRegexPlaceholder"])));
+        panel.Children.Add(_versionFilePanel);
 
         // Install directory
         var dirGrid = new Grid { ColumnSpacing = 8 };
@@ -142,14 +151,17 @@ public sealed class AddEditAppDialog : ContentDialog
     private StackPanel? _exePanel;
     private StackPanel? _procPanel;
     private StackPanel? _wingetPanel;
+    private StackPanel? _versionFilePanel;
 
     private void UpdateVisibility(int updateKindIndex)
     {
         var isWinget = updateKindIndex == (int)UpdateKind.WingetPackage;
-        if (_strategyPanel is not null) _strategyPanel.Visibility = isWinget ? Visibility.Collapsed : Visibility.Visible;
+        var isExternal = updateKindIndex == (int)UpdateKind.External;
+        if (_strategyPanel is not null) _strategyPanel.Visibility = isWinget || isExternal ? Visibility.Collapsed : Visibility.Visible;
         if (_exePanel is not null) _exePanel.Visibility = isWinget ? Visibility.Collapsed : Visibility.Visible;
         if (_procPanel is not null) _procPanel.Visibility = isWinget ? Visibility.Collapsed : Visibility.Visible;
         if (_wingetPanel is not null) _wingetPanel.Visibility = isWinget ? Visibility.Visible : Visibility.Collapsed;
+        if (_versionFilePanel is not null) _versionFilePanel.Visibility = isExternal ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private static StackPanel Field(string label, FrameworkElement input)

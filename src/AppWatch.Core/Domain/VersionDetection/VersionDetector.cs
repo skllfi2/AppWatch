@@ -16,7 +16,9 @@ public enum VersionSource
     Chocolatey,
     Scoop,
     FileNamePattern,
-    ExecutableMetadata
+    ExecutableMetadata,
+    /// <summary>P3: version extracted from a data file (e.g. Battle.net .product.db).</summary>
+    VersionFile
 }
 
 public static class VersionDetector
@@ -28,6 +30,15 @@ public static class VersionDetector
     /// </summary>
     public static async Task<DetectedVersion?> DetectAsync(TrackedApp app, CancellationToken ct = default)
     {
+        // 0. P3: explicit version file — most specific source, wins over everything.
+        // For apps that hide their version from FVI and the registry (Battle.net).
+        if (!string.IsNullOrEmpty(app.VersionFilePath) && !string.IsNullOrEmpty(app.VersionFileRegex))
+        {
+            var fileVer = TryGetVersionFromFile(app.VersionFilePath, app.VersionFileRegex);
+            if (fileVer is not null)
+                return fileVer;
+        }
+
         // 1. Try executable file version (most reliable for portable apps)
         if (!string.IsNullOrEmpty(app.ExecutableName) && !string.IsNullOrEmpty(app.InstallDirectory))
         {
@@ -70,6 +81,28 @@ public static class VersionDetector
                 var fvi = FileVersionInfo.GetVersionInfo(exePath);
                 return fvi.FileVersion ?? fvi.ProductVersion;
             }
+        }
+        catch { }
+        return null;
+    }
+
+    /// <summary>
+    /// P3: extract the version from a data file (env-expanded path) via a regex with
+    /// one capture group. Read as Latin-1 so ASCII strings inside binary files
+    /// (protobuf like Battle.net .product.db) survive decoding.
+    /// </summary>
+    private static DetectedVersion? TryGetVersionFromFile(string pathTemplate, string regex)
+    {
+        try
+        {
+            var path = Environment.ExpandEnvironmentVariables(pathTemplate);
+            if (!File.Exists(path)) return null;
+            var content = File.ReadAllText(path, System.Text.Encoding.Latin1);
+            var match = Regex.Match(content, regex, RegexOptions.CultureInvariant);
+            if (!match.Success) return null;
+            var version = match.Groups.Count > 1 ? match.Groups[1].Value : match.Value;
+            if (!VersionRegex.IsMatch(version)) return null; // sanity: looks like a version
+            return new DetectedVersion(version, VersionSource.VersionFile, path);
         }
         catch { }
         return null;

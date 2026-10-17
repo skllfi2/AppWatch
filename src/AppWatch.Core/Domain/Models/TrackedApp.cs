@@ -36,6 +36,15 @@ public sealed class TrackedApp
     public string? RegistryKeyName { get; set; }
     public string? VersionExeName { get; set; }
 
+    /// <summary>P3: path to a data file containing the version string (env vars expanded).
+    /// Battle.net: %ProgramFiles(x86)%\Battle.net\.product.db — the exe has no FVI,
+    /// no registry entry; the version lives in this small protobuf file.</summary>
+    public string? VersionFilePath { get; set; }
+
+    /// <summary>P3: regex with one capture group extracting the version from VersionFilePath content.
+    /// File is read as Latin-1 so ASCII strings inside binary files survive.</summary>
+    public string? VersionFileRegex { get; set; }
+
     // New: Update strategy
     public UpdateStrategy Strategy { get; set; } = UpdateStrategy.Auto;
 }

@@ -39,6 +39,8 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
         ProcessName = _app.ProcessName ?? "";
         InstallDirectory = _app.InstallDirectory ?? "";
         WingetPackageId = _app.WingetPackageId ?? "";
+        VersionFilePath = _app.VersionFilePath ?? "";
+        VersionFileRegex = _app.VersionFileRegex ?? "";
         LaunchAfterUpdate = _app.LaunchAfterUpdate;
         IgnorePreReleases = _app.IgnorePreReleases;
         AllowUnsignedInstaller = _app.AllowUnsignedInstaller;
@@ -78,6 +80,14 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
 
     [ObservableProperty]
     public partial string WingetPackageId { get; set; } = "";
+
+    /// <summary>P3: data file containing the version string (env-expanded path).</summary>
+    [ObservableProperty]
+    public partial string VersionFilePath { get; set; } = "";
+
+    /// <summary>P3: regex with one capture group extracting the version from the file.</summary>
+    [ObservableProperty]
+    public partial string VersionFileRegex { get; set; } = "";
 
     [ObservableProperty]
     public partial bool LaunchAfterUpdate { get; set; } = true;
@@ -119,6 +129,8 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
         _app.ProcessName = string.IsNullOrWhiteSpace(ProcessName) ? null : ProcessName.Trim();
         _app.InstallDirectory = string.IsNullOrWhiteSpace(InstallDirectory) ? null : InstallDirectory.Trim();
         _app.WingetPackageId = string.IsNullOrWhiteSpace(WingetPackageId) ? null : WingetPackageId.Trim();
+        _app.VersionFilePath = string.IsNullOrWhiteSpace(VersionFilePath) ? null : VersionFilePath.Trim();
+        _app.VersionFileRegex = string.IsNullOrWhiteSpace(VersionFileRegex) ? null : VersionFileRegex.Trim();
         _app.LaunchAfterUpdate = LaunchAfterUpdate;
         _app.IgnorePreReleases = IgnorePreReleases;
         _app.AllowUnsignedInstaller = AllowUnsignedInstaller;

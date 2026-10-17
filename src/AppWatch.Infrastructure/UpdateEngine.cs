@@ -45,6 +45,23 @@ public sealed class UpdateEngine : IUpdateEngine
                 return new(app, UpdateStatus.UpToDate,
                     Detail: "winget packages are updated via scheduled upgrade-all");
 
+            // P3: externally managed app (Battle.net, Steam…) — detect-only, never touch GitHub
+            if (app.UpdateKind == UpdateKind.External)
+            {
+                if (app.AutoDetectVersion)
+                {
+                    var detected = await VersionDetector.DetectAsync(app, cancellationToken);
+                    if (detected is not null && detected.Version != app.CurrentVersion)
+                    {
+                        Log.Information("version auto-detected for {App}: {Version} ({Source}), stored: {Stored}",
+                            app.Name, detected.Version, detected.Source, app.CurrentVersion ?? "none");
+                        app.CurrentVersion = detected.Version;
+                    }
+                }
+                return new(app, UpdateStatus.UpToDate,
+                    Detail: "managed by its own updater");
+            }
+
             if (app.InstallDirectory is null)
                 return new(app, UpdateStatus.Error, Detail: "install directory is not configured");
 
