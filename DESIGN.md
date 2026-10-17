@@ -626,4 +626,58 @@ history.json, кэш версий в %LOCALAPPDATA%\AppWatch\Versions):
 
 Tests: 120/120.
 
+### P1+P2 (2026-10-16, каталог + per-app правила) — завершено
+
+- ✅ **P1 каталог**: фикс `Mode=OneWay` на ItemsSource (x:Bind без Mode падал в OneTime —
+  коллекция не подхватывалась). Live: 16 карточек рендерятся; yt-dlp (PortableExe, 17.8 МБ,
+  `2026.08.19`) и Vesktop (PortableZip, 140 МБ→200 МБ exe, `v1.6.7`) установлены из UI,
+  автотрекинг → «Отслеживается: 6». Коммиты `8dc7ff6`, `491eb27`.
+- ✅ **P2 A1 pin/skip**: `TrackedApp.SkippedVersion` + движок (skipped-тег → UpToDate до
+  новее; Pinned приоритетнее Skipped); `LatestTag` во всех 3 check-флоу; ⋮ MenuFlyout на
+  карточке (Пропустить — только при апдейте / Закрепить-Открепить / Сбросить — только при
+  правиле) + бейдж «закреплено»/«пропущено». Live: pin → бейдж + config, unpin → чисто.
+  125/125 тестов.
+
+### P3 — Battle.net-hide (2026-10-17, завершено) — коммит `e6b9acd`
+
+Витрина «движок справляется с кем угодно». Battle.net вырезает fixed version info из exe,
+uninstall-ключа в реестре нет — все 4 штатных источника детекции пусты. Версия живёт в
+маленьком protobuf-файле `%ProgramFiles(x86)%\Battle.net\.product.db` (357 байт).
+
+Решение generic, не Battle.net-хак:
+- `TrackedApp.VersionFilePath` + `VersionFileRegex` — env-развёрнутый путь к файлу данных
+  + regex с одной группой; чтение Latin-1 (ASCII-строки в бинарных файлах выживают).
+- `VersionDetector` шаг 0: version-file приоритетнее FVI/реестра/winget. Sanity-фильтр
+  (выглядит как версия) отсеивает мусорные capture.
+- `UpdateKind.External` — detect-only приложения со своим апдейтером (Battle.net, Steam,
+  Epic): CheckAsync только обновляет локальную версию, на GitHub не ходит, статус
+  «актуально».
+- Диалог: combo видов приведён к enum 1:1 (попутно исправлен старый баг: пункт «winget
+  пакет» на индексе 2 сохранялся как Installer); добавлены PortableExe и External;
+  поля version-file видны только для External.
+- Тесты: 6 hermetic `VersionFileDetectionTests` (в т.ч. урок: .NET FileVersionInfo читает
+  и string-таблицу — Battle.net.exe в .NET отдаёт версию через FVI; version-file —
+  надёжный путь для сборок без string-таблицы и Steam-подобных кейсов). 131/131.
+- **Live**: карточка Battle.net показывает `2.53.4.17896` (источник VersionFile),
+  персист в config, переживает рестарт.
+
+### P4 — CI/CD (2026-10-17, в работе)
+
+`.github/workflows/ci.yml` (коммит `d5a4459`):
+- push/PR master: build App (x64 Release) + tests прямым xunit v3 exe (обёртка `dotnet
+  test` сломана Test.Sdk 18.11 — exit 5 «ноль тестов»).
+- тег `vX.Y.Z`: publish win-x64 self-contained → `vpk pack` → GitHub Release c
+  AppWatch-win-Portable.zip (target самообновления, AppWatch.exe в корне zip — проверено
+  локально распаковкой), AppWatch-win-Setup.exe, full nupkg + releases.win.json (SHA256).
+
+Два живых урока CI (проверено локально прогоном publish+vpk):
+1. `VCRTForwarders-IncludeDebugCRT=false` — inline-задача UseDebugCRT (CodeTaskFactory)
+   не работает в .NET Core MSBuild (MSB4801); пакет скипает её только в Debug, поэтому
+   локальные Debug-сборки проходили, а Release/publish — нет. Задача решает лишь, нужен
+   ли DEBUG CRT — Release-дистрибутиву он не нужен, property её легально обходит.
+2. `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1` в CI убрать: без ICU makepri валится с
+   APPX1685 «Default language 'en-US' is not valid» на чистой сборке (локально проходило
+   только из-за кэшированного resources.pri в obj от VS-билдов). Варокап был для
+   локальной RU-консоли, en-US pwsh раннеру он не нужен. Коммит `1b17cd2`.
+
 
