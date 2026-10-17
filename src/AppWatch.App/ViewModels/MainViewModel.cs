@@ -209,6 +209,51 @@ public partial class MainViewModel : ObservableObject
                     StatusText = _loc["RollbackDone"];
                 }
 
+                // === A1: pin / skip / reset per-app update rules ===
+
+                [RelayCommand]
+                private void SkipVersion(TrackedAppItem? item)
+                {
+                    if (item is null) return;
+                    var app = item.App;
+                    var newest = item.LatestTag;
+                    if (newest is null) return;
+                    app.SkippedVersion = newest;
+                    _configStore.Save(_config);
+                    item.Refresh();
+                    StatusText = _loc.Format("SkipVersionDone", newest);
+                }
+
+                [RelayCommand]
+                private void PinCurrent(TrackedAppItem? item)
+                {
+                    if (item is null || item.App.CurrentVersion is null) return;
+                    var app = item.App;
+                    if (app.PinnedVersion is null)
+                    {
+                        app.PinnedVersion = app.CurrentVersion;
+                        StatusText = _loc.Format("PinCurrentDone", app.CurrentVersion);
+                    }
+                    else
+                    {
+                        app.PinnedVersion = null;
+                        StatusText = _loc["PinCleared"];
+                    }
+                    _configStore.Save(_config);
+                    item.Refresh();
+                }
+
+                [RelayCommand]
+                private void ResetRules(TrackedAppItem? item)
+                {
+                    if (item is null) return;
+                    item.App.SkippedVersion = null;
+                    item.App.PinnedVersion = null;
+                    _configStore.Save(_config);
+                    item.Refresh();
+                    StatusText = _loc["RulesReset"];
+                }
+
     private string InstallRoot => _config.InstallRoot
         ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -356,6 +401,7 @@ public partial class MainViewModel : ObservableObject
 
             vm.StatusText = Describe(result.Status);
             vm.UpdateAvailable = result.Status == UpdateStatus.UpdateAvailable;
+            vm.LatestTag = result.NewRelease?.TagName; // A1: for "skip this version"
             vm.Stage = result.Status switch
             {
                 UpdateStatus.Error => UpdateStage.Error,
@@ -389,6 +435,7 @@ public partial class MainViewModel : ObservableObject
                     var check = await _engine.CheckAsync(item.App, _updateAllCts.Token);
                     item.StatusText = Describe(check.Status);
                     item.UpdateAvailable = check.Status == UpdateStatus.UpdateAvailable;
+                    item.LatestTag = check.NewRelease?.TagName; // A1
                     if (check.Status != UpdateStatus.UpdateAvailable)
                     {
                         item.Stage = check.Status == UpdateStatus.Error ? UpdateStage.Error : UpdateStage.Done;
@@ -577,6 +624,7 @@ public partial class MainViewModel : ObservableObject
             var check = await _engine.CheckAsync(item.App);
             item.StatusText = Describe(check.Status);
             item.UpdateAvailable = check.Status == UpdateStatus.UpdateAvailable;
+            item.LatestTag = check.NewRelease?.TagName; // A1: for "skip this version"
             if (check.Status != UpdateStatus.UpdateAvailable)
             {
                 item.Stage = check.Status == UpdateStatus.Error ? UpdateStage.Error : UpdateStage.Done;

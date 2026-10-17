@@ -181,5 +181,15 @@
     "ImportEmpty": "Новых приложений в файле нет (дубликаты пропущены)",
     "CopyListDone": "Скопировано записей: {0}",
     "BatchSummaryOk": "Обновлено: {0}",
-    "BatchSummaryMixed": "Обновлено: {0}, ошибок: {1}: {2}"
+    "BatchSummaryMixed": "Обновлено: {0}, ошибок: {1}: {2}",
+    "MenuSkipVersion": "Пропустить эту версию",
+    "MenuPinCurrent": "Закрепить текущую версию",
+    "MenuUnpin": "Открепить версию",
+    "MenuResetRules": "Сбросить правила",
+    "BadgePinned": "закреплено",
+    "BadgeSkipped": "пропущено",
+    "SkipVersionDone": "Версия {0} больше не предлагается",
+    "PinCurrentDone": "Версия {0} закреплена",
+    "PinCleared": "Закрепление снято",
+    "RulesReset": "Правила обновления сброшены"
 }

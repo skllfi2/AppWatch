@@ -142,4 +142,68 @@ public class UpdateDecisionEngineTests
 
         Assert.Equal("app-x64.zip", result.ChosenAsset?.Name);
     }
+
+    // === A1: SkippedVersion — user explicitly skipped a specific version ===
+
+    [Fact]
+    public void Evaluate_SkippedVersion_TreatedAsUpToDate()
+    {
+        var app = App(a => { a.CurrentVersion = "1.0.0"; a.SkippedVersion = "1.2.0"; });
+        var releases = new[] { Release("1.2.0") };
+
+        var result = UpdateDecisionEngine.Evaluate(app, releases, SystemArchitecture.X86_64);
+
+        Assert.Equal(UpdateStatus.UpToDate, result.Status);
+        Assert.Contains("skipped", result.Detail);
+    }
+
+    [Fact]
+    public void Evaluate_SkippedVersion_Ignored_WhenNewerReleaseAppears()
+    {
+        var app = App(a => { a.CurrentVersion = "1.0.0"; a.SkippedVersion = "1.2.0"; });
+        var releases = new[] { Release("1.3.0"), Release("1.2.0") };
+
+        var result = UpdateDecisionEngine.Evaluate(app, releases, SystemArchitecture.X86_64);
+
+        Assert.Equal(UpdateStatus.UpdateAvailable, result.Status);
+        Assert.Equal("1.3.0", result.NewRelease?.TagName);
+    }
+
+    [Fact]
+    public void Evaluate_SkippedVersion_DifferentTag_StillOffersUpdate()
+    {
+        // Skipped "v1.2.0" (with v prefix) but release tag is "1.2.0" — same version, different tag → still offered? No:
+        // comparison is case-insensitive on the exact tag string, so a differently-prefixed tag is a different string.
+        // We treat tags as opaque identifiers: only an exact tag match is skipped.
+        var app = App(a => { a.CurrentVersion = "1.0.0"; a.SkippedVersion = "v1.2.0"; });
+        var releases = new[] { Release("1.2.0") };
+
+        var result = UpdateDecisionEngine.Evaluate(app, releases, SystemArchitecture.X86_64);
+
+        Assert.Equal(UpdateStatus.UpdateAvailable, result.Status);
+    }
+
+    [Fact]
+    public void Evaluate_PinAndSkip_RulesResetByClearingFields()
+    {
+        // After ResetRules both fields are null → normal behavior restored
+        var app = App(a => { a.CurrentVersion = "1.0.0"; a.SkippedVersion = null; a.PinnedVersion = null; });
+        var releases = new[] { Release("1.2.0") };
+
+        var result = UpdateDecisionEngine.Evaluate(app, releases, SystemArchitecture.X86_64);
+
+        Assert.Equal(UpdateStatus.UpdateAvailable, result.Status);
+    }
+
+    [Fact]
+    public void Evaluate_Pinned_TakesPrecedence_OverSkipped()
+    {
+        // If both are set (shouldn't normally happen), Pinned wins — safest behavior
+        var app = App(a => { a.CurrentVersion = "1.0.0"; a.PinnedVersion = "1.0.0"; a.SkippedVersion = "2.0.0"; });
+        var releases = new[] { Release("2.0.0") };
+
+        var result = UpdateDecisionEngine.Evaluate(app, releases, SystemArchitecture.X86_64);
+
+        Assert.Equal(UpdateStatus.Pinned, result.Status);
+    }
 }

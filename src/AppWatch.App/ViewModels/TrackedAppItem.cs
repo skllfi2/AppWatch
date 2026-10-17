@@ -76,6 +76,26 @@ public partial class TrackedAppItem : ObservableObject
     [ObservableProperty]
     public partial bool UpdateAvailable { get; set; }
 
+    /// <summary>A1: newest release tag from the last check (drives "skip this version").</summary>
+    [ObservableProperty]
+    public partial string? LatestTag { get; set; }
+
+    /// <summary>A1: true when the user pinned the current version (engine returns Pinned).</summary>
+    public bool IsPinned => App.PinnedVersion is not null;
+
+    /// <summary>A1: true when the user skipped a specific version.</summary>
+    public bool HasSkipRule => App.SkippedVersion is not null;
+
+    /// <summary>A1: menu captions resolved per-item for x:Bind inside DataTemplate.</summary>
+    public string MenuSkipVersion => LocalizationService.Instance["MenuSkipVersion"];
+    public string MenuPinCurrent => IsPinned
+        ? LocalizationService.Instance["MenuUnpin"]
+        : LocalizationService.Instance["MenuPinCurrent"];
+    public string MenuResetRules => LocalizationService.Instance["MenuResetRules"];
+    public string RuleBadge => IsPinned
+        ? LocalizationService.Instance["BadgePinned"]
+        : HasSkipRule ? LocalizationService.Instance["BadgeSkipped"] : "";
+
     partial void OnStageChanged(UpdateStage value)
     {
         OnPropertyChanged(nameof(StatusBrush));
@@ -98,6 +118,10 @@ public partial class TrackedAppItem : ObservableObject
         OnPropertyChanged(nameof(BtnUpdateOne));
         OnPropertyChanged(nameof(BtnLaunch));
         OnPropertyChanged(nameof(RollbackAvailable));
+        OnPropertyChanged(nameof(IsPinned));
+        OnPropertyChanged(nameof(HasSkipRule));
+        OnPropertyChanged(nameof(MenuPinCurrent));
+        OnPropertyChanged(nameof(RuleBadge));
     }
 
     /// <summary>Localized "Update" button label (resolved per-item to keep x:Bind inside DataTemplate valid).</summary>
@@ -125,6 +149,11 @@ public partial class TrackedAppItem : ObservableObject
         && global::AppWatch.App.Resolve<Infrastructure.System.VersionStore>().Any(App.Name);
 
     public IRelayCommand RollbackAppCommand => global::AppWatch.App.Resolve<MainViewModel>().RollbackAppCommand;
+
+    /// <summary>A1: per-app update rules commands (proxied from MainViewModel for DataTemplate x:Bind).</summary>
+    public IRelayCommand SkipVersionCommand => global::AppWatch.App.Resolve<MainViewModel>().SkipVersionCommand;
+    public IRelayCommand PinCurrentCommand => global::AppWatch.App.Resolve<MainViewModel>().PinCurrentCommand;
+    public IRelayCommand ResetRulesCommand => global::AppWatch.App.Resolve<MainViewModel>().ResetRulesCommand;
 
     private static Brush MakeBrush(byte r, byte g, byte b) =>
         new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, r, g, b));

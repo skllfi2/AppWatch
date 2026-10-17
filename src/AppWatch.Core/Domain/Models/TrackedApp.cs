@@ -23,6 +23,11 @@ public sealed class TrackedApp
     public IReadOnlyList<string>? AssetExtensionPriority { get; set; }
     public bool IgnorePreReleases { get; set; } = true;
     public string? PinnedVersion { get; set; }
+
+    /// <summary>A1: user explicitly skipped this version — engine treats it as UpToDate
+    /// until a NEWER release appears or the user resets the rule.</summary>
+    public string? SkippedVersion { get; set; }
+
     public string? CurrentVersion { get; set; }
     public bool Enabled { get; set; } = true;
 

@@ -181,5 +181,15 @@
     "ImportEmpty": "No new apps in the file (duplicates skipped)",
     "CopyListDone": "Copied {0} entries",
     "BatchSummaryOk": "Updated: {0}",
-    "BatchSummaryMixed": "Updated: {0}, failed: {1}: {2}"
+    "BatchSummaryMixed": "Updated: {0}, failed: {1}: {2}",
+    "MenuSkipVersion": "Skip this version",
+    "MenuPinCurrent": "Pin current version",
+    "MenuUnpin": "Unpin version",
+    "MenuResetRules": "Reset rules",
+    "BadgePinned": "pinned",
+    "BadgeSkipped": "skipped",
+    "SkipVersionDone": "Version {0} will no longer be offered",
+    "PinCurrentDone": "Version {0} pinned",
+    "PinCleared": "Pin removed",
+    "RulesReset": "Update rules reset"
 }

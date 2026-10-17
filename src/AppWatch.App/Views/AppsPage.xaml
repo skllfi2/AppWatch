@@ -137,6 +137,11 @@
                                                      ToolTipService.ToolTip="{x:Bind StageText}"/>
                                             <TextBlock Text="{x:Bind Version}" Opacity="0.7" FontSize="12"/>
                                             <TextBlock Text="{x:Bind StatusText, Mode=OneWay}" Opacity="0.7" FontSize="12"/>
+                                            <!-- A1: pin/skip rule badge -->
+                                            <Border CornerRadius="4" Padding="6,1" Background="#33FFFFFF"
+                                                    Visibility="{x:Bind RuleBadge, Converter={StaticResource StringNotEmptyToVisibility}, Mode=OneWay}">
+                                                <TextBlock Text="{x:Bind RuleBadge, Mode=OneWay}" FontSize="10" Opacity="0.75"/>
+                                            </Border>
                                         </StackPanel>
                                     </StackPanel>
 
@@ -183,6 +188,37 @@
                                                                                     <FontIcon Glyph="&#xE7A6;" FontSize="12" Foreground="{StaticResource HeroTertiaryBrush}"/>
                                                                                     <TextBlock Text="{x:Bind BtnRollback}" FontSize="11" Foreground="{StaticResource HeroTertiaryBrush}"/>
                                                                                 </StackPanel>
+                                                                            </Button>
+                                                                            <!-- A1: per-app update rules menu -->
+                                                                            <Button Padding="8,6" CornerRadius="6"
+                                                                                    Background="{StaticResource HeroOverlayBrush}" BorderThickness="0"
+                                                                                    ToolTipService.ToolTip="{x:Bind MenuResetRules, Mode=OneWay}">
+                                                                                <FontIcon Glyph="&#xE10C;" FontSize="12" Foreground="{StaticResource HeroTertiaryBrush}"/>
+                                                                                <Button.Flyout>
+                                                                                    <MenuFlyout>
+                                                                                        <MenuFlyoutItem Command="{x:Bind SkipVersionCommand}" CommandParameter="{x:Bind}"
+                                                                                                        Text="{x:Bind MenuSkipVersion, Mode=OneWay}"
+                                                                                                        Visibility="{x:Bind UpdateAvailable, Converter={StaticResource BoolToVisibility}, Mode=OneWay}">
+                                                                                            <MenuFlyoutItem.Icon>
+                                                                                                <FontIcon Glyph="&#xE7E3;"/>
+                                                                                            </MenuFlyoutItem.Icon>
+                                                                                        </MenuFlyoutItem>
+                                                                                        <MenuFlyoutItem Command="{x:Bind PinCurrentCommand}" CommandParameter="{x:Bind}"
+                                                                                                        Text="{x:Bind MenuPinCurrent, Mode=OneWay}">
+                                                                                            <MenuFlyoutItem.Icon>
+                                                                                                <FontIcon Glyph="&#xE840;"/>
+                                                                                            </MenuFlyoutItem.Icon>
+                                                                                        </MenuFlyoutItem>
+                                                                                        <MenuFlyoutSeparator/>
+                                                                                        <MenuFlyoutItem Command="{x:Bind ResetRulesCommand}" CommandParameter="{x:Bind}"
+                                                                                                        Text="{x:Bind MenuResetRules, Mode=OneWay}"
+                                                                                                        Visibility="{x:Bind RuleBadge, Converter={StaticResource StringNotEmptyToVisibility}, Mode=OneWay}">
+                                                                                            <MenuFlyoutItem.Icon>
+                                                                                                <FontIcon Glyph="&#xE74D;"/>
+                                                                                            </MenuFlyoutItem.Icon>
+                                                                                        </MenuFlyoutItem>
+                                                                                    </MenuFlyout>
+                                                                                </Button.Flyout>
                                                                             </Button>
                                                                         </StackPanel>
                                 </Grid>

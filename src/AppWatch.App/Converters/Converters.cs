@@ -56,6 +56,16 @@ public sealed class NotNullToVisibilityConverter : IValueConverter
         => throw new NotSupportedException();
 }
 
+/// <summary>A1: non-empty string → Visible (drives the pin/skip rule badge).</summary>
+public sealed class StringNotEmptyToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+        => value is string s && s.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+        => throw new NotSupportedException();
+}
+
 public sealed class InverseCountToVisibilityConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)

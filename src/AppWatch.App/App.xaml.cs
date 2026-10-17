@@ -76,6 +76,7 @@ public partial class App : Application
                         Resources["InverseCountToVisibility"] = new Converters.InverseCountToVisibilityConverter();
                         Resources["StringToBrushConverter"] = new Converters.StringToBrushConverter();
                         Resources["InverseBoolToVisibility"] = new Converters.InverseBoolToVisibilityConverter();
+            Resources["StringNotEmptyToVisibility"] = new Converters.StringNotEmptyToVisibilityConverter();
 
             var appData = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AppWatch");

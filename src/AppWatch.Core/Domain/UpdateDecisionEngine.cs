@@ -31,6 +31,11 @@ public static class UpdateDecisionEngine
 
         var newest = ordered[0].Release;
 
+        // A1: user explicitly skipped this version — treat as UpToDate until a newer one appears
+        if (app.SkippedVersion is { } skipped
+            && string.Equals(skipped, newest.TagName, StringComparison.OrdinalIgnoreCase))
+            return new(app, UpdateStatus.UpToDate, Detail: $"version {skipped} skipped by user");
+
         if (!VersionParser.IsNewer(app.CurrentVersion, newest.TagName))
             return new(app, UpdateStatus.UpToDate);
 
