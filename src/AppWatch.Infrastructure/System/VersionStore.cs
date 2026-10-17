@@ -36,8 +36,18 @@ public sealed class VersionStore
         if (Directory.Exists(target)) Directory.Delete(target, true);
 
         Directory.Move(backup, target);
+
+        // D5: keep the RAW version next to the sanitized label — "0560" → "v0.5.6.0"
+        if (!string.IsNullOrWhiteSpace(versionLabel))
+        {
+            try { File.WriteAllText(Path.Combine(target, MetadataFileName), versionLabel); }
+            catch (IOException) { /* metadata is best-effort */ }
+        }
+
         Prune(appName);
     }
+
+    private const string MetadataFileName = ".appwatch-version";
 
     /// <summary>Archived snapshots for an app, newest first (rollback UI order).</summary>
     public IReadOnlyList<VersionArchiveEntry> List(string appName)
@@ -49,9 +59,20 @@ public sealed class VersionStore
             .Select(dir => new VersionArchiveEntry(
                 dir,
                 Path.GetFileName(dir),
-                Directory.GetLastWriteTimeUtc(dir)))
+                Directory.GetLastWriteTimeUtc(dir),
+                ReadMetadata(dir)))
             .ToList();
         return VersionArchive.NewestFirst(entries);
+    }
+
+    private static string? ReadMetadata(string snapshotDir)
+    {
+        try
+        {
+            var path = Path.Combine(snapshotDir, MetadataFileName);
+            return File.Exists(path) ? File.ReadAllText(path).Trim() : null;
+        }
+        catch (IOException) { return null; }
     }
 
     /// <summary>True when at least one archived snapshot exists for the app.</summary>
@@ -79,6 +100,11 @@ public sealed class VersionStore
         }
 
         Directory.Move(target.DirectoryPath, installDirectory);
+
+        // D5: don't leave the archive metadata dotfile in the live install dir
+        try { File.Delete(Path.Combine(installDirectory, MetadataFileName)); }
+        catch (IOException) { /* cosmetic */ }
+
         Prune(appName);
     }
 

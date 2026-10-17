@@ -1,7 +1,9 @@
 namespace AppWatch.Core.Domain;
 
-/// <summary>One archived snapshot: directory path, version label, archive write time (UTC).</summary>
-public sealed record VersionArchiveEntry(string DirectoryPath, string Label, DateTime WrittenUtc);
+/// <summary>One archived snapshot: directory path, version label, archive write time (UTC).
+/// D5: DisplayVersion carries the human-readable version from the snapshot metadata
+/// ("v0.5.6.0") while Label stays the sanitized directory id ("0560").</summary>
+public sealed record VersionArchiveEntry(string DirectoryPath, string Label, DateTime WrittenUtc, string? DisplayVersion = null);
 
 /// <summary>
 /// B10 — pure version-cache policy: which archived snapshots survive pruning.

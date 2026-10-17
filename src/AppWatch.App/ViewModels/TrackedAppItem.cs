@@ -70,6 +70,14 @@ public partial class TrackedAppItem : ObservableObject
     [ObservableProperty]
     public partial string StatusText { get; set; } = "";
 
+    /// <summary>D5: engine Detail for the last check/apply (error reason etc.) — shown in the card tooltip.</summary>
+    [ObservableProperty]
+    public partial string? StatusDetail { get; set; }
+
+    /// <summary>D5: tooltip = stage caption + engine detail (why the error happened).</summary>
+    public string StatusTooltip =>
+        string.IsNullOrWhiteSpace(StatusDetail) ? StageText : $"{StageText}\n{StatusDetail}";
+
     [ObservableProperty]
     public partial double ProgressValue { get; set; }
 
@@ -103,6 +111,8 @@ public partial class TrackedAppItem : ObservableObject
         OnPropertyChanged(nameof(IsStageProgress));
     }
 
+    partial void OnStatusDetailChanged(string? value) => OnPropertyChanged(nameof(StatusTooltip));
+
     public void ReportVersionChanged() => OnPropertyChanged(nameof(Version));
 
     public void Refresh()
@@ -122,6 +132,7 @@ public partial class TrackedAppItem : ObservableObject
         OnPropertyChanged(nameof(HasSkipRule));
         OnPropertyChanged(nameof(MenuPinCurrent));
         OnPropertyChanged(nameof(RuleBadge));
+        OnPropertyChanged(nameof(StatusTooltip));
     }
 
     /// <summary>Localized "Update" button label (resolved per-item to keep x:Bind inside DataTemplate valid).</summary>

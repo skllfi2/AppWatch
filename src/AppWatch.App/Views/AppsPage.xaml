@@ -133,8 +133,8 @@
                                         <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" FontSize="14"
                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
                                         <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <Ellipse Width="10" Height="10" Fill="{x:Bind StatusBrush}" VerticalAlignment="Center"
-                                                     ToolTipService.ToolTip="{x:Bind StageText}"/>
+                                            <Ellipse Width="10" Height="10" Fill="{x:Bind StatusBrush, Mode=OneWay}" VerticalAlignment="Center"
+                                                     ToolTipService.ToolTip="{x:Bind StatusTooltip, Mode=OneWay}"/>
                                             <TextBlock Text="{x:Bind Version, Mode=OneWay}" Opacity="0.7" FontSize="12"/>
                                             <TextBlock Text="{x:Bind StatusText, Mode=OneWay}" Opacity="0.7" FontSize="12"/>
                                             <!-- A1: pin/skip rule badge -->

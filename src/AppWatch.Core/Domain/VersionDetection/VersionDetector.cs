@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
 using AppWatch.Core.Domain.Models;
@@ -21,6 +22,7 @@ public enum VersionSource
     VersionFile
 }
 
+[SupportedOSPlatform("windows")]
 public static class VersionDetector
 {
     private static readonly Regex VersionRegex = new(@"\d+\.\d+(\.\d+)*", RegexOptions.Compiled);

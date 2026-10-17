@@ -171,7 +171,7 @@ public sealed class FirstCharToBrushConverter : IValueConverter
     {
         if (value is not string s || string.IsNullOrEmpty(s))
             return new SolidColorBrush(Microsoft.UI.Colors.Gray);
-        var hash = Math.Abs(string.GetHashCode(s[..1], StringComparison.OrdinalIgnoreCase));
+        var hash = Math.Abs(string.GetHashCode(s.AsSpan(0, 1), StringComparison.OrdinalIgnoreCase));
         var hex = Palette[hash % Palette.Length];
         return new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255,
             (byte)(hex >> 16), (byte)(hex >> 8), (byte)hex));

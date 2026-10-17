@@ -201,7 +201,7 @@ public partial class MainViewModel : ObservableObject
                     var versions = App.Resolve<Infrastructure.System.VersionStore>();
                     versions.RollbackTo(app.InstallDirectory!, app.Name, target);
 
-                    app.CurrentVersion = target.Label;
+                    app.CurrentVersion = target.DisplayVersion ?? target.Label; // D5: human-readable
                     _configStore.Save(_config);
                     item.Refresh();
                     item.Stage = UpdateStage.Done;
@@ -400,6 +400,7 @@ public partial class MainViewModel : ObservableObject
             item.LastCheckUtc = DateTimeOffset.UtcNow;
 
             vm.StatusText = Describe(result.Status);
+            vm.StatusDetail = result.Detail; // D5: error/decision reason for the card tooltip
             vm.UpdateAvailable = result.Status == UpdateStatus.UpdateAvailable;
             vm.LatestTag = result.NewRelease?.TagName; // A1: for "skip this version"
             vm.ReportVersionChanged(); // P3: auto-detect may have updated CurrentVersion during the check
@@ -435,6 +436,7 @@ public partial class MainViewModel : ObservableObject
                     item.Stage = UpdateStage.Checking;
                     var check = await _engine.CheckAsync(item.App, _updateAllCts.Token);
                     item.StatusText = Describe(check.Status);
+                    item.StatusDetail = check.Detail; // D5
                     item.UpdateAvailable = check.Status == UpdateStatus.UpdateAvailable;
                     item.LatestTag = check.NewRelease?.TagName; // A1
                     if (check.Status != UpdateStatus.UpdateAvailable)
@@ -503,6 +505,7 @@ public partial class MainViewModel : ObservableObject
         item.Stage = UpdateStage.Checking;
         var check = await _engine.CheckAsync(item.App, cancellationToken);
         item.StatusText = Describe(check.Status);
+        item.StatusDetail = check.Detail; // D5
         if (check.Status != UpdateStatus.UpdateAvailable)
         {
             item.Stage = check.Status == UpdateStatus.Error ? UpdateStage.Error : UpdateStage.Done;
@@ -525,6 +528,7 @@ public partial class MainViewModel : ObservableObject
         {
             item.Stage = UpdateStage.Error;
         }
+        item.StatusDetail = history.Success ? check.Detail : history.Detail; // D5: failure reason in tooltip
         item.StatusText = history.Success ? _loc["updated"] : _loc["updateFailed"];
         UpdatesAvailableCount = Apps.Count(a => a.UpdateAvailable);
         _configStore.Save(_config);
@@ -649,6 +653,7 @@ public partial class MainViewModel : ObservableObject
             {
                 item.Stage = UpdateStage.Error;
             }
+            item.StatusDetail = history.Success ? null : history.Detail; // D5
             item.StatusText = history.Success ? _loc["Updated"] : _loc["UpdateFailed"];
         }
         UpdatesAvailableCount = Apps.Count(a => a.UpdateAvailable);

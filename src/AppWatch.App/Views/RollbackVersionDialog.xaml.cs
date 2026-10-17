@@ -56,7 +56,7 @@ public sealed class RollbackVersionDialog : ContentDialog
             {
                 var row = new RadioButton
                 {
-                    Content = $"{entry.Label}   —   {entry.WrittenUtc.ToLocalTime():dd.MM.yyyy HH:mm}",
+                    Content = $"{entry.DisplayVersion ?? entry.Label}   —   {entry.WrittenUtc.ToLocalTime():dd.MM.yyyy HH:mm}",
                     Tag = entry,
                     IsChecked = ReferenceEquals(entry, entries[0]),
                     Margin = new Thickness(0, 2, 0, 2),
