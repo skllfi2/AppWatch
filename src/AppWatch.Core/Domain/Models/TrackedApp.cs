@@ -20,6 +20,9 @@ public sealed class TrackedApp
 
     /// <summary>B9: when the app was last checked (UTC).</summary>
     public DateTimeOffset? LastCheckUtc { get; set; }
+
+    /// <summary>P6: consecutive error count for backoff. Reset to 0 on any non-Error status.</summary>
+    public int ConsecutiveErrorCount { get; set; }
     public IReadOnlyList<string>? AssetExtensionPriority { get; set; }
     public bool IgnorePreReleases { get; set; } = true;
     public string? PinnedVersion { get; set; }
