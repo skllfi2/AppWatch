@@ -661,9 +661,9 @@ uninstall-ключа в реестре нет — все 4 штатных ист
 - **Live**: карточка Battle.net показывает `2.53.4.17896` (источник VersionFile),
   персист в config, переживает рестарт.
 
-### P4 — CI/CD (2026-10-17, в работе)
+### P4 — CI/CD (2026-10-17, завершено)
 
-`.github/workflows/ci.yml` (коммит `d5a4459`):
+`.github/workflows/ci.yml` (коммиты `d5a4459`, `1b17cd2`, `a6778f1`):
 - push/PR master: build App (x64 Release) + tests прямым xunit v3 exe (обёртка `dotnet
   test` сломана Test.Sdk 18.11 — exit 5 «ноль тестов»).
 - тег `vX.Y.Z`: publish win-x64 self-contained → `vpk pack` → GitHub Release c
@@ -679,5 +679,30 @@ uninstall-ключа в реестре нет — все 4 штатных ист
    APPX1685 «Default language 'en-US' is not valid» на чистой сборке (локально проходило
    только из-за кэшированного resources.pri в obj от VS-билдов). Варокап был для
    локальной RU-консоли, en-US pwsh раннеру он не нужен. Коммит `1b17cd2`.
+
+CI зелёный 2 раза подряд: run 39029194014 (2m29s), run 39048602131 (D5-коммит).
+
+### D5 — полиш (2026-10-17, завершено) — коммит `a6778f1`
+
+Закрывает обе P0-заметки из живого прогона:
+- **Tooltip причины статуса на карточке**: `TrackedAppItem.StatusDetail` (Detail движка
+  из check/apply) + `StatusTooltip` = стадия + причина; tooltip на точке статуса. Все 4
+  флоу заполняют (CheckAll / UpdateAll / UpdateOne / Background; на неудаче apply —
+  history.Detail).
+- **Человекочитаемая версия после отката**: `VersionArchiveEntry.DisplayVersion`;
+  VersionStore пишет `.appwatch-version` (сырой лейбл «v0.5.6.0») в каждый снапшот,
+  читает в List(), удаляет из install-директории после RollbackTo. Диалог отката и
+  CurrentVersion показывают DisplayVersion, не sanitized-id («0560»).
+- Чистый лог анализаторов: `[SupportedOSPlatform("windows")]` на VersionDetector (12x
+  CA1416), `AsSpan` в конвертере (CA1831).
+- **Чистый rebuild без obj-кэша**: Release+Debug зелёные БЕЗ invariant-варокапа —
+  локальная сборка CI-эквивалентна.
+- Тесты 131/131; live: приложение, check-флоу, Battle.net `2.53.4.17896` персист.
+
+**Не закрыто (осознанно, вне 5-дневного окна — «никаких публичных релизов»):**
+- Тег `vX.Y.Z` → полный CI-цикл publish+vpk+Release — путь готов, не гонялся.
+- SelfUpdateService против реального CI-релиза — после первого тега.
+- P5 winget-манифест, README.
+
 
 
