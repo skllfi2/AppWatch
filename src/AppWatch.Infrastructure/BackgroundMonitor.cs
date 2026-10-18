@@ -88,9 +88,8 @@ public sealed class BackgroundMonitor : BackgroundService
 
                         var result = await _engine.CheckAsync(app, stoppingToken);
 
-                        // B9: persist the verdict — it drives the next cycle's priority
-                        app.LastCheckStatus = result.Status;
-                        app.LastCheckUtc = DateTimeOffset.UtcNow;
+                        // B9+P6: persist the verdict — drives the next cycle's priority and error backoff
+                        BackgroundCheckOrder.RecordOutcome(app, result.Status);
 
                         if (result.Status == UpdateStatus.UpdateAvailable)
                         {

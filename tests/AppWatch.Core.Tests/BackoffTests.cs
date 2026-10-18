@@ -142,4 +142,48 @@ public class BackoffTests
     [Fact]
     public void Prioritize_Empty_NoCrash()
         => Assert.Empty(BackgroundCheckOrder.Prioritize([]));
+
+    // P6 wiring: RecordOutcome increments on Error
+    [Fact]
+    public void RecordOutcome_Error_IncrementsCounter()
+    {
+        var app = App("flaky", UpdateStatus.UpToDate);
+        app.ConsecutiveErrorCount = 2;
+
+        BackgroundCheckOrder.RecordOutcome(app, UpdateStatus.Error);
+
+        Assert.Equal(UpdateStatus.Error, app.LastCheckStatus);
+        Assert.Equal(3, app.ConsecutiveErrorCount);
+        Assert.NotNull(app.LastCheckUtc);
+    }
+
+    // P6 wiring: one good check clears the backoff
+    [Theory]
+    [InlineData(UpdateStatus.UpToDate)]
+    [InlineData(UpdateStatus.UpdateAvailable)]
+    [InlineData(UpdateStatus.Pinned)]
+    public void RecordOutcome_NonError_ResetsCounter(UpdateStatus status)
+    {
+        var app = App("recovered", UpdateStatus.Error, consecutiveErrors: 3);
+
+        BackgroundCheckOrder.RecordOutcome(app, status);
+
+        Assert.Equal(status, app.LastCheckStatus);
+        Assert.Equal(0, app.ConsecutiveErrorCount);
+    }
+
+    // P6 wiring: the recorded state actually drives Prioritize backoff (end-to-end)
+    [Fact]
+    public void RecordOutcome_ThenPrioritize_BackoffDeprioritizesAfterThreeErrors()
+    {
+        var app = App("cycle", null);
+        foreach (var _ in Enumerable.Range(0, 3))
+            BackgroundCheckOrder.RecordOutcome(app, UpdateStatus.Error);
+        var healthy = App("healthy", UpdateStatus.Error);
+
+        var ordered = BackgroundCheckOrder.Prioritize([app, healthy]);
+
+        Assert.Equal("healthy", ordered[0].Name);
+        Assert.Equal("cycle", ordered[^1].Name);
+    }
 }

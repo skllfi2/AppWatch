@@ -47,4 +47,16 @@ public static class BackgroundCheckOrder
         tier1.AddRange(tier3);
         return tier1;
     }
+
+    /// <summary>P6: record a check outcome — keeps LastCheckStatus/LastCheckUtc and the
+    /// consecutive-error counter in one place so every check flow maintains backoff state.
+    /// Any non-Error outcome resets the counter (one good check clears the backoff).</summary>
+    public static void RecordOutcome(TrackedApp app, UpdateStatus status)
+    {
+        app.LastCheckStatus = status;
+        app.LastCheckUtc = DateTimeOffset.UtcNow;
+        app.ConsecutiveErrorCount = status == UpdateStatus.Error
+            ? app.ConsecutiveErrorCount + 1
+            : 0;
+    }
 }

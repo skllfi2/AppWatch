@@ -395,9 +395,8 @@ public partial class MainViewModel : ObservableObject
             vm.Stage = UpdateStage.Checking;
             var result = await _engine.CheckAsync(item, cancellationToken);
 
-            // B9: persist the verdict for the next background cycle's priority
-            item.LastCheckStatus = result.Status;
-            item.LastCheckUtc = DateTimeOffset.UtcNow;
+            // B9+P6: persist the verdict — drives the next background cycle's priority and error backoff
+            BackgroundCheckOrder.RecordOutcome(item, result.Status);
 
             vm.StatusText = Describe(result.Status);
             vm.StatusDetail = result.Detail; // D5: error/decision reason for the card tooltip

@@ -1,0 +1,7 @@
+commit	metric	base_suite	status	description
+d07e033	6/6	131/131	keep	P1 UpdatePolicy.ShouldAutoApply consent gate
+0eafbc5	28/28	131/131	keep	P3 VersionComparisonFixturesTests 22 real pairs
+9cf6867	43/43	131/131	keep	P4 AssetSelectionFixturesTests 15 repos + Core fixes
+d50fcce	51/51	131/131	keep	P5 Preflight disk-space preflight pure function
+e2480c1	59/59	131/131	keep	P6 BackgroundCheckOrder consecutive-error backoff
+abad023	66/66	131/131	keep	P2 TrackingGuarantee invariant + Pinned fix
