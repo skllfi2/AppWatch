@@ -97,8 +97,8 @@ public sealed class BackgroundMonitor : BackgroundService
                             updatesFound++;
                             _toast.ShowUpdateAvailable(app.Name, result.NewRelease?.TagName ?? "?");
 
-                            // Auto-apply if enabled
-                            if (config.AutoApplyUpdates && app.LaunchAfterUpdate)
+                            // P1: consent gate via the shared Core policy (default OFF)
+                            if (UpdatePolicy.ShouldAutoApply(config, app))
                             {
                                 await _engine.ApplyAsync(app, result, cancellationToken: stoppingToken);
                             }

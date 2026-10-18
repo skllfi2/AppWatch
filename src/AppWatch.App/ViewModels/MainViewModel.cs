@@ -623,6 +623,12 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     public async Task RunBackgroundCheckAsync()
     {
+        // reviewer: sync the consent flag from disk — the ctor-loaded snapshot would both
+        // miss a hand-edited config.json and then clobber it on the trailing Save below.
+        // Sync the FIELD only: replacing _config wholesale would break the reference
+        // identity between Apps items and _config.TrackedApps.
+        _config.AutoApplyUpdates = _configStore.Load().AutoApplyUpdates;
+
         foreach (var item in Apps.Where(a => a.App.UpdateKind != UpdateKind.WingetPackage && a.App.Enabled))
         {
             item.Stage = UpdateStage.Checking;
@@ -630,9 +636,20 @@ public partial class MainViewModel : ObservableObject
             item.StatusText = Describe(check.Status);
             item.UpdateAvailable = check.Status == UpdateStatus.UpdateAvailable;
             item.LatestTag = check.NewRelease?.TagName; // A1: for "skip this version"
+            item.StatusDetail = check.Detail; // reviewer: stale-detail cleanup on every plain check
             if (check.Status != UpdateStatus.UpdateAvailable)
             {
                 item.Stage = check.Status == UpdateStatus.Error ? UpdateStage.Error : UpdateStage.Done;
+                continue;
+            }
+
+            // P1: consent gate — never auto-apply without explicit user consent.
+            // The card already shows "Доступно обновление" + UpdateAvailable=true,
+            // so the update is surfaced, not silently applied.
+            if (!UpdatePolicy.ShouldAutoApply(_config, item.App))
+            {
+                // reviewer: same convention as CheckUpdatesAsync — update found, awaiting user action
+                item.Stage = UpdateStage.Idle;
                 continue;
             }
 
