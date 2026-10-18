@@ -96,6 +96,7 @@ public partial class TrackedAppItem : ObservableObject
 
     /// <summary>A1: menu captions resolved per-item for x:Bind inside DataTemplate.</summary>
     public string MenuSkipVersion => LocalizationService.Instance["MenuSkipVersion"];
+    public string MenuUpdateRules => LocalizationService.Instance["MenuUpdateRules"];
     public string MenuPinCurrent => IsPinned
         ? LocalizationService.Instance["MenuUnpin"]
         : LocalizationService.Instance["MenuPinCurrent"];

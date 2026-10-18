@@ -167,7 +167,15 @@
     "CatalogEmpty": "Catalog is empty or failed to load",
     "WingetNoUpdates": "No winget updates available — scan to check",
     "WingetNotAvailable": "winget is not available on this system",
-    "SettingsScheduleSection": "Background monitors",
+        "WingetScan": "Check for updates",
+        "WingetUpdateSelected": "Update selected",
+        "BtnRemoveFromCatalog": "Remove from catalog",
+        "CatalogSearchPlaceholder": "Search catalog…",
+        "AddedToCatalog": "{0} added to catalog",
+        "RemovedFromCatalog": "{0} removed from catalog",
+        "CatalogSaveFailed": "Failed to save catalog (check AppData permissions)",
+        "UserEntryBadge": "mine",
+        "SettingsScheduleSection": "Background monitors",
     "SettingsNextBackgroundCheck": "Next apps check",
     "SettingsNextCatalogCheck": "Next catalog check",
     "SettingsScheduleNone": "not scheduled yet",
@@ -197,5 +205,7 @@
     "SkipVersionDone": "Version {0} will no longer be offered",
     "PinCurrentDone": "Version {0} pinned",
     "PinCleared": "Pin removed",
-    "RulesReset": "Update rules reset"
+    "RulesReset": "Update rules reset",
+    "AddApp": "Add application",
+    "MenuUpdateRules": "Update rules"
 }

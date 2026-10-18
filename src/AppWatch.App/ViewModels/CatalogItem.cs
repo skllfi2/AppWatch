@@ -48,9 +48,23 @@ public partial class CatalogItem : ObservableObject
     [ObservableProperty]
     public partial bool IsTracked { get; set; }
 
+    /// <summary>User-added entry (vs seed): shows a badge + remove option.</summary>
+    [ObservableProperty]
+    public partial bool IsUserEntry { get; set; }
+
     [ObservableProperty]
     public partial string InstallStatus { get; set; } = "";
 
     [ObservableProperty]
     public partial bool UpdateAvailable { get; set; }
+
+    /// <summary>Remove-from-catalog command (only for user entries).</summary>
+    public IRelayCommand RemoveFromCatalogCommand =>
+        global::AppWatch.App.Resolve<MainViewModel>().RemoveFromCatalogCommand;
+
+    /// <summary>Localized "Remove from catalog" label.</summary>
+    public string BtnRemoveFromCatalog => LocalizationService.Instance["BtnRemoveFromCatalog"];
+
+    /// <summary>Localized "mine" badge for user entries.</summary>
+    public string UserEntryBadge => LocalizationService.Instance["UserEntryBadge"];
 }

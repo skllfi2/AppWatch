@@ -25,19 +25,18 @@ public sealed class Loc : INotifyPropertyChanged
             public string UpdateAll => LocalizationService.Instance["updateAll"];
             public string Stop => LocalizationService.Instance["Stop"];
             public string BtnStop => LocalizationService.Instance["BtnStop"];
+            public string AddApp => LocalizationService.Instance["AddApp"];
+        public string CatalogSearchPlaceholder => LocalizationService.Instance["CatalogSearchPlaceholder"];
             public string TrackedApps => LocalizationService.Instance["trackedApps"];
 
         public string NoTrackedApps => LocalizationService.Instance["NoTrackedApps"];
-    public string Catalog => LocalizationService.Instance["catalog"];
-            public string CatalogHint => LocalizationService.Instance["catalogHint"];
-            public string CatalogEmpty => LocalizationService.Instance["CatalogEmpty"];
-            public string WingetNoUpdates => LocalizationService.Instance["WingetNoUpdates"];
-            public string WingetNotAvailable => LocalizationService.Instance["WingetNotAvailable"];
-    public string WingetUpdates => LocalizationService.Instance["wingetUpdates"];
-    public string WingetGoTo => LocalizationService.Instance["wingetGoTo"];
-    public string WingetScan => LocalizationService.Instance["wingetScan"];
-    public string WingetUnavailable => LocalizationService.Instance["wingetUnavailable"];
-    public string NavApps => LocalizationService.Instance["navApps"];
+            public string Catalog => LocalizationService.Instance["catalog"];
+                    public string CatalogHint => LocalizationService.Instance["catalogHint"];
+                    public string CatalogEmpty => LocalizationService.Instance["CatalogEmpty"];
+            public string WingetUpdates => LocalizationService.Instance["wingetUpdates"];
+                public string WingetGoTo => LocalizationService.Instance["wingetGoTo"];
+                public string WingetUnavailable => LocalizationService.Instance["wingetUnavailable"];
+                public string NavApps => LocalizationService.Instance["navApps"];
     public string NavCatalog => LocalizationService.Instance["navCatalog"];
     public string NavWinget => LocalizationService.Instance["navWinget"];
     public string NavSettings => LocalizationService.Instance["navSettings"];
@@ -178,11 +177,14 @@ public sealed class Loc : INotifyPropertyChanged
                 public string CatalogAddCustom => LocalizationService.Instance["CatalogAddCustom"];
 
                 // Winget Hero
-                public string WingetHeroTitle => LocalizationService.Instance["WingetHeroTitle"];
-                public string WingetMetricTotal => LocalizationService.Instance["WingetMetricTotal"];
-                public string WingetMetricUpdates => LocalizationService.Instance["WingetMetricUpdates"];
-                public string WingetMetricPending => LocalizationService.Instance["WingetMetricPending"];
-                public string WingetUpdateSelected => LocalizationService.Instance["wingetUpdateSelected"];
+                                public string WingetHeroTitle => LocalizationService.Instance["WingetHeroTitle"];
+                                public string WingetMetricTotal => LocalizationService.Instance["WingetMetricTotal"];
+                                public string WingetMetricUpdates => LocalizationService.Instance["WingetMetricUpdates"];
+                                public string WingetMetricPending => LocalizationService.Instance["WingetMetricPending"];
+                                public string WingetUpdateSelected => LocalizationService.Instance["WingetUpdateSelected"];
+                                public string WingetScan => LocalizationService.Instance["WingetScan"];
+                                public string WingetNoUpdates => LocalizationService.Instance["WingetNoUpdates"];
+                                public string WingetNotAvailable => LocalizationService.Instance["WingetNotAvailable"];
 
                 // Not implemented
                 public string NotImplemented => LocalizationService.Instance["notImplemented"];

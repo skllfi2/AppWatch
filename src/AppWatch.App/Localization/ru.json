@@ -167,6 +167,14 @@
     "CatalogEmpty": "Каталог пуст или не загрузился",
     "WingetNoUpdates": "Обновлений winget нет — запустите сканирование",
     "WingetNotAvailable": "winget недоступен в системе",
+    "WingetScan": "Проверить обновления",
+    "WingetUpdateSelected": "Обновить выбранное",
+    "BtnRemoveFromCatalog": "Убрать из каталога",
+    "CatalogSearchPlaceholder": "Поиск по каталогу…",
+    "AddedToCatalog": "{0} добавлено в каталог",
+    "RemovedFromCatalog": "{0} убрано из каталога",
+    "CatalogSaveFailed": "Не удалось сохранить каталог (проверьте права на AppData)",
+    "UserEntryBadge": "моя",
     "SettingsScheduleSection": "Фоновые проверки",
     "SettingsNextBackgroundCheck": "Следующая проверка приложений",
     "SettingsNextCatalogCheck": "Следующая проверка каталога",
@@ -197,5 +205,7 @@
     "SkipVersionDone": "Версия {0} больше не предлагается",
     "PinCurrentDone": "Версия {0} закреплена",
     "PinCleared": "Закрепление снято",
-    "RulesReset": "Правила обновления сброшены"
+    "RulesReset": "Правила обновления сброшены",
+    "AddApp": "Добавить приложение",
+    "MenuUpdateRules": "Правила обновления"
 }

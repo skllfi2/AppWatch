@@ -51,11 +51,15 @@ public partial class MainViewModel : ObservableObject
             Apps.Add(new TrackedAppItem(app));
 
         foreach (var entry in _catalog.Entries)
-                        {
-                            var tracked = _config.TrackedApps.Any(
-                                a => a.RepoOwner == entry.RepoOwner && a.RepoName == entry.RepoName);
-                            CatalogApps.Add(new CatalogItem(entry, tracked));
-                        }
+        {
+            var tracked = _config.TrackedApps.Any(
+                a => a.RepoOwner == entry.RepoOwner && a.RepoName == entry.RepoName);
+            var item = new CatalogItem(entry, tracked)
+            {
+                IsUserEntry = _catalog.IsUserEntry(entry.RepoOwner, entry.RepoName),
+            };
+            CatalogApps.Add(item);
+        }
 
                         // Initialize catalog metrics
                 CatalogTotalCount = CatalogApps.Count;
@@ -283,6 +287,92 @@ public partial class MainViewModel : ObservableObject
             AppsTrackedCount = Apps.Count;
         }
         StatusText = _loc["checkDone"];
+    }
+
+    // === User catalog: add/remove/search (closes "решаем за пользователя") ===
+
+    [RelayCommand]
+    private async Task AddToCatalogAsync()
+    {
+        var dialog = new Views.AddEditAppDialog();
+        dialog.XamlRoot = App.MainWindow!.Content.XamlRoot;
+        var result = await dialog.ShowAsync();
+        if (result != ContentDialogResult.Primary)
+            return;
+
+        var vm = dialog.ViewModel;
+        var entry = new CatalogEntry
+        {
+            Name = vm.Name.Trim(),
+            RepoOwner = vm.RepoOwner.Trim(),
+            RepoName = vm.RepoName.Trim(),
+            UpdateKind = (UpdateKind)vm.SelectedUpdateKindIndex,
+            ExecutableName = string.IsNullOrWhiteSpace(vm.ExecutableName) ? null : vm.ExecutableName.Trim(),
+            ProcessName = string.IsNullOrWhiteSpace(vm.ProcessName) ? null : vm.ProcessName.Trim(),
+            Description = null,
+        };
+
+        if (_catalog.AddUserEntry(entry))
+        {
+            RefreshCatalogItems();
+            StatusText = _loc.Format("AddedToCatalog", entry.Name);
+        }
+        else
+        {
+            StatusText = _loc["CatalogSaveFailed"];
+        }
+    }
+
+    [RelayCommand]
+    private void RemoveFromCatalog(CatalogItem? item)
+    {
+        if (item is null || !item.IsUserEntry) return;
+        if (_catalog.RemoveUserEntry(item.Entry.RepoOwner, item.Entry.RepoName))
+        {
+            RefreshCatalogItems();
+            StatusText = _loc.Format("RemovedFromCatalog", item.Name);
+        }
+    }
+
+    private void RefreshCatalogItems()
+    {
+        CatalogApps.Clear();
+        foreach (var entry in _catalog.Entries)
+        {
+            var tracked = _config.TrackedApps.Any(
+                a => a.RepoOwner == entry.RepoOwner && a.RepoName == entry.RepoName);
+            CatalogApps.Add(new CatalogItem(entry, tracked)
+            {
+                IsUserEntry = _catalog.IsUserEntry(entry.RepoOwner, entry.RepoName),
+            });
+        }
+        CatalogTotalCount = CatalogApps.Count;
+        CatalogTrackedCount = CatalogApps.Count(c => c.IsTracked);
+        ApplyCatalogFilter();
+    }
+
+    [ObservableProperty]
+    public partial string CatalogSearchQuery { get; set; } = "";
+
+    partial void OnCatalogSearchQueryChanged(string value) => ApplyCatalogFilter();
+
+    /// <summary>Filtered catalog: search matches name, repo, or description (case-insensitive substring).</summary>
+    public ObservableCollection<CatalogItem> FilteredCatalogApps { get; } = [];
+
+    private void ApplyCatalogFilter()
+    {
+        FilteredCatalogApps.Clear();
+        var query = CatalogSearchQuery?.Trim() ?? "";
+        foreach (var item in CatalogApps)
+        {
+            if (query.Length == 0 ||
+                item.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                item.Entry.RepoName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                (item.Entry.Description?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false))
+            {
+                FilteredCatalogApps.Add(item);
+            }
+        }
     }
 
     // === W1–W3: winget search & install ("Установить из winget") ===
