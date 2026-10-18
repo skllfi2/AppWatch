@@ -7,3 +7,4 @@ TestResults/
 dist/
 artifacts/
 *.binlog
+results.tsv
