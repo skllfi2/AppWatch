@@ -52,6 +52,10 @@ public partial class CatalogItem : ObservableObject
     [ObservableProperty]
     public partial bool IsUserEntry { get; set; }
 
+    /// <summary>Which catalog source this entry came from ("Сид", "Мой каталог", "DPI Tools", …).</summary>
+    [ObservableProperty]
+    public partial string? SourceName { get; set; }
+
     [ObservableProperty]
     public partial string InstallStatus { get; set; } = "";
 

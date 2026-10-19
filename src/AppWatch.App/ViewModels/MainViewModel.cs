@@ -61,10 +61,12 @@ public partial class MainViewModel : ObservableObject
             CatalogApps.Add(item);
         }
 
-                        // Initialize catalog metrics
-                CatalogTotalCount = CatalogApps.Count;
-                CatalogTrackedCount = CatalogApps.Count(c => c.IsTracked);
-                CatalogUpdatesAvailable = CatalogApps.Count(c => c.UpdateAvailable);
+        // Initialize catalog metrics + sources + search filter
+        CatalogTotalCount = CatalogApps.Count;
+        CatalogTrackedCount = CatalogApps.Count(c => c.IsTracked);
+        CatalogUpdatesAvailable = CatalogApps.Count(c => c.UpdateAvailable);
+        RefreshSources();
+        ApplyCatalogFilter();
 
                 AppsTrackedCount = Apps.Count;
                                 WingetTotalCount = 0;
@@ -334,6 +336,91 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    // === Catalog sources: subscribe to external catalogs ===
+
+    [ObservableProperty]
+    public partial string NewSourceName { get; set; } = "";
+
+    [ObservableProperty]
+    public partial string NewSourceUrl { get; set; } = "";
+
+    [ObservableProperty]
+    public partial bool IsAddingSource { get; set; }
+
+    /// <summary>All catalog sources for UI display.</summary>
+    public ObservableCollection<CatalogSource> CatalogSources { get; } = [];
+
+    private void RefreshSources()
+    {
+        CatalogSources.Clear();
+        foreach (var s in _catalog.Sources)
+            CatalogSources.Add(s);
+    }
+
+    [RelayCommand]
+    private async Task AddCatalogSourceAsync(CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(NewSourceName) || string.IsNullOrWhiteSpace(NewSourceUrl))
+        {
+            StatusText = _loc["SourceNameUrlRequired"];
+            return;
+        }
+        IsAddingSource = true;
+        StatusText = _loc["SourceDownloading"];
+        try
+        {
+            var error = await _catalog.AddRemoteSourceAsync(NewSourceName.Trim(), NewSourceUrl.Trim());
+            if (error is not null)
+            {
+                StatusText = _loc.Format("SourceAddFailed", error);
+            }
+            else
+            {
+                NewSourceName = "";
+                NewSourceUrl = "";
+                StatusText = _loc.Format("SourceAdded", NewSourceName);
+                RefreshSources();
+                RefreshCatalogItems();
+            }
+        }
+        finally
+        {
+            IsAddingSource = false;
+        }
+    }
+
+    [RelayCommand]
+    private void RemoveCatalogSource(CatalogSource? source)
+    {
+        if (source is null || source.Type == CatalogSourceType.Seed) return;
+        if (_catalog.RemoveSource(source.Id))
+        {
+            RefreshSources();
+            RefreshCatalogItems();
+            StatusText = _loc.Format("SourceRemoved", source.Name);
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleCatalogSource(CatalogSource? source)
+    {
+        if (source is null) return;
+        _catalog.ToggleSource(source.Id);
+        RefreshSources();
+        RefreshCatalogItems();
+    }
+
+    [RelayCommand]
+    private async Task RefreshCatalogSourceAsync(CatalogSource? source)
+    {
+        if (source is null || source.Type != CatalogSourceType.RemoteUrl) return;
+        StatusText = _loc["SourceDownloading"];
+        var error = await _catalog.RefreshSourceAsync(source.Id);
+        StatusText = error is null ? _loc["SourceRefreshed"] : _loc.Format("SourceAddFailed", error);
+        RefreshSources();
+        RefreshCatalogItems();
+    }
+
     private void RefreshCatalogItems()
     {
         CatalogApps.Clear();
@@ -341,9 +428,11 @@ public partial class MainViewModel : ObservableObject
         {
             var tracked = _config.TrackedApps.Any(
                 a => a.RepoOwner == entry.RepoOwner && a.RepoName == entry.RepoName);
+            var repoKey = $"{entry.RepoOwner}/{entry.RepoName}";
             CatalogApps.Add(new CatalogItem(entry, tracked)
             {
                 IsUserEntry = _catalog.IsUserEntry(entry.RepoOwner, entry.RepoName),
+                SourceName = _catalog.SourceByRepo.TryGetValue(repoKey, out var src) ? src : null,
             });
         }
         CatalogTotalCount = CatalogApps.Count;

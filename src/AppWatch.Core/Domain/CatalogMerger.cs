@@ -56,4 +56,40 @@ public static class CatalogMerger
         userEntries.Any(e =>
             string.Equals(e.RepoOwner, repoOwner, StringComparison.OrdinalIgnoreCase) &&
             string.Equals(e.RepoName, repoName, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Multi-source merge: an ordered list of (sourceName, entries). Later sources override
+    /// earlier ones by owner/repo. Returns merged entries + a repo→source lookup for UI badges.
+    /// </summary>
+    public static (List<CatalogEntry> Entries, Dictionary<string, string> SourceByRepo) MergeSources(
+        IReadOnlyList<(string SourceName, IReadOnlyList<CatalogEntry> Entries)> sources)
+    {
+        // build final map: later sources win
+        var byRepo = new Dictionary<string, (CatalogEntry Entry, string Source)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (sourceName, entries) in sources)
+        {
+            foreach (var e in entries)
+                byRepo[$"{e.RepoOwner}/{e.RepoName}"] = (e, sourceName);
+        }
+
+        // preserve insertion order: first occurrence position wins
+        var seenKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var ordered = new List<CatalogEntry>();
+        var sourceByRepo = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (sourceName, entries) in sources)
+        {
+            foreach (var e in entries)
+            {
+                var key = $"{e.RepoOwner}/{e.RepoName}";
+                if (seenKeys.Add(key))
+                {
+                    ordered.Add(byRepo[key].Entry);
+                    sourceByRepo[key] = byRepo[key].Source;
+                }
+            }
+        }
+
+        return (ordered, sourceByRepo);
+    }
 }
