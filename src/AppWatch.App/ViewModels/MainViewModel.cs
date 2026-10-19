@@ -363,15 +363,17 @@ public partial class MainViewModel : ObservableObject
     {
         FilteredCatalogApps.Clear();
         var query = CatalogSearchQuery?.Trim() ?? "";
-        foreach (var item in CatalogApps)
+        if (query.Length == 0)
         {
-            if (query.Length == 0 ||
-                item.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                item.Entry.RepoName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                (item.Entry.Description?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false))
-            {
+            foreach (var item in CatalogApps)
                 FilteredCatalogApps.Add(item);
-            }
+            return;
+        }
+        // Fuzzy search: exact > prefix > substring > typo (Levenshtein ≤ 2) > subsequence > description
+        foreach (var entry in CatalogSearch.Rank(CatalogApps.Select(i => i.Entry).ToList(), query))
+        {
+            var vm = CatalogApps.First(c => ReferenceEquals(c.Entry, entry));
+            FilteredCatalogApps.Add(vm);
         }
     }
 
