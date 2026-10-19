@@ -777,6 +777,9 @@ public partial class MainViewModel : ObservableObject
         if (selected.Count == 0) return;
 
         var total = selected.Count;
+        var updatedNames = new List<string>();
+        var failedNames = new List<string>();
+
         // Mark all as "queued" so the user sees the full picture before anything starts
         for (var i = 0; i < selected.Count; i++)
             selected[i].Status = _loc.Format("WingetQueued", i + 1, total);
@@ -802,8 +805,85 @@ public partial class MainViewModel : ObservableObject
             item.IsUpdating = false;
             item.ProgressValue = ok ? 100 : item.ProgressValue;
             item.Status = ok ? _loc["WingetDone"] : $"{_loc["WingetFailed"]}: {message}";
+            if (ok) updatedNames.Add(item.Name); else failedNames.Add($"{item.Name} — {message}");
         }
         StatusText = _loc["WingetBatchDone"];
+
+        // Summary dialog: what updated, what failed, then re-scan on close
+        await ShowWingetBatchSummaryAsync(updatedNames, failedNames);
+    }
+
+    /// <summary>
+    /// Post-batch summary dialog (C# ContentDialog — XAML ContentDialog crashes the compiler
+    /// on RU locale, see AddEditAppDialog). On close, re-scans the winget updates list.
+    /// </summary>
+    private async Task ShowWingetBatchSummaryAsync(List<string> updated, List<string> failed)
+    {
+        var loc = AppWatch.Localization.Loc.Instance;
+        var dialog = new ContentDialog
+        {
+            XamlRoot = App.MainWindow!.Content.XamlRoot,
+            Title = updated.Count > 0 && failed.Count == 0
+                ? string.Format(loc["WingetSummaryOkTitle"], updated.Count)
+                : string.Format(loc["WingetSummaryMixedTitle"], updated.Count, failed.Count),
+            PrimaryButtonText = loc["WingetSummaryClose"],
+            DefaultButton = ContentDialogButton.Primary,
+            MinWidth = 440,
+        };
+
+        var panel = new StackPanel { Spacing = 8, Padding = new Thickness(0, 8, 0, 0) };
+
+        if (updated.Count > 0)
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text = loc["WingetSummaryUpdated"],
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                FontSize = 13,
+            });
+            foreach (var name in updated)
+                panel.Children.Add(new TextBlock
+                {
+                    Text = $"✓  {name}",
+                    FontSize = 13,
+                    Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                        Microsoft.UI.ColorHelper.FromArgb(255, 0x2E, 0xA0, 0x43)),
+                    Margin = new Thickness(12, 0, 0, 0),
+                });
+        }
+
+        if (failed.Count > 0)
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text = loc["WingetSummaryFailed"],
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                FontSize = 13,
+                Margin = new Thickness(0, updated.Count > 0 ? 12 : 0, 0, 0),
+            });
+            foreach (var name in failed)
+                panel.Children.Add(new TextBlock
+                {
+                    Text = $"✗  {name}",
+                    FontSize = 13,
+                    Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                        Microsoft.UI.ColorHelper.FromArgb(255, 0xD8, 0x3B, 0x01)),
+                    Margin = new Thickness(12, 0, 0, 0),
+                    TextWrapping = TextWrapping.Wrap,
+                });
+        }
+
+        dialog.Content = new ScrollViewer
+        {
+            Content = panel,
+            MaxHeight = 380,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+        };
+
+        await dialog.ShowAsync();
+
+        // Re-scan the updates list — the old entries are stale after the batch
+        await ScanWingetAsync(default);
     }
 
     /// <summary>
