@@ -1,3 +1,5 @@
+using AppWatch.Core.Domain.Models;
+
 namespace AppWatch.Core.Domain;
 
 /// <summary>
@@ -42,6 +44,28 @@ public static class CatalogSearch
         var d = (description ?? "").ToLowerInvariant();
         return d.Contains(q, StringComparison.Ordinal) ? ScoreDescription : 0;
     }
+
+    /// <summary>
+    /// D3 (oct18): filters + ranks entries by score (desc), tie-broken by name
+    /// (ordinal, case-insensitive) so results are deterministic. Empty/whitespace
+    /// query → empty result; "show all on empty query" is the caller's concern.
+    /// </summary>
+    public static IReadOnlyList<T> Rank<T>(
+        IReadOnlyList<T> entries, string? query, Func<T, string> name, Func<T, string?> description)
+    {
+        if (string.IsNullOrWhiteSpace(query)) return [];
+        var q = query.Trim();
+        return entries
+            .Select(e => (Entry: e, Score: Score(q, name(e), description(e))))
+            .Where(x => x.Score > 0)
+            .OrderByDescending(x => x.Score)
+            .ThenBy(x => name(x.Entry), StringComparer.OrdinalIgnoreCase)
+            .Select(x => x.Entry)
+            .ToList();
+    }
+
+    public static IReadOnlyList<CatalogEntry> Rank(IReadOnlyList<CatalogEntry> entries, string? query)
+        => Rank(entries, query, e => e.Name, e => e.Description);
 
     /// <summary>Classic two-row Levenshtein edit distance (insert/delete/substitute).</summary>
     private static int Levenshtein(string a, string b)

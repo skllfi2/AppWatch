@@ -1,4 +1,5 @@
 using AppWatch.Core.Domain;
+using AppWatch.Core.Domain.Models;
 using Xunit;
 
 namespace AppWatch.Core.Tests;
@@ -103,4 +104,95 @@ public class CatalogSearchTests
     [Fact]
     public void Score_UnrelatedQuery_IsZero()
         => Assert.Equal(0, CatalogSearch.Score("photoshop", YtDlpName, YtDlpDesc));
+
+    // === E6: Rank over the REAL 16-entry catalog. Names+descriptions baked inline from
+    // src/AppWatch.App/Catalog/catalog.json (read-only allowed source) — hermetic. ===
+
+    private static IReadOnlyList<CatalogEntry> RealCatalog() =>
+    [
+        new() { Name = "zapret-discord-youtube", RepoOwner = "Flowseal", RepoName = "zapret-discord-youtube", Description = "Обход замедления Discord и YouTube (Flowseal)" },
+        new() { Name = "zapret2-next", RepoOwner = "Dunterbabochka", RepoName = "zapret2-next", Description = "Zapret 2 для Windows с bat-лаунчерами (Dunterbabochka)" },
+        new() { Name = "yt-dlp", RepoOwner = "yt-dlp", RepoName = "yt-dlp", Description = "Загрузчик YouTube: видео, аудио, плейлисты (обновляется еженедельно)" },
+        new() { Name = "Vesktop", RepoOwner = "Vencord", RepoName = "Vesktop", Description = "Discord-клиент с Vencord внутри (когда Discord душат — особенно актуален)" },
+        new() { Name = "AmneziaVPN", RepoOwner = "amnezia-vpn", RepoName = "amnezia-client", Description = "Self-hosted VPN-клиент с обфускацией AmneziaWG" },
+        new() { Name = "qBittorrent", RepoOwner = "qbittorrent", RepoName = "qBittorrent", Description = "Торрент-клиент без рекламы (стандарт де-факто)" },
+        new() { Name = "optimizerDuck", RepoOwner = "itsfatduck", RepoName = "optimizerDuck", Description = "Бесплатный оптимизатор Windows: производительность и приватность" },
+        new() { Name = "GameOptimizer", RepoOwner = "charlie754", RepoName = "Game-Optimizer-CPUs-Threads-Optimizer", Description = "Оптимизатор игр: привязка к CPU-кластерам через CPU Sets API" },
+        new() { Name = "Rufus", RepoOwner = "pbatard", RepoName = "rufus", Description = "Создание загрузочных USB (1.9 МБ, без установки)" },
+        new() { Name = "Ventoy", RepoOwner = "ventoy", RepoName = "Ventoy", Description = "Мультизагрузочные USB: копируй ISO прямо на флешку" },
+        new() { Name = "ShareX", RepoOwner = "ShareX", RepoName = "ShareX", Description = "Скриншоты, записи экрана, загрузки — мощнейший инструмент" },
+        new() { Name = "OBS Studio", RepoOwner = "obsproject", RepoName = "obs-studio", Description = "Запись и стриминг (портативная сборка x64)" },
+        new() { Name = "RustDesk", RepoOwner = "rustdesk", RepoName = "rustdesk", Description = "Удалённый доступ (open-source TeamViewer, самохостинг)" },
+        new() { Name = "VSCodium", RepoOwner = "VSCodium", RepoName = "vscodium", Description = "VS Code без телеметрии Microsoft (обновляется ежедневно)" },
+        new() { Name = "PowerToys", RepoOwner = "microsoft", RepoName = "PowerToys", Description = "Набор утилит Microsoft для продуктивности и кастомизации" },
+        new() { Name = "GPU-Z", RepoOwner = "TechPowerUp", RepoName = "GPU-Z", Description = "Информация о видеокарте и датчики (TechPowerUp)" },
+    ];
+
+    // RESEARCH.md D3 case 1 at list level: "ytdl" ranks yt-dlp first over 15 others
+    [Fact]
+    public void Rank_Ytdl_ReturnsYtDlpFirst()
+    {
+        var hits = CatalogSearch.Rank(RealCatalog(), "ytdl");
+
+        Assert.NotEmpty(hits);
+        Assert.Equal("yt-dlp", hits[0].Name);
+    }
+
+    // RESEARCH.md D3 case 2 at list level: "vescop" typo ranks Vesktop first
+    [Fact]
+    public void Rank_VescopTypo_ReturnsVesktopFirst()
+    {
+        var hits = CatalogSearch.Rank(RealCatalog(), "vescop");
+
+        Assert.NotEmpty(hits);
+        Assert.Equal("Vesktop", hits[0].Name);
+    }
+
+    // RESEARCH.md D3 case 3 at list level: "optimizer" returns exactly the two
+    // optimizer entries, duck first (prefix 90 > substring 80)
+    [Fact]
+    public void Rank_Optimizer_ReturnsExactlyBothOptimizers()
+    {
+        var hits = CatalogSearch.Rank(RealCatalog(), "optimizer");
+
+        Assert.Equal(["optimizerDuck", "GameOptimizer"], hits.Select(h => h.Name).ToArray());
+    }
+
+    // Real catalog: BOTH zapret names start with "zapret" (prefix tier tie, 90) →
+    // deterministic tie-break by name ordinal: '-' (45) < '2' (50)
+    [Fact]
+    public void Rank_TiedPrefixScores_BreakByNameOrdinal()
+    {
+        var hits = CatalogSearch.Rank(RealCatalog(), "zapret");
+
+        Assert.Equal(["zapret-discord-youtube", "zapret2-next"], hits.Select(h => h.Name).ToArray());
+    }
+
+    // Real catalog tier order: "youtube" — zapret-discord-youtube matches the NAME
+    // (substring, 80) and must rank above yt-dlp which only matches its DESCRIPTION (40)
+    [Fact]
+    public void Rank_NameMatch_BeatsDescriptionMatch()
+    {
+        var hits = CatalogSearch.Rank(RealCatalog(), "youtube");
+
+        Assert.Equal(["zapret-discord-youtube", "yt-dlp"], hits.Select(h => h.Name).ToArray());
+    }
+
+    // Real catalog: "usb" matches only two DESCRIPTIONS at the same tier (40) →
+    // deterministic tie-break by name ordinal: Rufus < Ventoy
+    [Fact]
+    public void Rank_TiedDescriptionScores_BreakByNameOrdinal()
+    {
+        var hits = CatalogSearch.Rank(RealCatalog(), "usb");
+
+        Assert.Equal(["Rufus", "Ventoy"], hits.Select(h => h.Name).ToArray());
+    }
+
+    // Empty/null query → no forced matches; showing everything is the caller's job
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void Rank_EmptyQuery_ReturnsNothing(string? q)
+        => Assert.Empty(CatalogSearch.Rank(RealCatalog(), q));
 }
