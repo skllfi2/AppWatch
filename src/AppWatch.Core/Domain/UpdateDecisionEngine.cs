@@ -1,7 +1,6 @@
 using AppWatch.Core.Domain.AssetSelection;
 using AppWatch.Core.Domain.Models;
 using AppWatch.Core.Domain.VersionDetection;
-using System.Text.RegularExpressions;
 
 namespace AppWatch.Core.Domain;
 
@@ -46,7 +45,7 @@ public static class UpdateDecisionEngine
 
         var candidates = newest.Assets
             .Select(a => new GithubAssetCandidate(a.Name, a.Size))
-            .Where(c => AssetSelector.ArchRank(c.Name, arch) > 0 && IsWindowsCompatibleAsset(c.Name))
+            .Where(c => AssetSelector.ArchRank(c.Name, arch) > 0 && PlatformAssetFilter.IsWindowsCompatible(c.Name))
             .ToList();
 
         var chosen = AssetSelector.Choose(candidates, arch, priority);
@@ -121,16 +120,4 @@ public static class UpdateDecisionEngine
 
     private static ParsedVersion? TryParse(string tag) =>
         VersionParser.TryParse(tag, out var v) ? v : null;
-
-    // Platform filter: exclude known non-Windows asset extensions for Windows targets
-    private static readonly Regex NonWindowsExtensionRegex = new(
-        @"\.(deb|rpm|apk|flatpak|snap|AppImage|dmg|pkg|run|tar\.gz|tar\.xz|tar\.zst|tar\.bz2|sh|bin)(\?.*)?$",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-    private static bool IsWindowsCompatibleAsset(string assetName)
-    {
-        // Assets with no recognized extension are assumed potentially compatible
-        // Explicitly exclude known non-Windows package formats
-        return !NonWindowsExtensionRegex.IsMatch(assetName);
-    }
 }
