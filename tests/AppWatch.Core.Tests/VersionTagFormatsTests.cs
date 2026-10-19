@@ -70,4 +70,57 @@ public class VersionTagFormatsTests
                 $"expected {chain[i - 1]} < {chain[i]}");
         }
     }
+
+    // === E2: prerelease keyword WITHOUT dash (qbittorrent/qBittorrent live tags
+    // release-5.3.0rc1, release-5.3.0beta1 — GitHub marks both as prerelease) ===
+
+    // qbittorrent/qBittorrent: real tag "release-5.3.0rc1" — rc suffix glued to the version
+    [Fact]
+    public void TryParse_KeywordSuffixWithoutDash_ParsesAsPreRelease()
+    {
+        var ok = VersionParser.TryParse("release-5.3.0rc1", out var v);
+
+        Assert.True(ok);
+        Assert.NotNull(v);
+        Assert.Equal(5, v.Major);
+        Assert.Equal(3, v.Minor);
+        Assert.Equal(0, v.Patch);
+        Assert.Equal("rc1", v.PreRelease);
+        Assert.Null(v.LetterSuffix);
+    }
+
+    // qbittorrent live: 5.3.0rc1 is a prerelease of 5.3.0 → stable must rank above it
+    [Fact]
+    public void IsNewer_KeywordSuffix_BelowStableSameBase()
+    {
+        Assert.True(VersionParser.IsNewer("release-5.3.0rc1", "release-5.3.0"));
+        Assert.False(VersionParser.IsNewer("release-5.3.0", "release-5.3.0rc1"));
+    }
+
+    // qbittorrent live publish order: beta1 first, then rc1 → beta1 < rc1; both above 5.2.4
+    [Fact]
+    public void IsNewer_KeywordSuffix_BetaBeforeRc_AbovePreviousStable()
+    {
+        Assert.True(VersionParser.IsNewer("release-5.3.0beta1", "release-5.3.0rc1"));
+        Assert.True(VersionParser.IsNewer("release-5.2.4", "release-5.3.0beta1"));
+    }
+
+    // rustdesk/rustdesk live tag "nightly" — a release WITHOUT a version must stay unparseable,
+    // otherwise it would shadow the newest real version (1.5.0) in engine ordering.
+    [Fact]
+    public void TryParse_NonVersionTag_Nightly_Rejected()
+        => Assert.False(VersionParser.TryParse("nightly", out _));
+
+    // obsproject/obs-studio live tag "33.0.0-rc2" — dash form must keep working after E2
+    [Fact]
+    public void TryParse_DashPreRelease_StillParses()
+    {
+        var ok = VersionParser.TryParse("33.0.0-rc2", out var v);
+
+        Assert.True(ok);
+        Assert.NotNull(v);
+        Assert.Equal((33, 0, 0), (v.Major, v.Minor, v.Patch));
+        Assert.Equal("rc2", v.PreRelease);
+        Assert.Null(v.LetterSuffix);
+    }
 }

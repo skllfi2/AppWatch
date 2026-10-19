@@ -15,6 +15,12 @@ public static class VersionParser
     // Keywords like "rc"/"beta" are NOT bare letters — those stay prereleases (dash form).
     private static readonly Regex BareLetterSuffixRegex = new(@"^(\d+)([A-Za-z]+)$", RegexOptions.Compiled);
 
+    // oct18 E2: qbittorrent tags glue a prerelease keyword to the last segment without a
+    // dash ("release-5.3.0rc1"). Recognized keywords rank BELOW the stable base — the
+    // opposite of Flowseal's bare letters, matching GitHub's prerelease flag on them.
+    private static readonly Regex KeywordSuffixRegex =
+        new(@"^(\d+)(rc|beta|alpha|preview|pre|dev)(\d*)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     public static bool TryParse(string? raw, out ParsedVersion? version)
         {
             version = null;
@@ -49,6 +55,15 @@ public static class VersionParser
                 continue;
             }
 
+            // oct18 E2: last segment may carry a glued prerelease keyword ("5.3.0rc1") —
+            // checked BEFORE bare letters so "0rc" is a prerelease, not a letter suffix.
+            if (i == parts.Length - 1 && TryStripKeywordPreRelease(parts[i], out n, out var keyword))
+            {
+                nums[i] = n;
+                preRelease ??= keyword;
+                continue;
+            }
+
             // oct18 E1: only the LAST segment may carry a bare letter suffix ("1.9.9d");
             // anything else non-numeric keeps the whole tag unparseable.
             if (i == parts.Length - 1 && TryStripBareLetterSuffix(parts[i], out n, out letterSuffix))
@@ -75,6 +90,18 @@ public static class VersionParser
         if (!match.Success) return false;
         if (!long.TryParse(match.Groups[1].Value, out number)) return false;
         letterSuffix = match.Groups[2].Value.ToLowerInvariant();
+        return true;
+    }
+
+    // oct18 E2: "0rc1" → numeric 0 + PreRelease "rc1"; "0beta1" → "beta1".
+    private static bool TryStripKeywordPreRelease(string segment, out long number, out string? keyword)
+    {
+        number = 0;
+        keyword = null;
+        var match = KeywordSuffixRegex.Match(segment);
+        if (!match.Success) return false;
+        if (!long.TryParse(match.Groups[1].Value, out number)) return false;
+        keyword = match.Groups[2].Value.ToLowerInvariant() + match.Groups[3].Value;
         return true;
     }
 
