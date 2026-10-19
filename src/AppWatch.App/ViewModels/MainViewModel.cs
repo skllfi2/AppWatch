@@ -776,9 +776,16 @@ public partial class MainViewModel : ObservableObject
         var selected = WingetUpdates.Where(w => w.IsSelected).ToList();
         if (selected.Count == 0) return;
 
-        foreach (var item in selected)
+        var total = selected.Count;
+        // Mark all as "queued" so the user sees the full picture before anything starts
+        for (var i = 0; i < selected.Count; i++)
+            selected[i].Status = _loc.Format("WingetQueued", i + 1, total);
+
+        for (var i = 0; i < selected.Count; i++)
         {
-            item.Status = _loc["WingetWaiting"];
+            var item = selected[i];
+            StatusText = _loc.Format("WingetUpdating", item.Name, i + 1, total); // main bar: "Обновление Telegram (1/3)…"
+            item.Status = _loc["WingetStarting"];
             item.ProgressValue = 0;
             item.IsUpdating = true;
             var progress = new Progress<double>(p =>
@@ -793,9 +800,10 @@ public partial class MainViewModel : ObservableObject
                 item.Name, item.Row.Update.CurrentVersion, item.Row.Update.AvailableVersion,
                 DateTimeOffset.UtcNow, ok, ok ? null : message));
             item.IsUpdating = false;
+            item.ProgressValue = ok ? 100 : item.ProgressValue;
             item.Status = ok ? _loc["WingetDone"] : $"{_loc["WingetFailed"]}: {message}";
         }
-        StatusText = _loc["checkDone"];
+        StatusText = _loc["WingetBatchDone"];
     }
 
     /// <summary>

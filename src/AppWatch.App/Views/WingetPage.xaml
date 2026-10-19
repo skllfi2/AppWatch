@@ -84,7 +84,8 @@
                                         <TextBlock Text="{x:Bind Status, Mode=OneWay}" Opacity="0.7" FontSize="12" />
                                     </StackPanel>
                                     <TextBlock Grid.Column="2" Text="{x:Bind Versions}" VerticalAlignment="Center" Opacity="0.8" />
-                                    <ProgressBar Grid.Column="3" VerticalAlignment="Center"
+                                    <ProgressBar Grid.Column="3" VerticalAlignment="Center" MinWidth="140"
+                                                 Height="8"
                                                  Visibility="{x:Bind IsUpdating, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"
                                                  IsIndeterminate="False"
                                                  Value="{x:Bind ProgressValue, Mode=OneWay}" />
