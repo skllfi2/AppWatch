@@ -123,4 +123,66 @@ public class VersionTagFormatsTests
         Assert.Equal("rc2", v.PreRelease);
         Assert.Null(v.LetterSuffix);
     }
+
+    // === E3: word prefixes named in RESEARCH.md D1 ("rel/v2.0", "version-0.5.0",
+    // "build-123") — "version-" was previously eaten by the 'v' trim and never stripped ===
+
+    // RESEARCH.md D1 named format: "rel/v2.0" (also seen on GitHub as "rel/")
+    [Fact]
+    public void TryParse_RelSlashPrefix_StripsPrefixAndV()
+    {
+        var ok = VersionParser.TryParse("rel/v2.0", out var v);
+
+        Assert.True(ok);
+        Assert.NotNull(v);
+        Assert.Equal((2, 0, 0), (v.Major, v.Minor, v.Patch));
+    }
+
+    // RESEARCH.md D1 named format: "version-0.5.0" — must not lose its 'v' to the v-trim
+    [Fact]
+    public void TryParse_VersionPrefix_StripsPrefix()
+    {
+        var ok = VersionParser.TryParse("version-0.5.0", out var v);
+
+        Assert.True(ok);
+        Assert.NotNull(v);
+        Assert.Equal((0, 5, 0), (v.Major, v.Minor, v.Patch));
+    }
+
+    // RESEARCH.md D1 named format: "build-123" — single build number parses as major
+    [Fact]
+    public void TryParse_BuildPrefix_SingleNumberParsesAsMajor()
+    {
+        var ok = VersionParser.TryParse("build-123", out var v);
+
+        Assert.True(ok);
+        Assert.NotNull(v);
+        Assert.Equal(123, v.Major);
+        Assert.Equal(0, v.Minor);
+    }
+
+    // qbittorrent live tag "release-5.2.4" — the oct17 prefix must keep working after reorder
+    [Fact]
+    public void TryParse_ReleasePrefix_StillStrips()
+    {
+        var ok = VersionParser.TryParse("release-5.2.4", out var v);
+
+        Assert.True(ok);
+        Assert.NotNull(v);
+        Assert.Equal((5, 2, 4), (v.Major, v.Minor, v.Patch));
+    }
+
+    // Vencord/Vesktop live "v1.6.7" + microsoft/PowerToys live "v0.102.2883.0":
+    // plain 'v' prefix and 4-part version must survive the prefix reorder
+    [Fact]
+    public void TryParse_VPrefixAndFourPart_StillParse()
+    {
+        Assert.True(VersionParser.TryParse("v1.6.7", out var a));
+        Assert.NotNull(a);
+        Assert.Equal((1, 6, 7), (a.Major, a.Minor, a.Patch));
+
+        Assert.True(VersionParser.TryParse("v0.102.2883.0", out var b));
+        Assert.NotNull(b);
+        Assert.Equal((0, 102, 2883, 0), (b.Major, b.Minor, b.Patch, b.Revision));
+    }
 }

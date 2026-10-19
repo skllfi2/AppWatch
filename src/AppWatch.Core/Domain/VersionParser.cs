@@ -21,15 +21,25 @@ public static class VersionParser
     private static readonly Regex KeywordSuffixRegex =
         new(@"^(\d+)(rc|beta|alpha|preview|pre|dev)(\d*)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    // oct18 E3: real-world tag word prefixes, longest first so "release-" wins over "rel/".
+    private static readonly string[] TagPrefixes = ["release-", "version-", "build-", "rel/"];
+
     public static bool TryParse(string? raw, out ParsedVersion? version)
         {
             version = null;
             if (string.IsNullOrWhiteSpace(raw)) return false;
 
-            var s = raw.Trim().TrimStart('v', 'V');
-            // Strip common non-numeric prefixes (e.g. "release-", "v", "version-")
-            if (s.StartsWith("release-", StringComparison.OrdinalIgnoreCase))
-                s = s["release-".Length..];
+            var s = raw.Trim();
+            // oct18 E3: strip word prefixes BEFORE the 'v' trim — "version-0.5.0" starts
+            // with 'v' and was previously mangled into "ersion-0.5.0" (unparseable).
+            // Formats named in RESEARCH.md D1: "release-", "rel/", "version-", "build-".
+            foreach (var prefix in TagPrefixes)
+            {
+                if (!s.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+                s = s[prefix.Length..];
+                break;
+            }
+            s = s.TrimStart('v', 'V');
             var plus = s.IndexOf('+');
             if (plus >= 0) s = s[..plus];
 
