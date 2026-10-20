@@ -14,8 +14,4 @@ public sealed partial class AboutPage : Page
     {
         InitializeComponent();
     }
-
-    // ZuiV2 pattern: back to dashboard with slide animation
-    private void Back_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e) =>
-        App.MainWindow!.GoBackWithAnimation();
 }

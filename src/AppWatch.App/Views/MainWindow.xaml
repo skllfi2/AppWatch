@@ -16,6 +16,56 @@
 
         <TitleBar Grid.Row="0" x:Name="AppTitleBar" Title="AppWatch" />
 
-        <Frame Grid.Row="1" x:Name="ContentFrame" Background="Transparent" />
+        <!-- ZuiV2 shell v2: persistent left navigation pane instead of hub-page
+             nav cards. Mica shows through the transparent pane. -->
+        <NavigationView Grid.Row="1"
+                        x:Name="Nav"
+                        PaneDisplayMode="Left"
+                        IsBackButtonVisible="Collapsed"
+                        IsSettingsVisible="False"
+                        OpenPaneLength="228"
+                        Background="Transparent"
+                        SelectionChanged="Nav_SelectionChanged">
+            <NavigationView.Resources>
+                <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="Transparent"/>
+                <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="Transparent"/>
+                <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="Transparent"/>
+            </NavigationView.Resources>
+            <NavigationView.MenuItems>
+                <NavigationViewItem x:Name="NavItemHome" Tag="home" Content="{x:Bind Loc.NavHome, Mode=OneWay}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE80F;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Tag="catalog" Content="{x:Bind Loc.Catalog, Mode=OneWay}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8F1;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Tag="winget" Content="{x:Bind Loc.WingetUpdates, Mode=OneWay}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE753;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Tag="history" Content="{x:Bind Loc.NavHistory, Mode=OneWay}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE81C;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+            <NavigationView.FooterMenuItems>
+                <NavigationViewItem Tag="settings" Content="{x:Bind Loc.NavSettings, Mode=OneWay}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE713;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Tag="about" Content="{x:Bind Loc.NavAbout, Mode=OneWay}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE946;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.FooterMenuItems>
+            <Frame x:Name="ContentFrame" Background="Transparent" />
+        </NavigationView>
     </Grid>
 </Window>

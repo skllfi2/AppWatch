@@ -117,7 +117,26 @@ public partial class MainViewModel : ObservableObject
 
                 private CancellationTokenSource? _updateAllCts;
 
-                public string HeroTitle => LocalizationService.Instance["HeroTitle"];
+                    [ObservableProperty]
+                    public partial string NewSourceName { get; set; } = "";
+
+                    [ObservableProperty]
+                    public partial string NewSourceUrl { get; set; } = "";
+
+                    [ObservableProperty]
+                    public partial bool IsAddingSource { get; set; }
+
+                    /// <summary>All catalog sources for UI display.</summary>
+                    public ObservableCollection<CatalogSource> CatalogSources { get; } = [];
+
+                    private void RefreshSources()
+                    {
+                        CatalogSources.Clear();
+                        foreach (var s in _catalog.Sources)
+                            CatalogSources.Add(s);
+                    }
+
+                    public string HeroTitle => LocalizationService.Instance["HeroTitle"];
         public string HeroMetricTracked => string.Format(LocalizationService.Instance["HeroMetricTracked"], AppsTrackedCount);
         public string HeroMetricUpdates => string.Format(LocalizationService.Instance["HeroMetricUpdates"], UpdatesAvailableCount);
         public string HeroMetricUpdatedToday => string.Format(LocalizationService.Instance["HeroMetricUpdatedToday"], UpdatedTodayCount);
@@ -337,26 +356,6 @@ public partial class MainViewModel : ObservableObject
     }
 
     // === Catalog sources: subscribe to external catalogs ===
-
-    [ObservableProperty]
-    public partial string NewSourceName { get; set; } = "";
-
-    [ObservableProperty]
-    public partial string NewSourceUrl { get; set; } = "";
-
-    [ObservableProperty]
-    public partial bool IsAddingSource { get; set; }
-
-    /// <summary>All catalog sources for UI display.</summary>
-    public ObservableCollection<CatalogSource> CatalogSources { get; } = [];
-
-    private void RefreshSources()
-    {
-        CatalogSources.Clear();
-        foreach (var s in _catalog.Sources)
-            CatalogSources.Add(s);
-    }
-
     [RelayCommand]
     private async Task AddCatalogSourceAsync(CancellationToken ct)
     {
@@ -421,7 +420,76 @@ public partial class MainViewModel : ObservableObject
         RefreshCatalogItems();
     }
 
-    private void RefreshCatalogItems()
+    // === Import from GitHub Stars ===
+
+    [RelayCommand]
+    private async Task ImportFromStarsAsync()
+    {
+        try
+        {
+            var dialog = new Views.ImportFromStarsDialog(_catalog);
+            dialog.XamlRoot = App.MainWindow!.Content.XamlRoot;
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+                return;
+
+            var entries = dialog.GetSelectedEntries();
+            if (entries.Count == 0)
+            {
+                StatusText = _loc["ImportStarsNothingSelected"];
+                return;
+            }
+
+            var added = 0;
+            foreach (var entry in entries)
+            {
+                if (_catalog.AddUserEntry(entry))
+                    added++;
+            }
+
+            RefreshCatalogItems();
+            StatusText = added > 0
+                ? _loc.Format("ImportStarsDone", added)
+                : _loc["ImportStarsNoneAdded"];
+        }
+        catch (System.Exception ex)
+        {
+            // Diagnostics: surface the failure in the status bar instead of crashing
+            StatusText = "ImportFromStars: " + ex.GetType().Name + ": " + ex.Message;
+        }
+    }
+
+    // === Clear user catalog ("мои приложения") ===
+
+    [RelayCommand]
+    private async Task ClearMyCatalogAsync()
+    {
+        if (_catalog.UserEntries.Count == 0)
+        {
+            StatusText = _loc["ImportStarsNoneAdded"];
+            return;
+        }
+
+        var confirm = new ContentDialog
+        {
+            Title = _loc["ClearCatalogConfirmTitle"],
+            Content = _loc.Format("ClearCatalogConfirmText", _catalog.UserEntries.Count),
+            PrimaryButtonText = _loc["BtnConfirmClear"],
+            CloseButtonText = _loc["Cancel"],
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = App.MainWindow!.Content.XamlRoot,
+        };
+        if (await confirm.ShowAsync() != ContentDialogResult.Primary)
+            return;
+
+        var removed = _catalog.ClearUserEntries();
+        RefreshCatalogItems();
+        StatusText = removed > 0
+            ? _loc.Format("CatalogCleared", removed)
+            : _loc["ImportStarsNoneAdded"];
+    }
+
+        private void RefreshCatalogItems()
     {
         CatalogApps.Clear();
         foreach (var entry in _catalog.Entries)

@@ -38,7 +38,4 @@ public sealed partial class HistoryPage : Page
             Entries.Add(new HistoryItem(entry));
         // empty-state has no converter: x:Bind re-evaluates when page is constructed
     }
-
-    private void Back_Click(object sender, RoutedEventArgs e) =>
-        App.MainWindow!.GoBackWithAnimation();
 }

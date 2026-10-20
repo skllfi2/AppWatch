@@ -22,8 +22,4 @@ public sealed partial class WingetPage : Page
     public Visibility IsWingetAvailable => ViewModel.WingetAvailable ? Visibility.Visible : Visibility.Collapsed;
 
     public string WingetUpdateSelectedText => Loc.Instance["wingetUpdateSelected"];
-
-    // ZuiV2 pattern: back to dashboard with slide animation
-    private void Back_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e) =>
-        App.MainWindow!.GoBackWithAnimation();
 }

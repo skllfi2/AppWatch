@@ -15,8 +15,4 @@ public sealed partial class CatalogPage : Page
         ViewModel = App.Resolve<MainViewModel>();
         InitializeComponent();
     }
-
-    // ZuiV2 pattern: back to dashboard with slide animation
-    private void Back_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e) =>
-        App.MainWindow!.GoBackWithAnimation();
 }

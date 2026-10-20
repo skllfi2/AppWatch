@@ -20,6 +20,8 @@ public sealed class Loc : INotifyPropertyChanged
 
     public string this[string key] => LocalizationService.Instance[key];
 
+    public string Format(string key, params object[] args) => LocalizationService.Instance.Format(key, args);
+
     public string WindowTitle => LocalizationService.Instance["windowTitle"];
             public string CheckUpdates => LocalizationService.Instance["checkUpdates"];
             public string UpdateAll => LocalizationService.Instance["updateAll"];
@@ -27,11 +29,18 @@ public sealed class Loc : INotifyPropertyChanged
             public string BtnStop => LocalizationService.Instance["BtnStop"];
             public string AddApp => LocalizationService.Instance["AddApp"];
         public string CatalogSearchPlaceholder => LocalizationService.Instance["CatalogSearchPlaceholder"];
-        public string SourcesSection => LocalizationService.Instance["SourcesSection"];
-        public string SourceNamePlaceholder => LocalizationService.Instance["SourceNamePlaceholder"];
-        public string SourceUrlPlaceholder => LocalizationService.Instance["SourceUrlPlaceholder"];
-        public string BtnAddSource => LocalizationService.Instance["BtnAddSource"];
-            public string TrackedApps => LocalizationService.Instance["trackedApps"];
+                public string SourcesSection => LocalizationService.Instance["SourcesSection"];
+                public string SourceNamePlaceholder => LocalizationService.Instance["SourceNamePlaceholder"];
+                public string SourceUrlPlaceholder => LocalizationService.Instance["SourceUrlPlaceholder"];
+                public string BtnAddSource => LocalizationService.Instance["BtnAddSource"];
+                public string ImportFromStarsTitle => LocalizationService.Instance["ImportFromStarsTitle"];
+                public string ImportStarsUsernameHint => LocalizationService.Instance["ImportStarsUsernameHint"];
+                public string BtnLoadStars => LocalizationService.Instance["BtnLoadStars"];
+                public string BtnImport => LocalizationService.Instance["BtnImport"];
+                public string ImportStarsNothingSelected => LocalizationService.Instance["ImportStarsNothingSelected"];
+                        public string ImportStarsDone => LocalizationService.Instance["ImportStarsDone"];
+                        public string ImportStarsNoneAdded => LocalizationService.Instance["ImportStarsNoneAdded"];
+                        public string TrackedApps => LocalizationService.Instance["trackedApps"];
 
         public string NoTrackedApps => LocalizationService.Instance["NoTrackedApps"];
             public string Catalog => LocalizationService.Instance["catalog"];
@@ -45,15 +54,17 @@ public sealed class Loc : INotifyPropertyChanged
     public string NavWinget => LocalizationService.Instance["navWinget"];
     public string NavSettings => LocalizationService.Instance["navSettings"];
     public string NavAbout => LocalizationService.Instance["navAbout"];
-    public string AppsPageSubtitle => LocalizationService.Instance["appsPageSubtitle"];
-    public string CatalogPageSubtitle => LocalizationService.Instance["catalogPageSubtitle"];
-    public string WingetPageSubtitle => LocalizationService.Instance["wingetPageSubtitle"];
-    public string SettingsPageTitle => LocalizationService.Instance["settingsPageTitle"];
-    public string SettingsPageSubtitle => LocalizationService.Instance["settingsPageSubtitle"];
-    public string AboutPageTitle => LocalizationService.Instance["aboutPageTitle"];
-        public string AboutPageSubtitle => LocalizationService.Instance["aboutPageSubtitle"];
+        public string NavHome => LocalizationService.Instance["NavHome"];
+        public string BtnClearMyCatalog => LocalizationService.Instance["BtnClearMyCatalog"];
+            public string AppsPageSubtitle => LocalizationService.Instance["appsPageSubtitle"];
+            public string CatalogPageSubtitle => LocalizationService.Instance["catalogPageSubtitle"];
+            public string WingetPageSubtitle => LocalizationService.Instance["wingetPageSubtitle"];
+            public string SettingsPageTitle => LocalizationService.Instance["settingsPageTitle"];
+            public string SettingsPageSubtitle => LocalizationService.Instance["settingsPageSubtitle"];
+            public string AboutPageTitle => LocalizationService.Instance["aboutPageTitle"];
+            public string AboutPageSubtitle => LocalizationService.Instance["aboutPageSubtitle"];
 
-        // Settings page keys
+            // Settings page keys
                                 public string SettingsGeneral => LocalizationService.Instance["SettingsGeneral"];
                                 public string SettingsBehavior => LocalizationService.Instance["SettingsBehavior"];
                                 public string SettingsGitHub => LocalizationService.Instance["SettingsGitHub"];

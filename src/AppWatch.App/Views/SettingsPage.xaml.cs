@@ -27,8 +27,4 @@ public sealed partial class SettingsPage : Page
         base.OnNavigatedTo(e);
         ViewModel.RefreshScheduleInfo();
     }
-
-    // ZuiV2 pattern: back to dashboard with slide animation
-    private void Back_Click(object sender, RoutedEventArgs e) =>
-        App.MainWindow!.GoBackWithAnimation();
 }

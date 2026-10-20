@@ -12,11 +12,8 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Header with back button (ZuiV2 pattern) -->
+        <!-- Header (navigation lives in the MainWindow NavigationView pane) -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,16">
-            <Button Click="Back_Click" Padding="8" CornerRadius="6" Background="Transparent" BorderThickness="0">
-                <FontIcon Glyph="&#xE72B;" FontSize="14"/>
-            </Button>
             <StackPanel Spacing="4">
                 <TextBlock Text="{x:Bind Loc.WingetUpdates, Mode=OneWay}" Style="{StaticResource PageHeaderStyle}" />
                 <TextBlock Text="{x:Bind Loc.WingetPageSubtitle, Mode=OneWay}" Style="{StaticResource PageSubtitleStyle}" TextWrapping="Wrap" />

@@ -242,64 +242,6 @@
                     </ListView>
                 </StackPanel>
 
-                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,12,0,0" HorizontalAlignment="Center">
-                    <Button Click="NavCard_Click" Tag="catalog"
-                            AutomationProperties.Name="{x:Bind Loc.Catalog, Mode=OneWay}"
-                            Padding="14,10" CornerRadius="10"
-                            Background="{StaticResource CardBackgroundBrush}" BorderThickness="1"
-                            BorderBrush="{StaticResource BorderDefaultBrush}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE8F1;" FontSize="16" Foreground="{StaticResource AccentBrush}"/>
-                            <TextBlock Text="{x:Bind Loc.Catalog, Mode=OneWay}" FontSize="12" FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextPrimaryBrush}"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Click="NavCard_Click" Tag="winget"
-                                                AutomationProperties.Name="{x:Bind Loc.WingetUpdates, Mode=OneWay}"
-                                                Padding="14,10" CornerRadius="10"
-                                                Background="{StaticResource CardBackgroundBrush}" BorderThickness="1"
-                                                BorderBrush="{StaticResource BorderDefaultBrush}">
-                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                <FontIcon Glyph="&#xE753;" FontSize="16" Foreground="{StaticResource AccentBrush}"/>
-                                                <TextBlock Text="{x:Bind Loc.WingetUpdates, Mode=OneWay}" FontSize="12" FontWeight="SemiBold"
-                                                           Foreground="{StaticResource TextPrimaryBrush}"/>
-                                            </StackPanel>
-                                        </Button>
-                                        <Button Click="NavCard_Click" Tag="history"
-                                                AutomationProperties.Name="{x:Bind Loc.NavHistory, Mode=OneWay}"
-                                                Padding="14,10" CornerRadius="10"
-                                                Background="{StaticResource CardBackgroundBrush}" BorderThickness="1"
-                                                BorderBrush="{StaticResource BorderDefaultBrush}">
-                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                <FontIcon Glyph="&#xE81C;" FontSize="16" Foreground="{StaticResource AccentBrush}"/>
-                                                <TextBlock Text="{x:Bind Loc.NavHistory, Mode=OneWay}" FontSize="12" FontWeight="SemiBold"
-                                                           Foreground="{StaticResource TextPrimaryBrush}"/>
-                                            </StackPanel>
-                                        </Button>
-                                        <Button Click="NavCard_Click" Tag="settings"
-                            AutomationProperties.Name="{x:Bind Loc.NavSettings, Mode=OneWay}"
-                            Padding="14,10" CornerRadius="10"
-                            Background="{StaticResource CardBackgroundBrush}" BorderThickness="1"
-                            BorderBrush="{StaticResource BorderDefaultBrush}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE713;" FontSize="16" Foreground="{StaticResource AccentBrush}"/>
-                            <TextBlock Text="{x:Bind Loc.NavSettings, Mode=OneWay}" FontSize="12" FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextPrimaryBrush}"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Click="NavCard_Click" Tag="about"
-                            AutomationProperties.Name="{x:Bind Loc.NavAbout, Mode=OneWay}"
-                            Padding="14,10" CornerRadius="10"
-                            Background="{StaticResource CardBackgroundBrush}" BorderThickness="1"
-                            BorderBrush="{StaticResource BorderDefaultBrush}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE946;" FontSize="16" Foreground="{StaticResource AccentBrush}"/>
-                            <TextBlock Text="{x:Bind Loc.NavAbout, Mode=OneWay}" FontSize="12" FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextPrimaryBrush}"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-
             </StackPanel>
         </ScrollViewer>
 

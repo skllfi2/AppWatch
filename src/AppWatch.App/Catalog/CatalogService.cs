@@ -84,6 +84,18 @@ public sealed class CatalogService
         return ok;
     }
 
+    /// <summary>Removes ALL user-added entries ("мои приложения"). Seed/remote sources are untouched.</summary>
+    /// <returns>How many entries were removed.</returns>
+    public int ClearUserEntries()
+    {
+        var removed = _userEntries.Count;
+        if (removed == 0) return 0;
+        _userEntries.Clear();
+        PersistUserCatalog();
+        RebuildMerged();
+        return removed;
+    }
+
     // === Source management ===
 
     /// <summary>Add a remote catalog source. Downloads immediately; returns null on success, error message on failure.</summary>

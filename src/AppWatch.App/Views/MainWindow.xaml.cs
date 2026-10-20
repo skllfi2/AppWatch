@@ -1,22 +1,22 @@
-using AppWatch.Platform;
+using System.Linq;
+using AppWatch.Localization;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
 namespace AppWatch.Views;
 
 /// <summary>
-/// The application window - ZuiV2 shell pattern: TitleBar + bare Frame.
-/// All navigation lives inside AppsPage (dashboard hub); subpages call
-/// NavigateTo / GoBackWithAnimation.
+/// ZuiV2 shell v2: TitleBar + NavigationView + Frame.
+/// The left pane is the single source of navigation; subpages no longer
+/// carry back buttons — the pane is always visible.
 /// </summary>
 public sealed partial class MainWindow : Window
 {
-    private readonly PageTransitionManager _transitionManager;
+    public Loc Loc => Loc.Instance;
 
     public MainWindow()
     {
         InitializeComponent();
-        _transitionManager = new PageTransitionManager(ContentFrame);
 
         // ZuiV2 pattern: extend content into the title bar area so Mica
         // covers the whole window and the system caption buttons overlay
@@ -26,20 +26,51 @@ public sealed partial class MainWindow : Window
 
         CenterWindowOnScreen();
 
-        ContentFrame.Navigate(typeof(AppsPage));
+        // Initial selection drives the first navigation via SelectionChanged.
+        Nav.SelectedItem = NavItemHome;
     }
 
-    // === Navigation (ZuiV2 MainWindow pattern) ===
+    // === Navigation (NavigationView-driven) ===
 
+    private static readonly System.Collections.Generic.Dictionary<string, Type> PageByTag = new()
+    {
+        ["home"] = typeof(AppsPage),
+        ["catalog"] = typeof(CatalogPage),
+        ["winget"] = typeof(WingetPage),
+        ["history"] = typeof(HistoryPage),
+        ["settings"] = typeof(SettingsPage),
+        ["about"] = typeof(AboutPage),
+    };
+
+    private void Nav_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    {
+        if (args.SelectedItem is not NavigationViewItem item || item.Tag is not string tag)
+            return;
+        if (!PageByTag.TryGetValue(tag, out var page))
+            return;
+        if (ContentFrame.CurrentSourcePageType != page)
+            ContentFrame.Navigate(page);
+    }
+
+    /// <summary>
+    /// Programmatic navigation that keeps the pane selection in sync.
+    /// Selecting an item raises SelectionChanged, which performs the actual Navigate.
+    /// </summary>
     public void NavigateTo(Type pageType)
     {
-        if (ContentFrame.CurrentSourcePageType == pageType) return;
-        _transitionManager.NavigateTo(pageType);
-    }
-
-    public void GoBackWithAnimation()
-    {
-        _transitionManager.NavigateBack();
+        var tag = PageByTag.FirstOrDefault(kv => kv.Value == pageType).Key;
+        if (tag is not null)
+        {
+            var item = Nav.MenuItems.OfType<NavigationViewItem>()
+                .Concat(Nav.FooterMenuItems.OfType<NavigationViewItem>())
+                .FirstOrDefault(i => (string?)i.Tag == tag);
+            if (item is not null)
+            {
+                Nav.SelectedItem = item;
+                return;
+            }
+        }
+        ContentFrame.Navigate(pageType);
     }
 
     /// <summary>Centers the window on the primary work area (ZuiV2 pattern).</summary>
