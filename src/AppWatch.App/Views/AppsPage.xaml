@@ -109,6 +109,20 @@
                                    Foreground="{StaticResource TextSecondaryBrush}" CharacterSpacing="40"/>
                     </StackPanel>
 
+                    <!-- Home filter + sort (P-UI informative-lite) -->
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="4,0">
+                        <ComboBox SelectedIndex="{x:Bind ViewModel.HomeFilterIndex, Mode=TwoWay}" MinWidth="140" VerticalAlignment="Center" Padding="8,4" FontSize="12">
+                            <ComboBoxItem Content="{x:Bind Loc.FilterAll, Mode=OneWay}" />
+                            <ComboBoxItem Content="{x:Bind Loc.FilterUpdates, Mode=OneWay}" />
+                            <ComboBoxItem Content="{x:Bind Loc.FilterErrors, Mode=OneWay}" />
+                            <ComboBoxItem Content="{x:Bind Loc.FilterDisabled, Mode=OneWay}" />
+                        </ComboBox>
+                        <ComboBox SelectedIndex="{x:Bind ViewModel.HomeSortIndex, Mode=TwoWay}" MinWidth="130" VerticalAlignment="Center" Padding="8,4" FontSize="12">
+                            <ComboBoxItem Content="{x:Bind Loc.SortByName, Mode=OneWay}" />
+                            <ComboBoxItem Content="{x:Bind Loc.SortByStatus, Mode=OneWay}" />
+                        </ComboBox>
+                    </StackPanel>
+
                     <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="24"
                             Visibility="{x:Bind ViewModel.Apps.Count, Converter={StaticResource InverseCountToVisibility}, Mode=OneWay}">
                         <StackPanel Spacing="8" HorizontalAlignment="Center">
@@ -116,10 +130,20 @@
                             <TextBlock Text="{x:Bind Loc.NoTrackedApps, Mode=OneWay}" FontSize="12"
                                        Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"
                                        HorizontalAlignment="Center" TextAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
+                                <Button Command="{x:Bind ViewModel.GoToCatalogCommand}"
+                                        Content="{x:Bind Loc.BtnOpenCatalog, Mode=OneWay}"
+                                        Padding="12,6" CornerRadius="6" FontSize="12"
+                                        Background="{StaticResource AccentBrush}" BorderThickness="0" Foreground="White" />
+                                <Button Command="{x:Bind ViewModel.AddCustomAppCommand}"
+                                        Content="{x:Bind Loc.AddApp, Mode=OneWay}"
+                                        Padding="12,6" CornerRadius="6" FontSize="12"
+                                        Background="{StaticResource CardBackgroundBrush}" BorderThickness="1" />
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 
-                    <ListView ItemsSource="{x:Bind ViewModel.Apps}" SelectionMode="None">
+                    <ListView ItemsSource="{x:Bind ViewModel.FilteredApps, Mode=OneWay}" SelectionMode="None">
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="vm:TrackedAppItem">
                                 <Grid Padding="16" ColumnSpacing="16" Margin="0,0,0,8"
@@ -205,9 +229,9 @@
                                                                             </Button>
                                                                             <!-- A1: per-app update rules menu -->
                                                                             <Button Padding="8,6" CornerRadius="6"
-                                                                                    AutomationProperties.Name="{x:Bind MenuUpdateRules, Mode=OneWay}"
+                                                                                    AutomationProperties.Name="{x:Bind MenuEdit, Mode=OneWay}"
                                                                                     Background="{StaticResource HeroOverlayBrush}" BorderThickness="0"
-                                                                                    ToolTipService.ToolTip="{x:Bind MenuUpdateRules, Mode=OneWay}">
+                                                                                    ToolTipService.ToolTip="{x:Bind MenuEdit, Mode=OneWay}">
                                                                                 <FontIcon Glyph="&#xE10C;" FontSize="12" Foreground="{StaticResource HeroTertiaryBrush}"/>
                                                                                 <Button.Flyout>
                                                                                     <MenuFlyout>
@@ -222,6 +246,20 @@
                                                                                                         Text="{x:Bind MenuPinCurrent, Mode=OneWay}">
                                                                                             <MenuFlyoutItem.Icon>
                                                                                                 <FontIcon Glyph="&#xE840;"/>
+                                                                                            </MenuFlyoutItem.Icon>
+                                                                                        </MenuFlyoutItem>
+                                                                                        <MenuFlyoutSeparator/>
+                                                                                        <MenuFlyoutItem Command="{x:Bind RollbackAppCommand}" CommandParameter="{x:Bind}"
+                                                                                                        Text="{x:Bind BtnRollback, Mode=OneWay}"
+                                                                                                        Visibility="{x:Bind RollbackAvailable, Converter={StaticResource BoolToVisibility}, Mode=OneWay}">
+                                                                                            <MenuFlyoutItem.Icon>
+                                                                                                <FontIcon Glyph="&#xE7A6;"/>
+                                                                                            </MenuFlyoutItem.Icon>
+                                                                                        </MenuFlyoutItem>
+                                                                                        <MenuFlyoutItem Command="{x:Bind EditAppCommand}" CommandParameter="{x:Bind}"
+                                                                                                        Text="{x:Bind MenuEdit, Mode=OneWay}">
+                                                                                            <MenuFlyoutItem.Icon>
+                                                                                                <FontIcon Glyph="&#xE70F;"/>
                                                                                             </MenuFlyoutItem.Icon>
                                                                                         </MenuFlyoutItem>
                                                                                         <MenuFlyoutSeparator/>

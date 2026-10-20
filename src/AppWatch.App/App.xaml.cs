@@ -156,6 +156,8 @@ public partial class App : Application
                                         // Startup visibility: winget scan + app check
                                         // (statuses land on the cards, not just in the config)
                                         _ = Services.GetRequiredService<MainViewModel>().RunStartupTasksAsync();
+                                        // Show onboarding on first launch
+                                        _ = Services.GetRequiredService<MainViewModel>().ShowOnboardingIfNeededAsync();
                                     }
 
             private void OnWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)

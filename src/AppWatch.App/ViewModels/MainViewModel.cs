@@ -79,20 +79,50 @@ public partial class MainViewModel : ObservableObject
         CatalogUpdatesAvailable = CatalogApps.Count(c => c.UpdateAvailable);
         RefreshSources();
         ApplyCatalogFilter();
+        ApplyHomeFilter(); // initial populate of FilteredApps
+        RefreshNextCheckText();
 
                 AppsTrackedCount = Apps.Count;
                                 WingetTotalCount = 0;
                                 WingetUpdatesAvailable = 0;
                                 WingetPendingUpdates = 0;
+
+        // Keep FilteredApps in sync whenever Apps changes (add/remove from any path)
+        Apps.CollectionChanged += (_, _) => ApplyHomeFilter();
                         }
 
                     public ObservableCollection<TrackedAppItem> Apps { get; } = [];
+
+    // === Home page: filter + sort + next-check (P-UI informative-lite) ===
+
+    /// <summary>Filtered+sorted view of <see cref="Apps"/> for the ListView.</summary>
+    public ObservableCollection<TrackedAppItem> FilteredApps { get; } = [];
+
+    /// <summary>0 = all, 1 = updates, 2 = errors, 3 = disabled.</summary>
+    [ObservableProperty]
+    public partial int HomeFilterIndex { get; set; }
+
+    /// <summary>0 = by name, 1 = by status (updates first, then errors).</summary>
+    [ObservableProperty]
+    public partial int HomeSortIndex { get; set; }
+
+    [ObservableProperty]
+    public partial string NextCheckText { get; set; } = "";
 
     public ObservableCollection<CatalogItem> CatalogApps { get; } = [];
 
     public ObservableCollection<WingetItem> WingetUpdates { get; } = [];
 
     public bool WingetAvailable { get; }
+
+    // === Catalog category filter (P-UI) ===
+
+    /// <summary>0 = all, 1 = utility, 2 = media, 3 = network, 4 = security, 5 = productivity, 6 = development.</summary>
+    [ObservableProperty]
+    public partial int CatalogCategoryIndex { get; set; }
+
+    public IReadOnlyList<string> CatalogCategories { get; } =
+        ["utility", "media", "network", "security", "productivity", "development"];
 
     [ObservableProperty]
     public partial string StatusText { get; set; } = "";
@@ -563,6 +593,10 @@ public partial class MainViewModel : ObservableObject
             ApplyCatalogFilter();
     }
 
+    partial void OnHomeFilterIndexChanged(int value) => ApplyHomeFilter();
+    partial void OnHomeSortIndexChanged(int value) => ApplyHomeFilter();
+    partial void OnCatalogCategoryIndexChanged(int value) => ApplyCatalogFilter();
+
     private async Task EnsureSemanticReadyAsync()
     {
         if (!IsSemanticModelInstalled)
@@ -612,7 +646,66 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    private void ApplyCatalogFilter()
+    
+
+    private void ApplyHomeFilter()
+    {
+        FilteredApps.Clear();
+        var items = HomeFilterIndex switch
+        {
+            1 => Apps.Where(a => a.UpdateAvailable),
+            2 => Apps.Where(a => a.Stage == UpdateStage.Error),
+            3 => Apps.Where(a => !a.App.Enabled),
+            _ => Apps.AsEnumerable(),
+        };
+        items = HomeSortIndex switch
+        {
+            1 => items.OrderBy(StatusRank).ThenBy(a => a.Name, StringComparer.OrdinalIgnoreCase),
+            _ => items.OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase),
+        };
+        foreach (var i in items)
+            FilteredApps.Add(i);
+    }
+
+    private static int StatusRank(TrackedAppItem a) => a switch
+    {
+        _ when a.UpdateAvailable => 0,
+        _ when a.Stage == UpdateStage.Error => 1,
+        _ => 2,
+    };
+
+    /// <summary>Localized "next check at HH:mm" from the monitor's persisted schedule.</summary>
+    public void RefreshNextCheckText()
+    {
+        var next = _configStore.Load().BackgroundCheckNextRunUtc;
+        NextCheckText = next is { } n
+            ? _loc.Format("NextCheckAt", n.ToLocalTime().ToString("HH:mm"))
+            : "";
+    }
+
+    [RelayCommand]
+    private void GoToCatalog() => App.MainWindow!.NavigateTo(typeof(Views.CatalogPage));
+
+    public async Task ShowOnboardingIfNeededAsync()
+    {
+        var cfg = _configStore.Load();
+        if (!cfg.ShowOnboarding) return;
+
+        var dialog = new ContentDialog
+        {
+            Title = _loc["OnboardingTitle"],
+            Content = _loc["OnboardingText"],
+            CloseButtonText = _loc["OnboardingOk"],
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = App.MainWindow!.Content.XamlRoot,
+        };
+        await dialog.ShowAsync();
+
+        cfg.ShowOnboarding = false;
+        _configStore.Save(cfg);
+    }
+
+private void ApplyCatalogFilter()
     {
         FilteredCatalogApps.Clear();
         var query = CatalogSearchQuery?.Trim() ?? "";

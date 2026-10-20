@@ -1,4 +1,4 @@
-namespace AppWatch.Core.Domain.Models;
+﻿namespace AppWatch.Core.Domain.Models;
 
 public sealed class AppConfig
 {
@@ -37,4 +37,7 @@ public sealed class AppConfig
 
     /// <summary>HF tokenizer.json URL override. Null = built-in default.</summary>
     public string? EmbeddingTokenizerUrl { get; set; }
+
+    /// <summary>Show the onboarding dialog on first launch.</summary>
+    public bool ShowOnboarding { get; set; } = true;
 }

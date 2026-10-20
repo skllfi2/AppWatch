@@ -209,4 +209,25 @@ public sealed class Loc : INotifyPropertyChanged
 
                 // Not implemented
                 public string NotImplemented => LocalizationService.Instance["notImplemented"];
+
+                // New UI keys (P-UI)
+                public string FilterAll => LocalizationService.Instance["FilterAll"];
+                public string FilterUpdates => LocalizationService.Instance["FilterUpdates"];
+                public string FilterErrors => LocalizationService.Instance["FilterErrors"];
+                public string FilterDisabled => LocalizationService.Instance["FilterDisabled"];
+                public string SortByName => LocalizationService.Instance["SortByName"];
+                public string SortByStatus => LocalizationService.Instance["SortByStatus"];
+                public string NextCheckAt => LocalizationService.Instance["NextCheckAt"];
+                public string CategoryAll => LocalizationService.Instance["CategoryAll"];
+                public string CategoryUtility => LocalizationService.Instance["CategoryUtility"];
+                public string CategoryMedia => LocalizationService.Instance["CategoryMedia"];
+                public string CategoryNetwork => LocalizationService.Instance["CategoryNetwork"];
+                public string CategorySecurity => LocalizationService.Instance["CategorySecurity"];
+                public string CategoryProductivity => LocalizationService.Instance["CategoryProductivity"];
+                public string CategoryDevelopment => LocalizationService.Instance["CategoryDevelopment"];
+                public string BtnOpenCatalog => LocalizationService.Instance["BtnOpenCatalog"];
+                public string OnboardingTitle => LocalizationService.Instance["OnboardingTitle"];
+                public string OnboardingText => LocalizationService.Instance["OnboardingText"];
+                public string OnboardingOk => LocalizationService.Instance["OnboardingOk"];
+                public string MenuEdit => LocalizationService.Instance["MenuEdit"];
             }
