@@ -55,7 +55,13 @@ public sealed class Loc : INotifyPropertyChanged
     public string NavSettings => LocalizationService.Instance["navSettings"];
     public string NavAbout => LocalizationService.Instance["navAbout"];
         public string NavHome => LocalizationService.Instance["NavHome"];
-        public string BtnClearMyCatalog => LocalizationService.Instance["BtnClearMyCatalog"];
+            public string BtnClearMyCatalog => LocalizationService.Instance["BtnClearMyCatalog"];
+            public string SettingsCatalogSection => LocalizationService.Instance["SettingsCatalogSection"];
+            public string SettingsSemanticSearch => LocalizationService.Instance["SettingsSemanticSearch"];
+            public string SettingsSemanticOn => LocalizationService.Instance["SettingsSemanticOn"];
+            public string SettingsSemanticOff => LocalizationService.Instance["SettingsSemanticOff"];
+            public string SettingsSemanticHint => LocalizationService.Instance["SettingsSemanticHint"];
+            public string SemanticModelDownload => LocalizationService.Instance["SemanticModelDownload"];
             public string AppsPageSubtitle => LocalizationService.Instance["appsPageSubtitle"];
             public string CatalogPageSubtitle => LocalizationService.Instance["catalogPageSubtitle"];
             public string WingetPageSubtitle => LocalizationService.Instance["wingetPageSubtitle"];

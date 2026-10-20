@@ -110,6 +110,14 @@ public partial class App : Application
                                             .AddSingleton<SystemVersionResolver>()
                                             .AddSingleton<UpdateHistoryStore>()
                                             .AddSingleton<CatalogService>()
+                                            .AddSingleton<IEmbeddingService, WindowsMlEmbeddingService>()
+                                            .AddSingleton<SemanticModelStore>(sp => new SemanticModelStore(
+                                                config: new AppConfigProxy
+                                                {
+                                                    EmbeddingModelUrl = config.EmbeddingModelUrl,
+                                                    EmbeddingTokenizerUrl = config.EmbeddingTokenizerUrl,
+                                                }))
+                                            .AddSingleton<SemanticCatalogIndex>()
                                             .AddSingleton<AutostartService>()
                                             .AddSingleton<TrayService>()
                                             .AddSingleton<ThemeService>()

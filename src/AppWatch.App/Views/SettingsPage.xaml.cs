@@ -10,11 +10,14 @@ public sealed partial class SettingsPage : Page
 {
     public SettingsViewModel ViewModel { get; }
 
+    public MainViewModel Main { get; }
+
     public Loc Loc => Loc.Instance;
 
     public SettingsPage()
     {
         ViewModel = App.Resolve<SettingsViewModel>();
+        Main = App.Resolve<MainViewModel>();
         InitializeComponent();
         // C12: page is cached (NavigationCacheMode=Required) — refresh on construction too
         ViewModel.RefreshScheduleInfo();

@@ -12,6 +12,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Dispatching;
 using Windows.Storage.Pickers;
 using Serilog;
 
@@ -29,11 +30,15 @@ public partial class MainViewModel : ObservableObject
     private readonly LocalizationService _loc;
     private readonly AppConfig _config;
     private readonly SystemVersionResolver _systemVersion;
+    private readonly IEmbeddingService _embedding;
+    private readonly SemanticModelStore _semanticStore;
+    private readonly SemanticCatalogIndex _semanticIndex;
 
     public MainViewModel(
         IConfigStore configStore, IUpdateEngine engine, WingetService winget,
         CatalogService catalog, UpdateHistoryStore history, IAppLauncher launcher,
-        LocalizationService loc, SystemVersionResolver systemVersion, IProcessService process)
+        LocalizationService loc, SystemVersionResolver systemVersion, IProcessService process,
+        IEmbeddingService embedding, SemanticModelStore semanticStore, SemanticCatalogIndex semanticIndex)
     {
         _configStore = configStore;
         _engine = engine;
@@ -44,8 +49,15 @@ public partial class MainViewModel : ObservableObject
         _process = process;
         _loc = loc;
         _systemVersion = systemVersion;
+        _embedding = embedding;
+        _semanticStore = semanticStore;
+        _semanticIndex = semanticIndex;
         _config = configStore.Load();
         WingetAvailable = winget.IsAvailable;
+        SemanticSearchEnabled = _config.SemanticSearchEnabled;
+        IsSemanticModelInstalled = _semanticStore.IsInstalled;
+        if (SemanticSearchEnabled && IsSemanticModelInstalled)
+            _ = EnsureSemanticReadyAsync();
 
         foreach (var app in _config.TrackedApps)
             Apps.Add(new TrackedAppItem(app));
@@ -511,10 +523,94 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     public partial string CatalogSearchQuery { get; set; } = "";
 
-    partial void OnCatalogSearchQueryChanged(string value) => ApplyCatalogFilter();
+    partial void OnCatalogSearchQueryChanged(string value)
+    {
+        _semanticQueryVector = null; // the old vector belongs to the old query
+        _semanticSearchVersion++;
+        ApplyCatalogFilter();
+    }
 
-    /// <summary>Filtered catalog: search matches name, repo, or description (case-insensitive substring).</summary>
+    /// <summary>Filtered catalog: lexical tiers, optionally merged with semantic cosine.</summary>
     public ObservableCollection<CatalogItem> FilteredCatalogApps { get; } = [];
+
+    // === P-Sem: semantic catalog search (settings-gated, model downloaded on demand) ===
+
+    [ObservableProperty]
+    public partial bool SemanticSearchEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsSemanticModelInstalled { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsDownloadingModel { get; set; }
+
+    [ObservableProperty]
+    public partial string SemanticModelStatusText { get; set; } = "";
+
+    private float[]? _semanticQueryVector;
+    private string _semanticQueryForVector = "";
+    private int _semanticSearchVersion;
+
+    partial void OnSemanticSearchEnabledChanged(bool value)
+    {
+        _config.SemanticSearchEnabled = value;
+        _configStore.Save(_config);
+        _semanticSearchVersion++;
+        _semanticQueryVector = null;
+        if (value)
+            _ = EnsureSemanticReadyAsync();
+        else
+            ApplyCatalogFilter();
+    }
+
+    private async Task EnsureSemanticReadyAsync()
+    {
+        if (!IsSemanticModelInstalled)
+        {
+            SemanticModelStatusText = _loc["SemanticModelMissing"];
+            return;
+        }
+        if (!_embedding.IsReady)
+        {
+            SemanticModelStatusText = _loc["SemanticModelLoading"];
+            if (!await _embedding.LoadAsync(_semanticStore.ModelPath, _semanticStore.TokenizerPath))
+            {
+                SemanticModelStatusText = _loc.Format("SemanticModelLoadFailed", _embedding.LastError ?? "?");
+                return;
+            }
+        }
+
+        var indexed = await _semanticIndex.BuildAsync(_catalog.Entries.ToList());
+        SemanticModelStatusText = _loc.Format("SemanticModelReady", indexed);
+        ApplyCatalogFilter();
+    }
+
+    [RelayCommand]
+    private async Task DownloadSemanticModelAsync()
+    {
+        if (IsDownloadingModel) return;
+        IsDownloadingModel = true;
+        SemanticModelStatusText = _loc["SemanticModelDownloading"];
+        var progress = new Progress<double>(p =>
+            SemanticModelStatusText = _loc.Format("SemanticModelDownloadingPercent", (int)p));
+        try
+        {
+            await _semanticStore.DownloadAsync(progress);
+            IsSemanticModelInstalled = true;
+            if (SemanticSearchEnabled)
+                await EnsureSemanticReadyAsync();
+            else
+                SemanticModelStatusText = _loc["SemanticModelDownloaded"];
+        }
+        catch (System.Exception ex)
+        {
+            SemanticModelStatusText = _loc.Format("SemanticModelDownloadFailed", ex.Message);
+        }
+        finally
+        {
+            IsDownloadingModel = false;
+        }
+    }
 
     private void ApplyCatalogFilter()
     {
@@ -526,12 +622,53 @@ public partial class MainViewModel : ObservableObject
                 FilteredCatalogApps.Add(item);
             return;
         }
-        // Fuzzy search: exact > prefix > substring > typo (Levenshtein ≤ 2) > subsequence > description
-        foreach (var entry in CatalogSearch.Rank(CatalogApps.Select(i => i.Entry).ToList(), query))
+
+        var entries = CatalogApps.Select(i => i.Entry).ToList();
+        // Lexical tiers, boosted/rescued by cosine — only if the vector is for THIS query
+        var ranked = SemanticSearchEnabled && _semanticQueryVector is not null
+            && string.Equals(_semanticQueryForVector, query, StringComparison.Ordinal)
+            ? SemanticSearch.Rank(entries, query, e => e.Name, e => e.Description,
+                _semanticIndex.VectorOf, _semanticQueryVector)
+            : CatalogSearch.Rank(entries, query);
+        foreach (var entry in ranked)
         {
             var vm = CatalogApps.First(c => ReferenceEquals(c.Entry, entry));
             FilteredCatalogApps.Add(vm);
         }
+
+        MaybeStartSemanticRefresh(query);
+    }
+
+    /// <summary>
+    /// Lexical results show instantly; the query embedding lands ~300 ms later
+    /// (CPU WinML, debounced) and re-ranks the list. Best-effort — never blocks typing.
+    /// </summary>
+    private void MaybeStartSemanticRefresh(string query)
+    {
+        if (!SemanticSearchEnabled || !_embedding.IsReady || query.Length < 3) return;
+        // Already have a vector for exactly this query → no refresh loop
+        if (string.Equals(_semanticQueryForVector, query, StringComparison.Ordinal)) return;
+        var version = ++_semanticSearchVersion;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(300); // debounce keystrokes
+                if (version != _semanticSearchVersion) return;
+
+                var vector = await _embedding.EmbedAsync(query);
+                if (vector is null || version != _semanticSearchVersion) return;
+
+                _semanticQueryVector = vector;
+                _semanticQueryForVector = query;
+                App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (version != _semanticSearchVersion) return;
+                    ApplyCatalogFilter();
+                });
+            }
+            catch { /* semantic refresh is best-effort */ }
+        });
     }
 
     // === W1–W3: winget search & install ("Установить из winget") ===

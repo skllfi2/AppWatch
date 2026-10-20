@@ -26,4 +26,15 @@ public sealed class AppConfig
 
     /// <summary>B10: how many old versions to keep per app in the version cache (newest first).</summary>
     public int VersionCacheCount { get; set; } = 3;
+
+    // === P-Sem: semantic catalog search (off by default; readiness for large catalogs) ===
+
+    /// <summary>User opt-in for semantic (embedding-based) catalog search.</summary>
+    public bool SemanticSearchEnabled { get; set; } = false;
+
+    /// <summary>Model download URL override (ONNX, int8-quantized sentence-transformer). Null = built-in default.</summary>
+    public string? EmbeddingModelUrl { get; set; }
+
+    /// <summary>HF tokenizer.json URL override. Null = built-in default.</summary>
+    public string? EmbeddingTokenizerUrl { get; set; }
 }
