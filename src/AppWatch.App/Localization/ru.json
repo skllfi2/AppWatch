@@ -298,5 +298,8 @@
     "CheckedDaysAgo": "проверено {0} дн назад",
     "SettingsToastToggle": "Уведомления об обновлениях",
     "SettingsToastHint": "Показывать Windows-уведомления, когда фоновая проверка находит обновления",
-    "SettingsSelfUpdateDownloading": "Скачивание: {0}%"
+    "SettingsSelfUpdateDownloading": "Скачивание: {0}%",
+    "InterruptedUpdateRecovered": "прерванное обновление обнаружено{0}",
+    "InterruptedRestored": " — прежняя версия восстановлена",
+    "InterruptedNoChanges": " — изменения не были применены"
 }

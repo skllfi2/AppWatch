@@ -33,12 +33,15 @@ public partial class MainViewModel : ObservableObject
     private readonly IEmbeddingService _embedding;
     private readonly SemanticModelStore _semanticStore;
     private readonly SemanticCatalogIndex _semanticIndex;
+    private readonly UpdateJournalStore _journal;
+    private readonly Infrastructure.System.FileStore _files;
 
     public MainViewModel(
         IConfigStore configStore, IUpdateEngine engine, WingetService winget,
         CatalogService catalog, UpdateHistoryStore history, IAppLauncher launcher,
         LocalizationService loc, SystemVersionResolver systemVersion, IProcessService process,
-        IEmbeddingService embedding, SemanticModelStore semanticStore, SemanticCatalogIndex semanticIndex)
+        IEmbeddingService embedding, SemanticModelStore semanticStore, SemanticCatalogIndex semanticIndex,
+        UpdateJournalStore journal, Infrastructure.System.FileStore files)
     {
         _configStore = configStore;
         _engine = engine;
@@ -52,6 +55,8 @@ public partial class MainViewModel : ObservableObject
         _embedding = embedding;
         _semanticStore = semanticStore;
         _semanticIndex = semanticIndex;
+        _journal = journal;
+        _files = files;
         _config = configStore.Load();
         WingetAvailable = winget.IsAvailable;
         SemanticSearchEnabled = _config.SemanticSearchEnabled;
@@ -1194,6 +1199,10 @@ private void ApplyCatalogFilter()
     {
         try
         {
+            // UPD-02: crash recovery first — a leftover journal means the last
+            // update died mid-apply; restore before anything else touches files.
+            await RecoverInterruptedUpdateAsync();
+
             await Task.Delay(TimeSpan.FromSeconds(3));
 
             if (WingetAvailable)
@@ -1210,6 +1219,47 @@ private void ApplyCatalogFilter()
         {
             Log.Error(ex, "startup check failed");
         }
+    }
+
+    /// <summary>
+    /// UPD-02: detects an update interrupted by a hard kill (power loss, crash,
+    /// taskkill) and restores the ".old" backup so the app is never left in a
+    /// half-replaced state. Pure decision in PendingUpdatePolicy, file IO here.
+    /// </summary>
+    private async Task RecoverInterruptedUpdateAsync()
+    {
+        var pending = _journal.Load();
+        if (pending is null) return;
+
+        Log.Warning("interrupted update detected: {App} → {Version} (started {Started:HH:mm})",
+            pending.AppName, pending.ToVersion, pending.StartedUtc);
+
+        var backupExists = Directory.Exists(pending.InstallDirectory + ".old");
+        var restored = false;
+        if (PendingUpdatePolicy.Decide(backupExists) == PendingUpdatePolicy.Action.RestoreBackup)
+        {
+            try
+            {
+                _files.RestoreBackup(pending.InstallDirectory);
+                restored = true;
+                Log.Information("restored previous version of {App} from backup", pending.AppName);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "restore after interrupted update failed for {App}", pending.AppName);
+            }
+        }
+
+        _journal.Clear();
+        var detail = restored
+            ? $"update interrupted — previous version restored ({pending.FromVersion ?? "?"})"
+            : "update interrupted — no changes had been applied";
+        _history.Append(new UpdateHistoryEntry(
+            pending.AppName, pending.FromVersion ?? "?", pending.ToVersion,
+            DateTimeOffset.UtcNow, false, detail));
+        StatusText = pending.AppName + ": " + _loc["InterruptedUpdateRecovered"]
+            + (restored ? _loc["InterruptedRestored"] : _loc["InterruptedNoChanges"]);
+        await Task.CompletedTask;
     }
 
     /// <summary>

@@ -20,11 +20,13 @@ public sealed class UpdateEngine : IUpdateEngine
     private readonly AppConfig _config;
     private readonly InstallerTrustService _trust;
     private readonly VersionStore _versions;
+    private readonly UpdateGate _gate;
+    private readonly UpdateJournalStore _journal;
 
     public UpdateEngine(
         IGitHubClient github, IProcessService process, IAppLauncher launcher,
         IElevationService elevation, WingetService winget, FileStore files, AppConfig config,
-        InstallerTrustService trust, VersionStore versions)
+        InstallerTrustService trust, VersionStore versions, UpdateGate gate, UpdateJournalStore journal)
     {
         _github = github;
         _process = process;
@@ -35,6 +37,8 @@ public sealed class UpdateEngine : IUpdateEngine
         _config = config;
         _trust = trust;
         _versions = versions;
+        _gate = gate;
+        _journal = journal;
     }
 
     public async Task<UpdateCheckResult> CheckAsync(TrackedApp app, CancellationToken cancellationToken = default)
@@ -102,6 +106,14 @@ public sealed class UpdateEngine : IUpdateEngine
                 if (check.Status != UpdateStatus.UpdateAvailable || check.NewRelease is null || check.ChosenAsset is null)
                     throw new InvalidOperationException($"nothing to apply: {check.Status}");
 
+                // UPD-03: refuse a concurrent operation on the same app (card button,
+                // toast button and background auto-apply all land here).
+                using var _gateClaim = _gate.TryAcquire(app.Name);
+                if (_gateClaim is null)
+                    return new UpdateHistoryEntry(
+                        app.Name, from, check.NewRelease.TagName, DateTimeOffset.UtcNow, false,
+                        "update already in progress");
+
                 // Determine strategy
                 var strategy = check.Strategy;
                 if (strategy == UpdateStrategy.Auto)
@@ -143,6 +155,11 @@ public sealed class UpdateEngine : IUpdateEngine
                         Log.Warning("launching {Trust} installer for {App} with per-app consent", trust, app.Name);
                 }
 
+                // UPD-02: journal the in-flight mutation — a hard kill (power loss, crash)
+                // from here on is detected and rolled back at next startup.
+                _journal.Write(new PendingUpdate(app.Name, installDir, from, tag, DateTimeOffset.UtcNow));
+                try
+                {
                 UpdateHistoryEntry result = strategy switch
                 {
                     UpdateStrategy.Winget => await ApplyWingetAsync(app, tag, cancellationToken),
@@ -159,6 +176,13 @@ public sealed class UpdateEngine : IUpdateEngine
                 }
 
                 return result;
+                }
+                finally
+                {
+                    // every handled failure path has already restored the backup —
+                    // only a hard process death leaves the journal record behind
+                    _journal.Clear();
+                }
             }
             catch (Exception ex)
             {
@@ -271,6 +295,12 @@ public sealed class UpdateEngine : IUpdateEngine
         var from = app.CurrentVersion ?? "not installed";
         try
         {
+            // UPD-03: same per-app lock as ApplyAsync
+            using var _gateClaim = _gate.TryAcquire(app.Name);
+            if (_gateClaim is null)
+                return new UpdateHistoryEntry(app.Name, from, "?", DateTimeOffset.UtcNow, false,
+                    "install already in progress");
+
             switch (app.UpdateKind)
             {
                 case UpdateKind.WingetPackage:

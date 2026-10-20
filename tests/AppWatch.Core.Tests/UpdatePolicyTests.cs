@@ -22,6 +22,8 @@ public class UpdatePolicyTests
             RepoName = "r",
             Enabled = true,
             LaunchAfterUpdate = true,
+            // Trust model: per-app consent must be EXPLICIT — default OFF
+            AutoApplyConsent = true,
         };
         configure?.Invoke(app);
         return app;
@@ -76,5 +78,32 @@ public class UpdatePolicyTests
     {
         var cfg = Config();
         Assert.Throws<ArgumentNullException>(() => UpdatePolicy.ShouldAutoApply(cfg, null!));
+    }
+
+    // Trust model: per-app consent gates auto-apply — the global flag alone is not enough.
+    // A user-imported stars entry defaults to consent OFF → never auto-applies.
+    [Fact]
+    public void ShouldAutoApply_PerAppConsentOff_ReturnsFalse_EvenWithGlobalFlag()
+    {
+        var cfg = Config(c => c.AutoApplyUpdates = true);
+        var app = App(a => a.AutoApplyConsent = false);
+        Assert.False(UpdatePolicy.ShouldAutoApply(cfg, app));
+    }
+
+    [Fact]
+    public void ShouldAutoApply_PerAppConsentOn_AllFlagsOn_ReturnsTrue()
+    {
+        var cfg = Config(c => c.AutoApplyUpdates = true);
+        var app = App(a => a.AutoApplyConsent = true);
+        Assert.True(UpdatePolicy.ShouldAutoApply(cfg, app));
+    }
+
+    [Fact]
+    public void ShouldAutoApply_NewApp_DefaultConsentOff_NeverAutoApplies()
+    {
+        var cfg = Config(c => c.AutoApplyUpdates = true);
+        var fresh = new TrackedApp { Name = "Fresh", RepoOwner = "o", RepoName = "r" };
+        Assert.False(fresh.AutoApplyConsent); // safe-by-default invariant
+        Assert.False(UpdatePolicy.ShouldAutoApply(cfg, fresh));
     }
 }

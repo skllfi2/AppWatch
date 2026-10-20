@@ -40,8 +40,24 @@ public sealed class BackgroundMonitor : BackgroundService
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            // Initial delay before first check (30s after app start)
-            await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+            // Initial delay: honor the persisted schedule. After any prior cycle the
+            // next run is already on disk — waiting until then avoids a duplicate
+            // full check 30s after launch (startup check + monitor cycle together
+            // burned the GitHub rate limit). First launch ever: NextRunUtc is unset,
+            // so the short default delay applies.
+            var initial = TimeSpan.FromSeconds(30);
+            try
+            {
+                if (_configStore.Load().BackgroundCheckNextRunUtc is { } scheduled)
+                {
+                    var until = scheduled - DateTimeOffset.UtcNow;
+                    if (until > TimeSpan.Zero)
+                        initial = until;
+                }
+            }
+            catch { /* unreadable config — use the default delay */ }
+
+            await Task.Delay(initial, stoppingToken);
 
             while (!stoppingToken.IsCancellationRequested)
             {

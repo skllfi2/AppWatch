@@ -112,4 +112,24 @@ public class VersionComparisonFixturesTests
     [Fact]
     public void IsNewer_NullCurrent_AlwaysTrue()
         => Assert.True(VersionParser.IsNewer(null, "1.0.0")); // Unknown current → any candidate is newer
+
+    // ── План §6.2 (версионная матрица): числовые суффиксы prerelease ──
+
+    [Theory]
+    [InlineData("1.2.0-beta.2", "1.2.0-beta.10", true)]   // numeric, NOT lexicographic (beta.10 > beta.2)
+    [InlineData("1.2.0-beta.10", "1.2.0-beta.2", false)]   // reverse must be false
+    [InlineData("1.2.0-beta.10", "1.2.0", true)]          // any prerelease < stable
+    [InlineData("1.2.0", "1.2.0-beta.10", false)]          // stable is NOT newer than its prerelease
+    [InlineData("1.2.9", "1.2.10", true)]                  // numeric segments (1.2.10 > 1.2.9)
+    [InlineData("1.2.10", "1.2.9", false)]                 // reverse
+    public void IsNewer_PlanMatrix_NumericPrereleaseAndSegments(string current, string candidate, bool expected)
+        => Assert.Equal(expected, VersionParser.IsNewer(current, candidate));
+
+    // Republished release: same version is never "newer" — no pointless reinstall
+    [Theory]
+    [InlineData("1.10.3")]
+    [InlineData("v1.10.3")]
+    [InlineData("1.2.0-beta.10")]
+    public void IsNewer_RepublishedSameVersion_False(string version)
+        => Assert.False(VersionParser.IsNewer(version, version));
 }

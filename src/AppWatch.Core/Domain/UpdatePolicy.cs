@@ -4,8 +4,11 @@ namespace AppWatch.Core.Domain;
 
 /// <summary>
 /// P1: Pure consent gate for auto-applying updates.
-/// Default OFF; respects AppConfig.AutoApplyUpdates, TrackedApp.Enabled, and TrackedApp.LaunchAfterUpdate.
-/// Both BackgroundMonitor and MainViewModel.RunBackgroundCheckAsync should call this.
+/// Safe by default: requires the GLOBAL flag, per-app Enabled, AND per-app
+/// AutoApplyConsent (trust model — no unattended updates without explicit
+/// opt-in for that specific app; user-imported stars entries never auto-apply
+/// until the user consents). Both BackgroundMonitor and MainViewModel
+/// should call this.
 /// </summary>
 public static class UpdatePolicy
 {
@@ -16,6 +19,7 @@ public static class UpdatePolicy
 
         return config.AutoApplyUpdates
             && app.Enabled
+            && app.AutoApplyConsent
             && app.LaunchAfterUpdate;
     }
 }

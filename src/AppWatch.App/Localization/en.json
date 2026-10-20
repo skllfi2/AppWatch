@@ -298,5 +298,8 @@
     "CheckedDaysAgo": "checked {0}d ago",
     "SettingsToastToggle": "Update notifications",
     "SettingsToastHint": "Show Windows notifications when a background check finds updates",
-    "SettingsSelfUpdateDownloading": "Downloading: {0}%"
+    "SettingsSelfUpdateDownloading": "Downloading: {0}%",
+    "InterruptedUpdateRecovered": "interrupted update detected{0}",
+    "InterruptedRestored": " — previous version restored",
+    "InterruptedNoChanges": " — no changes had been applied"
 }

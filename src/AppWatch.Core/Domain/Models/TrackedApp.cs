@@ -12,6 +12,13 @@ public sealed class TrackedApp
     public string? ProcessName { get; set; }
     public bool LaunchAfterUpdate { get; set; }
 
+    /// <summary>
+    /// Trust model (этап 6 плана): explicit per-app consent for UNATTENDED updates.
+    /// The global AutoApplyUpdates flag alone is NOT enough — the auto-apply only
+    /// fires when the user opted in for this specific app. Default OFF.
+    /// </summary>
+    public bool AutoApplyConsent { get; set; }
+
     /// <summary>B7: explicit per-app consent to run unsigned installers (most small GitHub tools ship unsigned).</summary>
     public bool AllowUnsignedInstaller { get; set; }
 

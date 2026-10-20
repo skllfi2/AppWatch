@@ -118,6 +118,8 @@ public partial class App : Application
                                             .AddSingleton<IElevationService, ElevationService>()
                                             .AddSingleton<FileStore>()
                                             .AddSingleton<InstallerTrustService>()
+                                            .AddSingleton<Core.Domain.UpdateGate>()
+                                            .AddSingleton<UpdateJournalStore>()
                                             .AddSingleton<VersionStore>(sp => new VersionStore(config.VersionCacheCount))
                                             .AddSingleton<IUpdateEngine, UpdateEngine>()
                                             .AddSingleton<WingetService>()
