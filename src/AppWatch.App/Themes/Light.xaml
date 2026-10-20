@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
@@ -24,7 +24,6 @@
 
     <!-- Hero banner overlays (for hero cards) -->
     <SolidColorBrush x:Key="HeroOverlayBrush" Color="{ThemeResource TextFillColorPrimary}" Opacity="0.2" />
-    <SolidColorBrush x:Key="HeroSecondaryBrush" Color="{ThemeResource TextFillColorPrimary}" Opacity="0.6" />
     <SolidColorBrush x:Key="HeroTertiaryBrush" Color="{ThemeResource TextFillColorPrimary}" Opacity="0.8" />
     <SolidColorBrush x:Key="SuccessSolidBrush" Color="{ThemeResource SystemFillColorSuccess}" />
 

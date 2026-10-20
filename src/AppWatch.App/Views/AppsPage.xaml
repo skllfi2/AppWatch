@@ -20,87 +20,87 @@
         <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Spacing="16">
 
-                <Border Style="{StaticResource AppWatchHeroBorder}">
-                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto">
-                        <StackPanel Grid.Column="0" Grid.Row="0" Spacing="12">
-                            <StackPanel Orientation="Horizontal" Spacing="12">
-                                <FontIcon Glyph="&#xE895;" FontSize="28" Foreground="White" VerticalAlignment="Center"/>
-                                <TextBlock Text="{x:Bind Loc.HeroTitle, Mode=OneWay}" FontSize="28" FontWeight="SemiBold"
-                                           Foreground="White" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Border Background="#80000000" CornerRadius="10" Padding="16,12" MinWidth="120">
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Text="{x:Bind Loc.HeroMetricTracked, Mode=OneWay}" FontSize="11" Foreground="{StaticResource HeroSecondaryBrush}"/>
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <Ellipse Width="10" Height="10" Fill="{x:Bind ViewModel.StatusDotBrush, Mode=OneWay}" VerticalAlignment="Center"/>
-                                            <TextBlock Text="{x:Bind ViewModel.AppsTrackedCount, Mode=OneWay}"
-                                                       FontSize="14" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Border>
-                                <Border Background="#80000000" CornerRadius="10" Padding="16,12" MinWidth="100">
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Text="{x:Bind Loc.HeroMetricUpdates, Mode=OneWay}" FontSize="11" Foreground="{StaticResource HeroSecondaryBrush}"/>
-                                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="White">
-                                            <Run Text="&#x2B06;"/><Run Text="{x:Bind ViewModel.UpdatesAvailableCount, Mode=OneWay}"/>
-                                        </TextBlock>
-                                    </StackPanel>
-                                </Border>
-                                <Border Background="#80000000" CornerRadius="10" Padding="16,12" MinWidth="90">
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Text="{x:Bind Loc.HeroMetricUpdatedToday, Mode=OneWay}" FontSize="11" Foreground="{StaticResource HeroSecondaryBrush}"/>
-                                        <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="White">
-                                            <Run Text="&#x2705;"/><Run Text="{x:Bind ViewModel.UpdatedTodayCount, Mode=OneWay}"/>
-                                        </TextBlock>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </StackPanel>
+                <!-- Compact dashboard toolbar: metrics + quick actions (replaces the old hero banner) -->
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                                    <Button Command="{x:Bind ViewModel.CheckUpdatesCommand}"
-                                                            ToolTipService.ToolTip="{x:Bind Loc.QuickCheck, Mode=OneWay}"
-                                                            Padding="12,6" CornerRadius="6"
-                                                            Background="{StaticResource HeroOverlayBrush}" BorderThickness="0">
-                                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                                            <FontIcon Glyph="&#xE895;" FontSize="12" Foreground="{StaticResource HeroTertiaryBrush}"/>
-                                                            <TextBlock Text="{x:Bind Loc.QuickCheck, Mode=OneWay}" FontSize="11" Foreground="{StaticResource HeroTertiaryBrush}"/>
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <Button Command="{x:Bind ViewModel.UpdateAllCommand}"
-                                                            ToolTipService.ToolTip="{x:Bind Loc.UpdateAll, Mode=OneWay}"
-                                                            Padding="12,6" CornerRadius="6"
-                                                            Background="{StaticResource HeroOverlayBrush}" BorderThickness="0"
-                                                            Visibility="{x:Bind ViewModel.IsUpdateAllRunning, Converter={StaticResource InverseBoolToVisibility}, Mode=OneWay}">
-                                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                                            <FontIcon Glyph="&#xE896;" FontSize="12" Foreground="{StaticResource HeroTertiaryBrush}"/>
-                                                            <TextBlock Text="{x:Bind Loc.UpdateAll, Mode=OneWay}" FontSize="11" Foreground="{StaticResource HeroTertiaryBrush}"/>
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <Button Command="{x:Bind ViewModel.StopUpdateAllCommand}"
-                                                            ToolTipService.ToolTip="{x:Bind Loc.BtnStop, Mode=OneWay}"
-                                                            Padding="12,6" CornerRadius="6"
-                                                            Background="#80D83B01" BorderThickness="0"
-                                                            Visibility="{x:Bind ViewModel.IsUpdateAllRunning, Converter={StaticResource BoolToVisibility}, Mode=OneWay}">
-                                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                                            <FontIcon Glyph="&#xE711;" FontSize="12" Foreground="White"/>
-                                                            <TextBlock Text="{x:Bind Loc.BtnStop, Mode=OneWay}" FontSize="11" Foreground="White"/>
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <Button Command="{x:Bind ViewModel.AddCustomAppCommand}"
-                                                            AutomationProperties.Name="{x:Bind Loc.AddApp, Mode=OneWay}"
-                                                            ToolTipService.ToolTip="{x:Bind Loc.AddApp, Mode=OneWay}"
-                                                            Padding="12,6" CornerRadius="6"
-                                                            Background="{StaticResource HeroOverlayBrush}" BorderThickness="0">
-                                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                                            <FontIcon Glyph="&#xE710;" FontSize="12" Foreground="{StaticResource HeroTertiaryBrush}"/>
-                                                            <TextBlock Text="{x:Bind Loc.AddApp, Mode=OneWay}" FontSize="11" Foreground="{StaticResource HeroTertiaryBrush}"/>
-                                                        </StackPanel>
-                                                    </Button>
-                                                </StackPanel>
-                    </Grid>
-                </Border>
+                    <!-- Metric chips -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="6" Padding="12,6"
+                                BorderThickness="1" BorderBrush="{StaticResource BorderDefaultBrush}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Ellipse Width="8" Height="8" Fill="{x:Bind ViewModel.StatusDotBrush, Mode=OneWay}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{x:Bind Loc.HeroMetricTracked, Mode=OneWay}" FontSize="12" Opacity="0.7" VerticalAlignment="Center"/>
+                                <TextBlock Text="{x:Bind ViewModel.AppsTrackedCount, Mode=OneWay}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="6" Padding="12,6"
+                                BorderThickness="1" BorderBrush="{StaticResource BorderDefaultBrush}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE74A;" FontSize="11" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{x:Bind Loc.HeroMetricUpdates, Mode=OneWay}" FontSize="12" Opacity="0.7" VerticalAlignment="Center"/>
+                                <TextBlock Text="{x:Bind ViewModel.UpdatesAvailableCount, Mode=OneWay}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="6" Padding="12,6"
+                                BorderThickness="1" BorderBrush="{StaticResource BorderDefaultBrush}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE73E;" FontSize="11" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{x:Bind Loc.HeroMetricUpdatedToday, Mode=OneWay}" FontSize="12" Opacity="0.7" VerticalAlignment="Center"/>
+                                <TextBlock Text="{x:Bind ViewModel.UpdatedTodayCount, Mode=OneWay}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Quick actions -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Button Command="{x:Bind ViewModel.CheckUpdatesCommand}"
+                                AutomationProperties.Name="{x:Bind Loc.QuickCheck, Mode=OneWay}"
+                                ToolTipService.ToolTip="{x:Bind Loc.QuickCheck, Mode=OneWay}"
+                                Padding="12,6" CornerRadius="6"
+                                Background="{StaticResource CardBackgroundBrush}" BorderThickness="1">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE895;" FontSize="12" Foreground="{StaticResource AccentBrush}"/>
+                                <TextBlock Text="{x:Bind Loc.QuickCheck, Mode=OneWay}" FontSize="12"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{x:Bind ViewModel.UpdateAllCommand}"
+                                AutomationProperties.Name="{x:Bind Loc.UpdateAll, Mode=OneWay}"
+                                ToolTipService.ToolTip="{x:Bind Loc.UpdateAll, Mode=OneWay}"
+                                Padding="12,6" CornerRadius="6"
+                                Background="{StaticResource CardBackgroundBrush}" BorderThickness="1"
+                                Visibility="{x:Bind ViewModel.IsUpdateAllRunning, Converter={StaticResource InverseBoolToVisibility}, Mode=OneWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE896;" FontSize="12" Foreground="{StaticResource AccentBrush}"/>
+                                <TextBlock Text="{x:Bind Loc.UpdateAll, Mode=OneWay}" FontSize="12"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{x:Bind ViewModel.StopUpdateAllCommand}"
+                                AutomationProperties.Name="{x:Bind Loc.BtnStop, Mode=OneWay}"
+                                ToolTipService.ToolTip="{x:Bind Loc.BtnStop, Mode=OneWay}"
+                                Padding="12,6" CornerRadius="6"
+                                Background="#26D83B01" BorderThickness="1"
+                                Visibility="{x:Bind ViewModel.IsUpdateAllRunning, Converter={StaticResource BoolToVisibility}, Mode=OneWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE711;" FontSize="12" Foreground="#FFD83B01"/>
+                                <TextBlock Text="{x:Bind Loc.BtnStop, Mode=OneWay}" FontSize="12" Foreground="#FFD83B01"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{x:Bind ViewModel.AddCustomAppCommand}"
+                                AutomationProperties.Name="{x:Bind Loc.AddApp, Mode=OneWay}"
+                                ToolTipService.ToolTip="{x:Bind Loc.AddApp, Mode=OneWay}"
+                                Padding="12,6" CornerRadius="6"
+                                Background="{StaticResource CardBackgroundBrush}" BorderThickness="1">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE710;" FontSize="12" Foreground="{StaticResource AccentBrush}"/>
+                                <TextBlock Text="{x:Bind Loc.AddApp, Mode=OneWay}" FontSize="12"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
 
                 <StackPanel Spacing="8">
                     <StackPanel Orientation="Horizontal" Spacing="8" Margin="4,0">
