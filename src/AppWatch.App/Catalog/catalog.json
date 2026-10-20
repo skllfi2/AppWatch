@@ -1,1 +1,225 @@
-{"entries": [{"name": "zapret-discord-youtube", "repoOwner": "Flowseal", "repoName": "zapret-discord-youtube", "updateKind": "portableZip", "processName": "winws", "assetExtensionPriority": [".zip", ".tar.gz", ".rar"], "ignorePreReleases": true, "description": "Обход замедления Discord и YouTube (Flowseal)", "category": "network"}, {"name": "zapret2-next", "repoOwner": "Dunterbabochka", "repoName": "zapret2-next", "updateKind": "portableZip", "processName": "winws2", "assetExtensionPriority": [".zip"], "ignorePreReleases": true, "description": "Zapret 2 для Windows с bat-лаунчерами (Dunterbabochka)", "category": "network"}, {"name": "yt-dlp", "repoOwner": "yt-dlp", "repoName": "yt-dlp", "updateKind": "portableExe", "executableName": "yt-dlp.exe", "processName": "yt-dlp", "assetExtensionPriority": [".exe"], "ignorePreReleases": true, "description": "Загрузчик YouTube: видео, аудио, плейлисты (обновляется еженедельно)", "category": "network"}, {"name": "Vesktop", "repoOwner": "Vencord", "repoName": "Vesktop", "updateKind": "portableZip", "executableName": "Vesktop.exe", "processName": "Vesktop", "assetExtensionPriority": [".zip"], "ignorePreReleases": true, "description": "Discord-клиент с Vencord внутри (когда Discord душат — особенно актуален)", "category": "network"}, {"name": "AmneziaVPN", "repoOwner": "amnezia-vpn", "repoName": "amnezia-client", "updateKind": "installer", "executableName": "AmneziaVPN.exe", "processName": "AmneziaVPN", "assetExtensionPriority": [".exe"], "ignorePreReleases": true, "description": "Self-hosted VPN-клиент с обфускацией AmneziaWG", "category": "network"}, {"name": "qBittorrent", "repoOwner": "qbittorrent", "repoName": "qBittorrent", "updateKind": "installer", "executableName": "qbittorrent.exe", "processName": "qbittorrent", "assetExtensionPriority": [".exe"], "ignorePreReleases": true, "description": "Торрент-клиент без рекламы (стандарт де-факто)", "category": "network"}, {"name": "optimizerDuck", "repoOwner": "itsfatduck", "repoName": "optimizerDuck", "updateKind": "portableExe", "executableName": "optimizerDuck.exe", "processName": "optimizerDuck", "assetExtensionPriority": [".exe"], "ignorePreReleases": true, "description": "Бесплатный оптимизатор Windows: производительность и приватность", "category": "windows"}, {"name": "GameOptimizer", "repoOwner": "charlie754", "repoName": "Game-Optimizer-CPUs-Threads-Optimizer", "updateKind": "portableZip", "executableName": "GameOptimizer.exe", "processName": "GameOptimizer", "assetExtensionPriority": [".zip"], "ignorePreReleases": true, "description": "Оптимизатор игр: привязка к CPU-кластерам через CPU Sets API", "category": "gaming"}, {"name": "Rufus", "repoOwner": "pbatard", "repoName": "rufus", "updateKind": "portableExe", "executableName": "rufus.exe", "processName": "rufus", "assetExtensionPriority": [".exe"], "ignorePreReleases": true, "description": "Создание загрузочных USB (1.9 МБ, без установки)", "category": "windows"}, {"name": "Ventoy", "repoOwner": "ventoy", "repoName": "Ventoy", "updateKind": "portableZip", "executableName": "Ventoy2Disk.exe", "processName": "Ventoy2Disk", "assetExtensionPriority": [".zip"], "ignorePreReleases": true, "description": "Мультизагрузочные USB: копируй ISO прямо на флешку", "category": "windows"}, {"name": "ShareX", "repoOwner": "ShareX", "repoName": "ShareX", "updateKind": "portableZip", "executableName": "ShareX.exe", "processName": "ShareX", "assetExtensionPriority": [".zip"], "ignorePreReleases": true, "description": "Скриншоты, записи экрана, загрузки — мощнейший инструмент", "category": "windows"}, {"name": "OBS Studio", "repoOwner": "obsproject", "repoName": "obs-studio", "updateKind": "portableZip", "executableName": "bin\\64bit\\obs64.exe", "processName": "obs64", "assetExtensionPriority": [".zip"], "ignorePreReleases": true, "description": "Запись и стриминг (портативная сборка x64)", "category": "windows"}, {"name": "RustDesk", "repoOwner": "rustdesk", "repoName": "rustdesk", "updateKind": "installer", "executableName": "rustdesk.exe", "processName": "RustDesk", "assetExtensionPriority": [".exe"], "ignorePreReleases": true, "description": "Удалённый доступ (open-source TeamViewer, самохостинг)", "category": "windows"}, {"name": "VSCodium", "repoOwner": "VSCodium", "repoName": "vscodium", "updateKind": "portableZip", "executableName": "VSCodium.exe", "processName": "VSCodium", "assetExtensionPriority": [".zip"], "ignorePreReleases": true, "description": "VS Code без телеметрии Microsoft (обновляется ежедневно)", "category": "dev"}, {"name": "PowerToys", "repoOwner": "microsoft", "repoName": "PowerToys", "updateKind": "installer", "executableName": "PowerToys.exe", "processName": "PowerToys", "assetExtensionPriority": [".exe"], "ignorePreReleases": true, "description": "Набор утилит Microsoft для продуктивности и кастомизации", "category": "windows"}, {"name": "GPU-Z", "repoOwner": "TechPowerUp", "repoName": "GPU-Z", "updateKind": "wingetPackage", "wingetPackageId": "TechPowerUp.GPU-Z", "ignorePreReleases": true, "description": "Информация о видеокарте и датчики (TechPowerUp)", "category": "gaming"}]}
+﻿{
+  "entries": [
+    {
+      "name": "7-Zip",
+      "repoOwner": "ip7z",
+      "repoName": "7zip",
+      "updateKind": "installer",
+      "executableName": "7zFM.exe",
+      "processName": "7zFM",
+      "assetExtensionPriority": [
+        ".exe"
+      ],
+      "ignorePreReleases": true,
+      "description": "Архиватор с высокой степенью сжатия (7z, zip, tar, rar)",
+      "category": "utility"
+    },
+    {
+      "name": "Notepad++",
+      "repoOwner": "notepad-plus-plus",
+      "repoName": "notepad-plus-plus",
+      "updateKind": "installer",
+      "executableName": "notepad++.exe",
+      "processName": "notepad++",
+      "assetExtensionPriority": [
+        ".exe"
+      ],
+      "ignorePreReleases": true,
+      "description": "Продвинутый текстовый редактор с подсветкой синтаксиса",
+      "category": "utility"
+    },
+    {
+      "name": "HandBrake",
+      "repoOwner": "HandBrake",
+      "repoName": "HandBrake",
+      "updateKind": "installer",
+      "executableName": "HandBrake.exe",
+      "processName": "HandBrake",
+      "assetExtensionPriority": [
+        ".exe"
+      ],
+      "ignorePreReleases": true,
+      "description": "Транскодер видео с открытым кодом",
+      "category": "media"
+    },
+    {
+      "name": "KeePassXC",
+      "repoOwner": "keepassxreboot",
+      "repoName": "keepassxc",
+      "updateKind": "installer",
+      "executableName": "KeePassXC.exe",
+      "processName": "KeePassXC",
+      "assetExtensionPriority": [
+        ".msi",
+        ".exe"
+      ],
+      "ignorePreReleases": true,
+      "description": "Менеджер паролей с современным UI (KeePass-совместимый)",
+      "category": "security"
+    },
+    {
+      "name": "Telegram Desktop",
+      "repoOwner": "telegramdesktop",
+      "repoName": "tdesktop",
+      "updateKind": "portableZip",
+      "executableName": "Telegram.exe",
+      "processName": "Telegram",
+      "assetExtensionPriority": [
+        ".zip"
+      ],
+      "ignorePreReleases": true,
+      "description": "Официальный клиент Telegram для десктопа",
+      "category": "network"
+    },
+    {
+      "name": "Joplin",
+      "repoOwner": "laurent22",
+      "repoName": "joplin",
+      "updateKind": "installer",
+      "executableName": "Joplin.exe",
+      "processName": "Joplin",
+      "assetExtensionPriority": [
+        ".exe"
+      ],
+      "ignorePreReleases": true,
+      "description": "Заметки с E2E-шифрованием и синхронизацией",
+      "category": "productivity"
+    },
+    {
+      "name": "PowerToys",
+      "repoOwner": "microsoft",
+      "repoName": "PowerToys",
+      "updateKind": "installer",
+      "executableName": "PowerToys.exe",
+      "processName": "PowerToys",
+      "assetExtensionPriority": [
+        ".exe"
+      ],
+      "ignorePreReleases": true,
+      "description": "Набор утилит Microsoft для продуктивности и кастомизации",
+      "category": "utility"
+    },
+    {
+      "name": "ShareX",
+      "repoOwner": "ShareX",
+      "repoName": "ShareX",
+      "updateKind": "portableZip",
+      "executableName": "ShareX.exe",
+      "processName": "ShareX",
+      "assetExtensionPriority": [
+        ".zip"
+      ],
+      "ignorePreReleases": true,
+      "description": "Скриншоты, записи экрана, загрузки — мощнейший инструмент",
+      "category": "media"
+    },
+    {
+      "name": "OBS Studio",
+      "repoOwner": "obsproject",
+      "repoName": "obs-studio",
+      "updateKind": "portableZip",
+      "executableName": "obs64.exe",
+      "processName": "obs64",
+      "assetExtensionPriority": [
+        ".zip"
+      ],
+      "ignorePreReleases": true,
+      "description": "Запись и стриминг (портативная сборка x64)",
+      "category": "media"
+    },
+    {
+      "name": "Rufus",
+      "repoOwner": "pbatard",
+      "repoName": "rufus",
+      "updateKind": "portableExe",
+      "executableName": "rufus.exe",
+      "processName": "rufus",
+      "assetExtensionPriority": [
+        ".exe"
+      ],
+      "ignorePreReleases": true,
+      "description": "Создание загрузочных USB (1.9 МБ, без установки)",
+      "category": "utility"
+    },
+    {
+      "name": "Ventoy",
+      "repoOwner": "ventoy",
+      "repoName": "Ventoy",
+      "updateKind": "portableZip",
+      "executableName": "Ventoy2Disk.exe",
+      "processName": "Ventoy2Disk",
+      "assetExtensionPriority": [
+        ".zip"
+      ],
+      "ignorePreReleases": true,
+      "description": "Мультизагрузочные USB: копируй ISO прямо на флешку",
+      "category": "utility"
+    },
+    {
+      "name": "qBittorrent",
+      "repoOwner": "qbittorrent",
+      "repoName": "qBittorrent",
+      "updateKind": "installer",
+      "executableName": "qbittorrent.exe",
+      "processName": "qbittorrent",
+      "assetExtensionPriority": [
+        ".exe"
+      ],
+      "ignorePreReleases": true,
+      "description": "Торрент-клиент без рекламы (стандарт де-факто)",
+      "category": "network"
+    },
+    {
+      "name": "yt-dlp",
+      "repoOwner": "yt-dlp",
+      "repoName": "yt-dlp",
+      "updateKind": "portableExe",
+      "executableName": "yt-dlp.exe",
+      "processName": "yt-dlp",
+      "assetExtensionPriority": [
+        ".exe"
+      ],
+      "ignorePreReleases": true,
+      "description": "Загрузчик YouTube: видео, аудио, плейлисты (обновляется еженедельно)",
+      "category": "network"
+    },
+    {
+      "name": "VSCodium",
+      "repoOwner": "VSCodium",
+      "repoName": "vscodium",
+      "updateKind": "portableZip",
+      "executableName": "VSCodium.exe",
+      "processName": "VSCodium",
+      "assetExtensionPriority": [
+        ".zip"
+      ],
+      "ignorePreReleases": true,
+      "description": "VS Code без телеметрии Microsoft (обновляется ежедневно)",
+      "category": "development"
+    },
+    {
+      "name": "RustDesk",
+      "repoOwner": "rustdesk",
+      "repoName": "rustdesk",
+      "updateKind": "portableZip",
+      "executableName": "RustDesk.exe",
+      "processName": "RustDesk",
+      "assetExtensionPriority": [
+        ".zip"
+      ],
+      "ignorePreReleases": true,
+      "description": "Удалённый доступ (open-source TeamViewer, самохостинг)",
+      "category": "network"
+    },
+    {
+      "name": "GPU-Z",
+      "repoOwner": "TechPowerUp",
+      "repoName": "GPU-Z",
+      "updateKind": "wingetPackage",
+      "wingetPackageId": "TechPowerUp.GPU-Z",
+      "ignorePreReleases": true,
+      "description": "Информация о видеокарте и датчики (TechPowerUp)",
+      "category": "utility"
+    }
+  ]
+}
