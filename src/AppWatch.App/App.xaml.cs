@@ -152,6 +152,10 @@ public partial class App : Application
                                             _window.Activate();
 
                                         SingleInstance.StartListening(_ => ActivateWindow());
+
+                                        // Startup visibility: winget scan + app check
+                                        // (statuses land on the cards, not just in the config)
+                                        _ = Services.GetRequiredService<MainViewModel>().RunStartupTasksAsync();
                                     }
 
             private void OnWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)

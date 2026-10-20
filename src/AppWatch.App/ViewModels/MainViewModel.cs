@@ -1092,6 +1092,34 @@ public partial class MainViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Startup visibility: winget scan (local, free) + tracked-apps check a few seconds
+    /// after launch, so the user SEES fresh statuses on the cards instead of stale ones.
+    /// App check is gated by AutoCheckEnabled (same consent as the background monitor);
+    /// the 15-min GitHub response cache keeps the monitor's own 30s cycle from double-burning quota.
+    /// </summary>
+    public async Task RunStartupTasksAsync()
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(3));
+
+            if (WingetAvailable)
+                await ScanWingetAsync(default);
+
+            if (_config.AutoCheckEnabled && Apps.Count > 0)
+            {
+                StatusText = _loc["checking"];
+                await RunBackgroundCheckAsync();
+                StatusText = _loc["checkDone"];
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "startup check failed");
+        }
+    }
+
+    /// <summary>
     /// Silent check + auto-apply for scheduled background runs (called by the App timer).
     /// </summary>
     public async Task RunBackgroundCheckAsync()
