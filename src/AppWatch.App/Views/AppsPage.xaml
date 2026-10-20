@@ -177,6 +177,8 @@
                                                 <TextBlock Text="{x:Bind RuleBadge, Mode=OneWay}" FontSize="10" Opacity="0.75"/>
                                             </Border>
                                         </StackPanel>
+                                        <!-- P-UI: when this app was last checked (B9 model field) -->
+                                        <TextBlock Text="{x:Bind LastCheckText, Mode=OneWay}" FontSize="11" Opacity="0.45"/>
                                     </StackPanel>
 
                                     <ProgressBar Grid.Column="2" VerticalAlignment="Center" Width="120" Height="6"

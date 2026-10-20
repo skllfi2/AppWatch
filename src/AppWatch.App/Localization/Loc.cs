@@ -230,4 +230,6 @@ public sealed class Loc : INotifyPropertyChanged
                 public string OnboardingText => LocalizationService.Instance["OnboardingText"];
                 public string OnboardingOk => LocalizationService.Instance["OnboardingOk"];
                 public string MenuEdit => LocalizationService.Instance["MenuEdit"];
+                public string SettingsToastToggle => LocalizationService.Instance["SettingsToastToggle"];
+                public string SettingsToastHint => LocalizationService.Instance["SettingsToastHint"];
             }

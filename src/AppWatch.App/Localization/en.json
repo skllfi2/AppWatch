@@ -284,5 +284,19 @@
     "OnboardingText": "1. Open \"Catalog\" and install what you need\n2. Enable auto-check in \"Settings\"\n3. Updates will arrive automatically",
     "OnboardingOk": "Got it",
     "BtnRollback": "Rollback",
-    "MenuEdit": "Edit"
+    "MenuEdit": "Edit",
+    "ToastUpdateTitle": "AppWatch: update found",
+    "ToastUpdateBody": "{0} — {1}",
+    "ToastSummaryTitle": "AppWatch: check complete",
+    "ToastSummaryBody": "Updates found: {0}",
+    "ToastBtnOpen": "Open",
+    "ToastBtnUpdate": "Update",
+    "NeverChecked": "never checked",
+    "CheckedJustNow": "checked just now",
+    "CheckedMinutesAgo": "checked {0}m ago",
+    "CheckedHoursAgo": "checked {0}h ago",
+    "CheckedDaysAgo": "checked {0}d ago",
+    "SettingsToastToggle": "Update notifications",
+    "SettingsToastHint": "Show Windows notifications when a background check finds updates",
+    "SettingsSelfUpdateDownloading": "Downloading: {0}%"
 }

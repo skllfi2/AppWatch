@@ -40,4 +40,7 @@ public sealed class AppConfig
 
     /// <summary>Show the onboarding dialog on first launch.</summary>
     public bool ShowOnboarding { get; set; } = true;
+
+    /// <summary>Show a Windows app notification when background checks find updates.</summary>
+    public bool ToastNotificationsEnabled { get; set; } = true;
 }

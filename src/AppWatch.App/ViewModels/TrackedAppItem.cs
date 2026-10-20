@@ -97,6 +97,25 @@ public partial class TrackedAppItem : ObservableObject
     /// <summary>A1: menu captions resolved per-item for x:Bind inside DataTemplate.</summary>
     public string MenuSkipVersion => LocalizationService.Instance["MenuSkipVersion"];
     public string MenuUpdateRules => LocalizationService.Instance["MenuUpdateRules"];
+
+    /// <summary>Localized relative "last checked" caption (P-UI informative-lite).</summary>
+    public string LastCheckText
+    {
+        get
+        {
+            var loc = LocalizationService.Instance;
+            if (App.LastCheckUtc is not { } t)
+                return loc["NeverChecked"];
+            var delta = DateTimeOffset.UtcNow - t;
+            if (delta < TimeSpan.FromMinutes(1))
+                return loc["CheckedJustNow"];
+            if (delta < TimeSpan.FromHours(1))
+                return string.Format(loc["CheckedMinutesAgo"], (int)delta.TotalMinutes);
+            if (delta < TimeSpan.FromDays(1))
+                return string.Format(loc["CheckedHoursAgo"], (int)delta.TotalHours);
+            return string.Format(loc["CheckedDaysAgo"], (int)delta.TotalDays);
+        }
+    }
     public string MenuPinCurrent => IsPinned
         ? LocalizationService.Instance["MenuUnpin"]
         : LocalizationService.Instance["MenuPinCurrent"];
@@ -110,6 +129,9 @@ public partial class TrackedAppItem : ObservableObject
         OnPropertyChanged(nameof(StatusBrush));
         OnPropertyChanged(nameof(StageText));
         OnPropertyChanged(nameof(IsStageProgress));
+        // Stage transitions bracket every check/apply — by the time the stage
+        // leaves Checking, the engine has already persisted App.LastCheckUtc.
+        OnPropertyChanged(nameof(LastCheckText));
     }
 
     partial void OnStatusDetailChanged(string? value) => OnPropertyChanged(nameof(StatusTooltip));
@@ -134,6 +156,7 @@ public partial class TrackedAppItem : ObservableObject
         OnPropertyChanged(nameof(MenuPinCurrent));
         OnPropertyChanged(nameof(RuleBadge));
         OnPropertyChanged(nameof(StatusTooltip));
+        OnPropertyChanged(nameof(LastCheckText));
     }
 
     /// <summary>Localized "Update" button label (resolved per-item to keep x:Bind inside DataTemplate valid).</summary>

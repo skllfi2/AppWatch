@@ -17,6 +17,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.Windows.AppNotifications;
 using Serilog;
 using Velopack;
 
@@ -38,6 +39,7 @@ public partial class App : Application
             private AutostartService? _autostart;
             private IntPtr _hwnd;
             private bool _exiting;
+            private readonly System.Threading.CancellationTokenSource _hostedCts = new();
 
     public App()
         {
@@ -64,19 +66,31 @@ public partial class App : Application
     public static T Resolve<T>() where T : notnull => (T)((App)Current).Services.GetRequiredService(typeof(T));
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
-        {
-            // Register converters AFTER XAML app init (Application.Resources throws
-            // COMException when touched from the App constructor in unpackaged mode),
-            // but BEFORE the first page loads (StaticResource lookups happen then).
-            Resources["BoolToVisibility"] = new Converters.BoolToVisibilityConverter();
-            Resources["InverseBool"] = new Converters.InverseBoolConverter();
-            Resources["StringToBool"] = new Converters.StringToBoolConverter();
-            Resources["NotNullToVisibility"] = new Converters.NotNullToVisibilityConverter();
-            Resources["CountToVisibility"] = new Converters.CountToVisibilityConverter();
+    {
+        // Register converters AFTER XAML app init (Application.Resources throws
+        // COMException when touched from the App constructor in unpackaged mode),
+        // but BEFORE the first page loads (StaticResource lookups happen then).
+        Resources["BoolToVisibility"] = new Converters.BoolToVisibilityConverter();
+        Resources["InverseBool"] = new Converters.InverseBoolConverter();
+        Resources["StringToBool"] = new Converters.StringToBoolConverter();
+        Resources["NotNullToVisibility"] = new Converters.NotNullToVisibilityConverter();
+        Resources["CountToVisibility"] = new Converters.CountToVisibilityConverter();
                         Resources["InverseCountToVisibility"] = new Converters.InverseCountToVisibilityConverter();
                         Resources["StringToBrushConverter"] = new Converters.StringToBrushConverter();
                         Resources["InverseBoolToVisibility"] = new Converters.InverseBoolToVisibilityConverter();
             Resources["StringNotEmptyToVisibility"] = new Converters.StringNotEmptyToVisibilityConverter();
+
+            // App notifications: register BEFORE the window exists (official WinAppSDK
+            // sample order). Best-effort — a failure here must never take the app down.
+            try
+            {
+                AppNotificationManager.Default.NotificationInvoked += OnNotificationInvoked;
+                AppNotificationManager.Default.Register();
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Warning(ex, "app notification registration failed; toasts disabled");
+            }
 
             var appData = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AppWatch");
@@ -133,6 +147,15 @@ public partial class App : Application
 
                 LocalizationService.Instance.SetLanguage(config.Language);
 
+                // CRITICAL: AddHostedService only auto-starts inside a real IHost.
+                // We build a bare ServiceProvider, so the background monitors
+                // (BackgroundMonitor, CatalogMonitor) never ran — the "auto check"
+                // was silently dead. Start them explicitly here.
+                foreach (var hosted in Services.GetServices<Microsoft.Extensions.Hosting.IHostedService>())
+                {
+                    _ = Task.Run(() => hosted.StartAsync(_hostedCts.Token));
+                }
+
                 _window = new MainWindow();
                 Window = _window;
                 _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
@@ -153,7 +176,7 @@ public partial class App : Application
 
                                         SingleInstance.StartListening(_ => ActivateWindow());
 
-                                        // Startup visibility: winget scan + app check
+                                                                // Startup visibility: winget scan + app check
                                         // (statuses land on the cards, not just in the config)
                                         _ = Services.GetRequiredService<MainViewModel>().RunStartupTasksAsync();
                                         // Show onboarding on first launch
@@ -172,6 +195,8 @@ public partial class App : Application
                                 {
                                     _exiting = true;
                                     _tray?.Destroy();
+                                    // stop the background monitors cleanly
+                                    _hostedCts.Cancel();
                                     // WinUI 3 has no OnExit override — cleanup happens here, before Exit()
                                     Log.CloseAndFlush();
                                     Exit();
@@ -209,6 +234,36 @@ public partial class App : Application
                     var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
                     NativeMethods.ShowWindow(hwnd, NativeMethods.SwRestore);
                     NativeMethods.SetForegroundWindow(hwnd);
+                });
+            }
+
+            /// <summary>
+            /// Toast activation: any interaction restores the window; the "Update"
+            /// button additionally starts the update for the named app.
+            /// NotificationInvoked arrives on a non-UI thread — everything marshals
+            /// through the main window's DispatcherQueue.
+            /// </summary>
+            private void OnNotificationInvoked(AppNotificationManager sender,
+                AppNotificationActivatedEventArgs args)
+            {
+                var window = _window;
+                if (window is null) return;
+
+                window.DispatcherQueue.TryEnqueue(() =>
+                {
+                    NativeMethods.ShowWindow(_hwnd, NativeMethods.SwRestore);
+                    NativeMethods.SetForegroundWindow(_hwnd);
+
+                    if (!args.Arguments.TryGetValue("action", out var action) || action != "update")
+                        return;
+                    if (!args.Arguments.TryGetValue("app", out var appName) || string.IsNullOrWhiteSpace(appName))
+                        return;
+
+                    var vm = Services.GetRequiredService<MainViewModel>();
+                    var item = vm.Apps.FirstOrDefault(x =>
+                        string.Equals(x.App.Name, appName, StringComparison.OrdinalIgnoreCase));
+                    if (item is { UpdateAvailable: true })
+                        vm.UpdateOneCommand.Execute(item);
                 });
             }
         }

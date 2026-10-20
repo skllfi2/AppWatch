@@ -101,6 +101,24 @@
                             </Grid>
                         </Border>
 
+                        <!-- Toast notifications -->
+                        <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="16">
+                            <Grid ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Loc.SettingsToastToggle, Mode=OneWay}" FontSize="14"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="{x:Bind Loc.SettingsToastHint, Mode=OneWay}" FontSize="11"
+                                               Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
+                                              IsOn="{x:Bind ViewModel.ToastNotificationsEnabled, Mode=TwoWay}"/>
+                            </Grid>
+                        </Border>
+
                         <!-- Interval -->
                                                 <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="16">
                                                     <Grid ColumnSpacing="16">

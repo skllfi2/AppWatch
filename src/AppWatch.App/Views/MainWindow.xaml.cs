@@ -28,6 +28,59 @@ public sealed partial class MainWindow : Window
 
         // Initial selection drives the first navigation via SelectionChanged.
         Nav.SelectedItem = NavItemHome;
+
+        WireNavBadges();
+    }
+
+    // === Nav badges: update counters on Home and Winget ===
+    // NavigationViewItem.InfoBadge crashes the XAML compiler (WMC9999) when
+    // declared in XAML, but works fine instantiated from code-behind.
+
+    private void WireNavBadges()
+    {
+        var vm = global::AppWatch.App.Resolve<ViewModels.MainViewModel>();
+
+        var homeBadge = NewBadge();
+        NavItemHome.InfoBadge = homeBadge;
+
+        var wingetItem = Nav.MenuItems.OfType<NavigationViewItem>()
+            .FirstOrDefault(i => (string?)i.Tag == "winget");
+        InfoBadge? wingetBadge = null;
+        if (wingetItem is not null)
+        {
+            wingetBadge = NewBadge();
+            wingetItem.InfoBadge = wingetBadge;
+        }
+
+        vm.PropertyChanged += (_, e) =>
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(ViewModels.MainViewModel.UpdatesAvailableCount):
+                    DispatcherQueue.TryEnqueue(() => SyncBadge(homeBadge, vm.UpdatesAvailableCount));
+                    break;
+                case nameof(ViewModels.MainViewModel.WingetUpdatesAvailable):
+                    if (wingetBadge is not null)
+                        DispatcherQueue.TryEnqueue(() => SyncBadge(wingetBadge, vm.WingetUpdatesAvailable));
+                    break;
+            }
+        };
+
+        SyncBadge(homeBadge, vm.UpdatesAvailableCount);
+        if (wingetBadge is not null)
+            SyncBadge(wingetBadge, vm.WingetUpdatesAvailable);
+    }
+
+    private static InfoBadge NewBadge() => new()
+    {
+        FontSize = 11,
+        Visibility = Visibility.Collapsed,
+    };
+
+    private static void SyncBadge(InfoBadge badge, int count)
+    {
+        badge.Value = count;
+        badge.Visibility = count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     // === Navigation (NavigationView-driven) ===

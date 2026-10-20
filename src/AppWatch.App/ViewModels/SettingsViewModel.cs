@@ -7,6 +7,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Velopack;
+using Velopack.Locators;
+using Velopack.Sources;
 using Windows.Storage.Pickers;
 
 namespace AppWatch.ViewModels;
@@ -48,6 +51,8 @@ public partial class SettingsViewModel : ObservableObject
         SelectedUpdateStrategyIndex = StrategyChoices.ToList().IndexOf(_config.DefaultUpdateStrategy);
         if (SelectedUpdateStrategyIndex < 0) SelectedUpdateStrategyIndex = 0;
 
+        ToastNotificationsEnabled = _config.ToastNotificationsEnabled;
+
         _initialized = true;
     }
 
@@ -59,6 +64,10 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     public partial bool AutoCheckEnabled { get; set; }
+
+    /// <summary>Windows app notifications for background-check findings.</summary>
+    [ObservableProperty]
+    public partial bool ToastNotificationsEnabled { get; set; }
 
     [ObservableProperty]
     public partial int SelectedIntervalIndex { get; set; }
@@ -127,6 +136,7 @@ public partial class SettingsViewModel : ObservableObject
     {
         _config.Language = SelectedLanguageIndex == 0 ? "ru" : "en";
         _config.AutoCheckEnabled = AutoCheckEnabled;
+        _config.ToastNotificationsEnabled = ToastNotificationsEnabled;
         _config.CheckIntervalHours = IntervalChoices[Math.Max(0, SelectedIntervalIndex)];
         if (!string.IsNullOrWhiteSpace(PatToken))
             _config.GitHubToken = PatToken.Trim();
@@ -142,6 +152,23 @@ public partial class SettingsViewModel : ObservableObject
         StatusText = "";
         try
         {
+            // Installed by Setup.exe → Velopack feed (delta updates, signed nupkg).
+            // Only available when VelopackLocator finds a real install; dev/portable
+            // builds fall back to the zip flow below.
+            _vpManager ??= TryCreateVpManager();
+            if (_vpManager is not null)
+            {
+                var info = await _vpManager.CheckForUpdatesAsync();
+                _vpUpdate = info;
+                _preparedUpdate = null;
+                StatusText = info is null
+                    ? LocalizationService.Instance["SettingsNoUpdates"]
+                    : string.Format(LocalizationService.Instance["SettingsUpdatesFound"],
+                        info.TargetFullRelease.Version);
+                OnPropertyChanged(nameof(CanApplySelfUpdate));
+                return;
+            }
+
             var version = typeof(SettingsViewModel).Assembly.GetName().Version?.ToString(3) ?? "0.1.0";
             var prepared = await _selfUpdate.PrepareAsync(version, cancellationToken);
             StatusText = prepared is null
@@ -164,7 +191,33 @@ public partial class SettingsViewModel : ObservableObject
 
     private SelfUpdateService.PreparedUpdate? _preparedUpdate;
 
-    public bool CanApplySelfUpdate => _preparedUpdate is not null && !SelfUpdateBusy;
+    // === Velopack self-update (Setup.exe installs) ===
+
+    private UpdateManager? _vpManager;
+    private UpdateInfo? _vpUpdate;
+
+    /// <summary>
+    /// null when this build isn't Velopack-installed (dotnet run / portable zip),
+    /// which is exactly the signal to use the zip flow instead.
+    /// </summary>
+    private static UpdateManager? TryCreateVpManager()
+    {
+        try
+        {
+            if (VelopackLocator.Current is not { } locator || locator.CurrentlyInstalledVersion is null)
+                return null;
+
+            // releases.win.json is attached to every GitHub Release by CI (vpk pack)
+            return new UpdateManager(new GithubSource("https://github.com/skllfi2/AppWatch", "", false));
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public bool CanApplySelfUpdate =>
+        (_preparedUpdate is not null || _vpUpdate is not null) && !SelfUpdateBusy;
 
     // === A3: export / import the app list ===
 
@@ -247,6 +300,32 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanApplySelfUpdate))]
     private async Task ApplySelfUpdateAsync(CancellationToken cancellationToken)
     {
+        // Velopack path: download the update, then apply + restart (process exits on success).
+        if (_vpUpdate is not null && _vpManager is not null)
+        {
+            var loc = LocalizationService.Instance;
+            SelfUpdateBusy = true;
+            StatusText = loc["SettingsSelfUpdateApplying"];
+            try
+            {
+                await _vpManager.DownloadUpdatesAsync(_vpUpdate, percent =>
+                    StatusText = string.Format(loc["SettingsSelfUpdateDownloading"], percent),
+                    cancellationToken);
+                _vpManager.ApplyUpdatesAndRestart(_vpUpdate);
+            }
+            catch (Exception ex)
+            {
+                StatusText = ex.Message;
+            }
+            finally
+            {
+                SelfUpdateBusy = false;
+                _vpUpdate = null;
+                OnPropertyChanged(nameof(CanApplySelfUpdate));
+            }
+            return;
+        }
+
         if (_preparedUpdate is null) return;
 
         SelfUpdateBusy = true;
