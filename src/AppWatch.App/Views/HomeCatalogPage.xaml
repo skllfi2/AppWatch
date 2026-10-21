@@ -467,7 +467,7 @@
                                 <!-- Source list -->
                                 <ItemsControl ItemsSource="{x:Bind ViewModel.CatalogSources, Mode=OneWay}">
                                     <ItemsControl.ItemTemplate>
-                                        <DataTemplate x:DataType="core:CatalogSource">
+                                        <DataTemplate x:DataType="vm:CatalogSourceItem">
                                             <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="12"
                                                     BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1"
                                                     Margin="0,0,0,8">
@@ -483,10 +483,11 @@
                                                     </StackPanel>
                                                     <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
                                                                   IsOn="{x:Bind Enabled, Mode=TwoWay}"
-                                                                  OnContent="{x:Bind Loc.SourceEnabled, Mode=OneWay}"
-                                                                  OffContent="{x:Bind Loc.SourceDisabled, Mode=OneWay}"/>
-                                                    <Button Grid.Column="2" Command="{x:Bind ViewModel.RemoveCatalogSourceCommand}" CommandParameter="{x:Bind}"
-                                                            Content="{x:Bind Loc.BtnRemoveSource, Mode=OneWay}"
+                                                                  OnContent="{x:Bind SourceEnabled}"
+                                                                  OffContent="{x:Bind SourceDisabled}"/>
+                                                    <Button Grid.Column="2" Command="{x:Bind RemoveCatalogSourceCommand}" CommandParameter="{x:Bind Source}"
+                                                            Content="{x:Bind BtnRemoveSource}"
+                                                            Visibility="{x:Bind CanRemove, Converter={StaticResource BoolToVisibility}}"
                                                             Padding="12,6" CornerRadius="6" FontSize="12"
                                                             Background="{StaticResource CardBackgroundBrush}" BorderThickness="1"/>
                                                 </Grid>

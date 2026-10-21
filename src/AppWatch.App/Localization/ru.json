@@ -345,5 +345,8 @@
   "OpenInGitHub": "Открыть в GitHub",
   "RepoOwnerNameRequired": "Укажите владельца и имя репозитория",
   "RepoNotFound": "Репозиторий не найден",
-  "RepoFetchFailed": "Ошибка получения данных репозитория"
+  "RepoFetchFailed": "Ошибка получения данных репозитория",
+  "SourceEnabled": "Включён",
+  "SourceDisabled": "Отключён",
+  "BtnRemoveSource": "Удалить"
 }

@@ -275,13 +275,13 @@ public partial class MainViewModel : ObservableObject
                     public partial bool IsAddingSource { get; set; }
 
                     /// <summary>All catalog sources for UI display.</summary>
-                    public ObservableCollection<CatalogSource> CatalogSources { get; } = [];
+                    public ObservableCollection<CatalogSourceItem> CatalogSources { get; } = [];
 
                     private void RefreshSources()
                     {
                         CatalogSources.Clear();
                         foreach (var s in _catalog.Sources)
-                            CatalogSources.Add(s);
+                            CatalogSources.Add(new CatalogSourceItem(s, _catalog));
                     }
 
                     public string HeroTitle => LocalizationService.Instance["HeroTitle"];

@@ -345,5 +345,8 @@
   "OpenInGitHub": "Open in GitHub",
   "RepoOwnerNameRequired": "Enter repo owner and name",
   "RepoNotFound": "Repository not found",
-  "RepoFetchFailed": "Failed to fetch repository data"
+  "RepoFetchFailed": "Failed to fetch repository data",
+  "SourceEnabled": "Enabled",
+  "SourceDisabled": "Disabled",
+  "BtnRemoveSource": "Remove"
 }
