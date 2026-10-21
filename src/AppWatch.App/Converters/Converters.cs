@@ -180,3 +180,24 @@ public sealed class FirstCharToBrushConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, string language)
         => throw new NotSupportedException();
 }
+
+/// <summary>
+/// String URL → BitmapImage for Image.Source binding in x:Bind.
+/// Returns null when string is empty/null so Image shows nothing (transparent).
+/// </summary>
+public sealed class StringToImageSourceConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is not string url || string.IsNullOrWhiteSpace(url))
+            return null;
+        try
+        {
+            return new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(url));
+        }
+        catch { return null; }
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+        => throw new NotSupportedException();
+}

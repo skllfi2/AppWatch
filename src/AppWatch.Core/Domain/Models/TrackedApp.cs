@@ -55,7 +55,10 @@ public sealed class TrackedApp
     /// File is read as Latin-1 so ASCII strings inside binary files survive.</summary>
     public string? VersionFileRegex { get; set; }
 
-    // New: Update strategy
+        // New: GitHub repo avatar URL for card icon
+        public string? AvatarUrl { get; set; }
+
+        // New: Update strategy
     public UpdateStrategy Strategy { get; set; } = UpdateStrategy.Auto;
 }
 

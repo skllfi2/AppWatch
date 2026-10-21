@@ -67,8 +67,11 @@ public partial class TrackedAppItem : ObservableObject
         }
     }
 
-    [ObservableProperty]
-    public partial UpdateStage Stage { get; set; } = UpdateStage.Idle;
+    /// <summary>GitHub repo avatar URL for card icon (from TrackedApp.AvatarUrl).</summary>
+        public string? AvatarUrl => App.AvatarUrl;
+
+        [ObservableProperty]
+        public partial UpdateStage Stage { get; set; } = UpdateStage.Idle;
 
     [ObservableProperty]
     public partial string StatusText { get; set; } = "";

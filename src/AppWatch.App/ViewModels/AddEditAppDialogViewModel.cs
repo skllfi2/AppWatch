@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using AppWatch.Core.Abstractions;
+using AppWatch.Core.Domain;
 using AppWatch.Core.Domain.Models;
 using AppWatch.Localization;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -50,6 +51,9 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
         AllowUnsignedInstaller = _app.AllowUnsignedInstaller;
         AutoDetectVersion = _app.AutoDetectVersion;
     }
+
+    // Expose AvatarUrl for binding to Image in dialog
+    public string? AvatarUrl => _app.AvatarUrl;
 
     public bool IsNewApp => _isNew;
 
@@ -175,6 +179,12 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
                 // Auto-fill app name if empty
                 if (string.IsNullOrWhiteSpace(Name))
                     Name = info.Name;
+
+                // Auto-detect UpdateKind and ExecutableName from latest release
+                if (_isNew) // only for new apps, don't override user's existing choices
+                {
+                    await AutoDetectFromLatestReleaseAsync(RepoOwner.Trim(), RepoName.Trim());
+                }
             }
             else
             {
@@ -188,6 +198,36 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
         finally
         {
             IsFetchingRepoInfo = false;
+        }
+    }
+
+    private async Task AutoDetectFromLatestReleaseAsync(string owner, string repo)
+    {
+        try
+        {
+            var releases = await _github.GetReleasesAsync(owner, repo);
+            var filtered = IgnorePreReleases
+                ? releases.Where(r => !r.IsPreRelease).ToList()
+                : releases;
+
+            if (filtered.Count > 0)
+            {
+                var latest = filtered[0];
+                var assetNames = latest.Assets.Select(a => a.Name).ToList();
+
+                var suggestedKind = StarsImportHeuristics.SuggestUpdateKind(assetNames);
+                if (suggestedKind.HasValue)
+                {
+                    SelectedUpdateKindIndex = (int)suggestedKind.Value;
+                    var suggestedExe = StarsImportHeuristics.SuggestExecutableName(assetNames, suggestedKind.Value);
+                    if (!string.IsNullOrWhiteSpace(suggestedExe))
+                        ExecutableName = suggestedExe;
+                }
+            }
+        }
+        catch
+        {
+            // best-effort; ignore auto-detect failures
         }
     }
 
@@ -226,6 +266,7 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
         _app.IgnorePreReleases = IgnorePreReleases;
         _app.AllowUnsignedInstaller = AllowUnsignedInstaller;
         _app.AutoDetectVersion = AutoDetectVersion;
+        _app.AvatarUrl = RepoAvatarUrl; // persist avatar URL
         return _app;
     }
 }

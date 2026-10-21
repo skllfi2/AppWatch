@@ -31,10 +31,14 @@
                         CornerRadius="6">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <Border Width="36" Height="36" CornerRadius="6"
-                                Background="{x:Bind MonogramBrush}" VerticalAlignment="Center">
-                            <TextBlock Text="{x:Bind Monogram}" FontSize="15" FontWeight="SemiBold"
-                                       Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                                                        Background="{x:Bind MonogramBrush}" VerticalAlignment="Center">
+                                                    <Grid>
+                                                        <TextBlock Text="{x:Bind Monogram}" FontSize="15" FontWeight="SemiBold"
+                                                                   Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        <Image Source="{x:Bind AvatarUrl, Converter={StaticResource StringToImageSource}, Mode=OneWay}"
+                                                               Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Grid>
+                                                </Border>
                         <StackPanel Spacing="2" VerticalAlignment="Center">
                             <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" FontSize="13"
                                        Foreground="{StaticResource TextPrimaryBrush}"/>
@@ -186,7 +190,8 @@
         <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" xmlns:conv="using:AppWatch.Converters" />
         <conv:BoolToVisibilityConverter x:Key="BoolToVisibility" xmlns:conv="using:AppWatch.Converters" />
         <conv:CountToVisibilityConverter x:Key="CountToVisibility" xmlns:conv="using:AppWatch.Converters" />
-    </Page.Resources>
+                <conv:StringToImageSourceConverter x:Key="StringToImageSource" xmlns:conv="using:AppWatch.Converters" />
+            </Page.Resources>
 
     <Grid Padding="32,24" RowSpacing="0">
         <Grid.RowDefinitions>
