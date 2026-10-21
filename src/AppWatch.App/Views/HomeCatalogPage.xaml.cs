@@ -1,7 +1,7 @@
-using System;
+using AppWatch.Localization;
+using AppWatch.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using AppWatch.ViewModels;
 
 namespace AppWatch.Views;
 
@@ -11,10 +11,13 @@ namespace AppWatch.Views;
 /// </summary>
 public sealed partial class HomeCatalogPage : Page
 {
+    public MainViewModel ViewModel { get; }
+
+    public Loc Loc => Loc.Instance;
+
     public HomeCatalogPage()
     {
+        ViewModel = App.Resolve<MainViewModel>();
         InitializeComponent();
     }
-
-
 }

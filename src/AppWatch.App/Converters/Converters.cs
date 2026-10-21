@@ -181,10 +181,10 @@ public sealed class FirstCharToBrushConverter : IValueConverter
         => throw new NotSupportedException();
 }
 
-/// <summary>
-/// String URL → BitmapImage for Image.Source binding in x:Bind.
-/// Returns null when string is empty/null so Image shows nothing (transparent).
-/// </summary>
+// /// <summary>
+// /// String URL → BitmapImage for Image.Source binding in x:Bind.
+// /// Returns null when string is empty/null so Image shows nothing (transparent).
+// /// </summary>
 public sealed class StringToImageSourceConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
