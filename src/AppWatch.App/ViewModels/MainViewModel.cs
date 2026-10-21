@@ -91,6 +91,10 @@ public partial class MainViewModel : ObservableObject
         RecomputeHomeGroups(); // initial population of the four home sections
         RefreshNextCheckText();
 
+        _footerTimer.Tick += (_, _) => RefreshFooter();
+        _statusResetTimer.Tick += (_, _) => StatusText = "";
+        _footerTimer.Start();
+
                 AppsTrackedCount = Apps.Count;
                                 WingetTotalCount = 0;
                                 WingetUpdatesAvailable = 0;
@@ -150,6 +154,7 @@ public partial class MainViewModel : ObservableObject
                      nameof(UpToDateHeaderText), nameof(DisabledHeaderText),
                  })
             OnPropertyChanged(p);
+        RefreshFooter();
     }
 
     private static void FillGroup(ObservableCollection<TrackedAppItem> group, IEnumerable<TrackedAppItem> items)
@@ -168,6 +173,44 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     public partial string NextCheckText { get; set; } = "";
+
+    /// <summary>
+    /// Bottom bar: operation status while something runs, otherwise a live summary
+    /// ("7 приложений · 1 обновление · след. проверка 02:37") refreshed every 30 s.
+    /// </summary>
+    public string FooterText => string.IsNullOrWhiteSpace(StatusText) ? BuildFooterSummary() : StatusText;
+
+    partial void OnStatusTextChanged(string value)
+    {
+        OnPropertyChanged(nameof(FooterText));
+        // transient op messages: let the live summary take the footer back ~20 s
+        // after the last status change (op completion texts, not busy indicators).
+        if (string.IsNullOrEmpty(value)) return;
+        _statusResetTimer.Stop();
+        _statusResetTimer.Start();
+    }
+
+    private readonly Microsoft.UI.Xaml.DispatcherTimer _statusResetTimer = new() { Interval = TimeSpan.FromSeconds(20) };
+
+    private readonly Microsoft.UI.Xaml.DispatcherTimer _footerTimer =
+        new() { Interval = TimeSpan.FromSeconds(30) };
+
+    private string BuildFooterSummary()
+    {
+        var updates = Apps.Count(a => a.UpdateAvailable);
+        var parts = new List<string>
+        {
+            _loc.Format("FooterApps", Apps.Count),
+            _loc.Format("FooterUpdates", updates),
+        };
+        if (WingetUpdatesAvailable > 0)
+            parts.Add(_loc.Format("FooterWinget", WingetUpdatesAvailable));
+        if (!string.IsNullOrEmpty(NextCheckText))
+            parts.Add(NextCheckText);
+        return string.Join("  ·  ", parts);
+    }
+
+    private void RefreshFooter() => OnPropertyChanged(nameof(FooterText));
 
     public ObservableCollection<CatalogItem> CatalogApps { get; } = [];
 
@@ -723,6 +766,68 @@ public partial class MainViewModel : ObservableObject
 
     [RelayCommand]
     private void GoToCatalog() => App.MainWindow!.NavigateTo(typeof(Views.CatalogPage));
+
+    [RelayCommand]
+    private void GoToWinget() => App.MainWindow!.NavigateTo(typeof(Views.WingetPage));
+
+    [RelayCommand]
+    private void GoToHistory() => App.MainWindow!.NavigateTo(typeof(Views.HistoryPage));
+
+    /// <summary>
+    /// Uninstalls an app installed/tracked by AppWatch, with an explicit confirm.
+    /// Managed portables are deleted from %LOCALAPPDATA%\AppWatch\Apps; winget
+    /// packages go through winget uninstall; anything else (user's own dirs,
+    /// installer-kind) is untracked without touching files. The confirm dialog
+    /// says which of the three will happen.
+    /// </summary>
+    [RelayCommand]
+    private async Task UninstallAppAsync(TrackedAppItem? item, CancellationToken cancellationToken)
+    {
+        if (item is null) return;
+
+        var isWinget = item.App.UpdateKind == UpdateKind.WingetPackage;
+        var managedRoot = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppWatch", "Apps");
+        var isManagedPortable = item.App.UpdateKind is UpdateKind.PortableZip or UpdateKind.PortableExe
+            && item.App.InstallDirectory is not null
+            && Path.GetFullPath(item.App.InstallDirectory)
+                .StartsWith(Path.GetFullPath(managedRoot), StringComparison.OrdinalIgnoreCase);
+
+        var whatHappens = isWinget
+            ? _loc["UninstallConfirmWinget"]
+            : isManagedPortable
+                ? _loc["UninstallConfirmDelete"]
+                : _loc["UninstallConfirmUntrack"];
+
+        var confirm = new ContentDialog
+        {
+            Title = _loc.Format("UninstallConfirmTitle", item.Name),
+            Content = whatHappens,
+            PrimaryButtonText = _loc["MenuUninstall"],
+            CloseButtonText = _loc["Cancel"],
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = App.MainWindow!.Content.XamlRoot,
+        };
+        if (await confirm.ShowAsync() != ContentDialogResult.Primary)
+            return;
+
+        var history = await _engine.UninstallAsync(item.App, cancellationToken);
+        _history.Append(history);
+
+        if (history.Success)
+        {
+            _config.TrackedApps.Remove(item.App);
+            Apps.Remove(item);
+            _configStore.Save(_config);
+            AppsTrackedCount = Apps.Count;
+            UpdatesAvailableCount = Apps.Count(a => a.UpdateAvailable);
+            StatusText = _loc.Format("UninstallDone", item.Name);
+        }
+        else
+        {
+            StatusText = _loc["UninstallFailed"] + ": " + UpdateErrorHints.WithHint(history.Detail, k => _loc[k]);
+        }
+    }
 
     /// <summary>
     /// Layer-1 UI: app details dialog — versions, pending release notes, per-app

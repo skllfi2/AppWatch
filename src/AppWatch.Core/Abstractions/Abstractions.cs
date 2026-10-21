@@ -27,6 +27,10 @@ public interface IUpdateEngine
     Task<UpdateHistoryEntry> ApplyAsync(TrackedApp app, UpdateCheckResult check,
         IProgress<double>? progress = null, CancellationToken cancellationToken = default);
     Task<UpdateHistoryEntry> InstallAsync(TrackedApp app, CancellationToken cancellationToken = default);
+
+    /// <summary>Removes the app: winget uninstall for packages, delete install dir for
+    /// AppWatch-managed portables (external dirs are only untracked, never deleted).</summary>
+    Task<UpdateHistoryEntry> UninstallAsync(TrackedApp app, CancellationToken cancellationToken = default);
 }
 
 public interface IProcessService

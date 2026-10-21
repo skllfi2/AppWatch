@@ -327,5 +327,15 @@
   "HintKillFailed": "The process runs elevated. Stop it manually or run AppWatch as administrator.",
   "HintAlreadyUpdating": "An update of this app is already in progress — wait for it to finish.",
   "HintHealthCheck": "The new version failed to start, so the previous version was restored automatically.",
-  "HintDigestMismatch": "The downloaded file did not match the release checksum — the download is corrupted or tampered. Retry later."
+  "HintDigestMismatch": "The downloaded file did not match the release checksum — the download is corrupted or tampered. Retry later.",
+  "MenuUninstall": "Uninstall",
+  "UninstallConfirmTitle": "Uninstall “{0}”?",
+  "UninstallConfirmDelete": "The app and its files will be removed and tracking will stop.",
+  "UninstallConfirmUntrack": "The app files live outside AppWatch's folder and will NOT be deleted — only tracking stops.",
+  "UninstallConfirmWinget": "The package will be uninstalled via winget.",
+  "UninstallDone": "{0} removed",
+  "UninstallFailed": "Uninstall failed",
+  "FooterApps": "apps: {0}",
+  "FooterUpdates": "updates: {0}",
+  "FooterWinget": "winget: {0}"
 }

@@ -206,6 +206,12 @@ public partial class TrackedAppItem : ObservableObject
     /// <summary>Layer-1 UI: opens the app details dialog (versions, release notes, history, automation).</summary>
     public IRelayCommand ShowDetailsCommand => global::AppWatch.App.Resolve<MainViewModel>().ShowAppDetailsCommand;
 
+    /// <summary>Uninstall/untrack this app (with confirm) — proxied from MainViewModel.</summary>
+    public IRelayCommand UninstallAppCommand => global::AppWatch.App.Resolve<MainViewModel>().UninstallAppCommand;
+
+    /// <summary>Menu caption for uninstall.</summary>
+    public string MenuUninstall => LocalizationService.Instance["MenuUninstall"];
+
     private static Brush MakeBrush(byte r, byte g, byte b) =>
         new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, r, g, b));
 }

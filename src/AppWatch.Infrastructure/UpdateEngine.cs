@@ -363,6 +363,70 @@ public sealed class UpdateEngine : IUpdateEngine
         }
     }
 
+    public async Task<UpdateHistoryEntry> UninstallAsync(TrackedApp app, CancellationToken cancellationToken = default)
+    {
+        var from = app.CurrentVersion ?? "not installed";
+        try
+        {
+            switch (app.UpdateKind)
+            {
+                case UpdateKind.WingetPackage:
+                {
+                    if (string.IsNullOrEmpty(app.WingetPackageId))
+                        throw new InvalidOperationException("WingetPackageId is not configured");
+                    var (exitCode, output) = await _winget.UninstallAsync(app.WingetPackageId, cancellationToken);
+                    if (exitCode != 0)
+                        throw new InvalidOperationException(
+                            $"winget uninstall failed (exit code 0x{exitCode:X8}): {WingetOutputParser.Squash(output)}");
+                    break;
+                }
+                case UpdateKind.PortableZip or UpdateKind.PortableExe:
+                {
+                    if (app.InstallDirectory is null)
+                        throw new InvalidOperationException("install directory is not configured");
+
+                    // SAFETY: only delete directories AppWatch itself manages
+                    // (%LOCALAPPDATA%\AppWatch\Apps\...). Anything outside (Program Files,
+                    // user-chosen dirs) is the user's own files — untrack only.
+                    var managedRoot = Path.GetFullPath(Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        "AppWatch", "Apps"));
+                    var target = Path.GetFullPath(app.InstallDirectory);
+                    if (target.StartsWith(managedRoot, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var processName = app.ProcessName
+                            ?? (app.ExecutableName is null ? null : Path.GetFileNameWithoutExtension(app.ExecutableName));
+                        if (processName is not null && _process.IsRunning(processName))
+                        {
+                            if (!_process.Kill(processName))
+                                throw new InvalidOperationException(
+                                    $"не удалось остановить процесс «{processName}» — остановите его вручную и повторите");
+                        }
+                        Directory.Delete(target, recursive: true);
+                        Log.Information("uninstalled {App}: removed {Dir}", app.Name, target);
+                    }
+                    else
+                    {
+                        Log.Information("uninstall of {App}: directory {Dir} is outside AppWatch's managed root — files kept, tracking removed",
+                            app.Name, target);
+                    }
+                    break;
+                }
+                default:
+                    // Installer/External kinds: their uninstallers own the files; we only untrack.
+                    Log.Information("uninstall of {App}: kind {Kind} — files kept, tracking removed", app.Name, app.UpdateKind);
+                    break;
+            }
+
+            return new UpdateHistoryEntry(app.Name, from, "uninstalled", DateTimeOffset.UtcNow, true, null);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "uninstall failed for {App}", app.Name);
+            return new UpdateHistoryEntry(app.Name, from, "uninstalled", DateTimeOffset.UtcNow, false, ex.Message);
+        }
+    }
+
     private async Task<string> DownloadAndVerifyAsync(
         ReleaseAsset asset, string repoName, string tag,
         IProgress<double>? progress = null, CancellationToken cancellationToken = default)

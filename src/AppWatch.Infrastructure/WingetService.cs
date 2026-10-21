@@ -204,6 +204,18 @@ public sealed class WingetService
     /// <summary>Exit code: winget reports "already installed" (APPINSTALLER_CLI_ERROR_PACKAGE_ALREADY_INSTALLED).</summary>
     public const int AlreadyInstalledExitCode = unchecked((int)0x8A150041);
 
+    /// <summary>Uninstalls a winget package; success = exit code 0.</summary>
+    public async Task<(int ExitCode, string Output)> UninstallAsync(
+        string packageId, CancellationToken cancellationToken = default)
+    {
+        if (!IsAvailable)
+            throw new InvalidOperationException("winget is not available");
+        var output = await RunWingetAsync(
+            $"uninstall --id \"{packageId}\" --exact --silent --disable-interactivity --accept-source-agreements",
+            cancellationToken);
+        return (LastExitCode, output);
+    }
+
     public async Task<(int ExitCode, string Output)> InstallAsync(
         string packageId, CancellationToken cancellationToken = default)
     {
