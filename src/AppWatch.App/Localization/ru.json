@@ -337,5 +337,8 @@
   "UninstallFailed": "Не удалось удалить",
   "FooterApps": "приложений: {0}",
   "FooterUpdates": "обновлений: {0}",
-  "FooterWinget": "winget: {0}"
+  "FooterWinget": "winget: {0}",
+  "NavHomeCatalog": "Приложения",
+  "TabHome": "Главная",
+  "TabCatalog": "Каталог"
 }

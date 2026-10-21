@@ -54,6 +54,8 @@ public sealed class Loc : INotifyPropertyChanged
     public string NavWinget => LocalizationService.Instance["navWinget"];
     public string NavSettings => LocalizationService.Instance["navSettings"];
     public string NavAbout => LocalizationService.Instance["navAbout"];
+    public string TabHome => LocalizationService.Instance["TabHome"];
+    public string TabCatalog => LocalizationService.Instance["TabCatalog"];
         public string NavHome => LocalizationService.Instance["NavHome"];
             public string BtnClearMyCatalog => LocalizationService.Instance["BtnClearMyCatalog"];
             public string SettingsCatalogSection => LocalizationService.Instance["SettingsCatalogSection"];

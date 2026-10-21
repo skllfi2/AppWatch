@@ -27,7 +27,7 @@ public sealed partial class MainWindow : Window
         CenterWindowOnScreen();
 
         // Initial selection drives the first navigation via SelectionChanged.
-        Nav.SelectedItem = NavItemHome;
+        Nav.SelectedItem = NavItemHomeCatalog;
 
         WireNavBadges();
     }
@@ -41,7 +41,7 @@ public sealed partial class MainWindow : Window
         var vm = global::AppWatch.App.Resolve<ViewModels.MainViewModel>();
 
         var homeBadge = NewBadge();
-        NavItemHome.InfoBadge = homeBadge;
+        NavItemHomeCatalog.InfoBadge = homeBadge;
 
         var wingetItem = Nav.MenuItems.OfType<NavigationViewItem>()
             .FirstOrDefault(i => (string?)i.Tag == "winget");
@@ -87,8 +87,7 @@ public sealed partial class MainWindow : Window
 
     private static readonly System.Collections.Generic.Dictionary<string, Type> PageByTag = new()
     {
-        ["home"] = typeof(AppsPage),
-        ["catalog"] = typeof(CatalogPage),
+        ["homecatalog"] = typeof(Views.HomeCatalogPage),
         ["winget"] = typeof(WingetPage),
         ["history"] = typeof(HistoryPage),
         ["settings"] = typeof(SettingsPage),

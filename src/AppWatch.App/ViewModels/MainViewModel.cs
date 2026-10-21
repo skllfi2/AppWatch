@@ -216,7 +216,10 @@ public partial class MainViewModel : ObservableObject
 
     public ObservableCollection<WingetItem> WingetUpdates { get; } = [];
 
-    public bool WingetAvailable { get; }
+        public bool WingetAvailable { get; }
+
+        [ObservableProperty]
+        public partial int SelectedTabIndex { get; set; } = 0;
 
     // === Catalog category filter (P-UI) ===
 
@@ -766,6 +769,9 @@ public partial class MainViewModel : ObservableObject
 
     [RelayCommand]
     private void GoToCatalog() => App.MainWindow!.NavigateTo(typeof(Views.CatalogPage));
+
+    [RelayCommand]
+    private void GoToHomeCatalog() => App.MainWindow!.NavigateTo(typeof(Views.HomeCatalogPage));
 
     [RelayCommand]
     private void GoToWinget() => App.MainWindow!.NavigateTo(typeof(Views.WingetPage));

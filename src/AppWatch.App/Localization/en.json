@@ -337,5 +337,8 @@
   "UninstallFailed": "Uninstall failed",
   "FooterApps": "apps: {0}",
   "FooterUpdates": "updates: {0}",
-  "FooterWinget": "winget: {0}"
+  "FooterWinget": "winget: {0}",
+  "NavHomeCatalog": "Apps",
+  "TabHome": "Home",
+  "TabCatalog": "Catalog"
 }

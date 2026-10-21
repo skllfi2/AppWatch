@@ -32,14 +32,9 @@
                 <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="Transparent"/>
             </NavigationView.Resources>
             <NavigationView.MenuItems>
-                <NavigationViewItem x:Name="NavItemHome" Tag="home" Content="{x:Bind Loc.NavHome, Mode=OneWay}">
+                <NavigationViewItem x:Name="NavItemHomeCatalog" Tag="homecatalog" Content="{x:Bind Loc.NavHomeCatalog, Mode=OneWay}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE80F;"/>
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem Tag="catalog" Content="{x:Bind Loc.Catalog, Mode=OneWay}">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8F1;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem Tag="winget" Content="{x:Bind Loc.WingetUpdates, Mode=OneWay}">
