@@ -126,6 +126,11 @@ public sealed class Loc : INotifyPropertyChanged
                                 public string AppNamePlaceholder => LocalizationService.Instance["AppNamePlaceholder"];
                                 public string RepoOwner => LocalizationService.Instance["RepoOwner"];
                                 public string RepoName => LocalizationService.Instance["RepoName"];
+        public string FetchFromGitHub => LocalizationService.Instance["FetchFromGitHub"];
+        public string OpenInGitHub => LocalizationService.Instance["OpenInGitHub"];
+        public string RepoOwnerNameRequired => LocalizationService.Instance["RepoOwnerNameRequired"];
+        public string RepoNotFound => LocalizationService.Instance["RepoNotFound"];
+        public string RepoFetchFailed => LocalizationService.Instance["RepoFetchFailed"];
                                 public string UpdateKind => LocalizationService.Instance["UpdateKind"];
                                 public string UpdateKindPortableZip => LocalizationService.Instance["UpdateKindPortableZip"];
                                 public string UpdateKindInstaller => LocalizationService.Instance["UpdateKindInstaller"];

@@ -340,5 +340,10 @@
   "FooterWinget": "winget: {0}",
   "NavHomeCatalog": "Apps",
   "TabHome": "Home",
-  "TabCatalog": "Catalog"
+  "TabCatalog": "Catalog",
+  "FetchFromGitHub": "Fetch from GitHub",
+  "OpenInGitHub": "Open in GitHub",
+  "RepoOwnerNameRequired": "Enter repo owner and name",
+  "RepoNotFound": "Repository not found",
+  "RepoFetchFailed": "Failed to fetch repository data"
 }

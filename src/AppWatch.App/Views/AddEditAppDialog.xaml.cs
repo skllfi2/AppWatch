@@ -2,6 +2,7 @@ using AppWatch.Core.Domain.Models;
 using AppWatch.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Data;
 
 namespace AppWatch.Views;
 
@@ -31,11 +32,109 @@ public sealed class AddEditAppDialog : ContentDialog
     private ScrollViewer BuildContent()
     {
         var loc = AppWatch.Localization.Loc.Instance;
-        var panel = new StackPanel { Spacing = 14, Padding = new Thickness(0, 8, 0, 0) };
+                var panel = new StackPanel { Spacing = 14, Padding = new Thickness(0, 8, 0, 0) };
 
-        panel.Children.Add(Field(loc["AppName"], TextBox("Name", loc["AppNamePlaceholder"])));
-        panel.Children.Add(Field(loc["RepoOwner"], TextBox("RepoOwner", "owner")));
-        panel.Children.Add(Field(loc["RepoName"], TextBox("RepoName", "repo")));
+                panel.Children.Add(Field(loc["AppName"], TextBox("Name", loc["AppNamePlaceholder"])));
+
+                // Repo owner + name row with fetch button
+                var repoGrid = new Grid { ColumnSpacing = 8 };
+                repoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                repoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                repoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var ownerBox = TextBox("RepoOwner", "owner");
+                Grid.SetColumn(ownerBox, 0);
+                repoGrid.Children.Add(ownerBox);
+
+                var nameBox = TextBox("RepoName", "repo");
+                Grid.SetColumn(nameBox, 1);
+                repoGrid.Children.Add(nameBox);
+
+                var fetchBtn = new Button
+                {
+                    Content = loc["FetchFromGitHub"],
+                    Padding = new Thickness(12, 4, 12, 4),
+                    CornerRadius = new CornerRadius(4),
+                    VerticalAlignment = VerticalAlignment.Bottom
+                };
+                fetchBtn.Click += async (_, _) => await _viewModel.FetchRepoInfoAsync();
+                Grid.SetColumn(fetchBtn, 2);
+                repoGrid.Children.Add(fetchBtn);
+
+                panel.Children.Add(Field(loc["RepoOwner"], repoGrid));
+
+                // GitHub repo info card (shown after fetch)
+                var githubInfoCard = new Border
+                {
+                    Background = (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["CardBackgroundBrush"],
+                    CornerRadius = new CornerRadius(8),
+                    Padding = new Thickness(12),
+                    Margin = new Thickness(0, 4, 0, 0),
+                    Visibility = Visibility.Collapsed
+                };
+                var githubInfoPanel = new StackPanel { Spacing = 8 };
+                githubInfoCard.Child = githubInfoPanel;
+
+                var githubHeader = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+                var avatarImage = new Microsoft.UI.Xaml.Controls.Image
+                {
+                    Width = 40,
+                    Height = 40,
+                    Stretch = Microsoft.UI.Xaml.Media.Stretch.UniformToFill
+                };
+                var avatarBinding = new Binding { Source = _viewModel, Path = new PropertyPath("RepoAvatarUrl"), Mode = BindingMode.OneWay };
+                BindingOperations.SetBinding(avatarImage, Microsoft.UI.Xaml.Controls.Image.SourceProperty, avatarBinding);
+                githubHeader.Children.Add(avatarImage);
+                var githubTitle = new TextBlock { FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = 14, VerticalAlignment = VerticalAlignment.Center };
+                var titleBinding = new Binding { Source = _viewModel, Path = new PropertyPath("Name"), Mode = BindingMode.OneWay };
+                BindingOperations.SetBinding(githubTitle, TextBlock.TextProperty, titleBinding);
+                githubHeader.Children.Add(githubTitle);
+                var openRepoBtn = new Button
+                {
+                    Content = loc["OpenInGitHub"],
+                    Padding = new Thickness(10, 4, 10, 4),
+                    CornerRadius = new CornerRadius(4),
+                    Margin = new Thickness(8, 0, 0, 0)
+                };
+                openRepoBtn.Click += (_, _) => _viewModel.OpenRepoInBrowser();
+                githubHeader.Children.Add(openRepoBtn);
+                githubInfoPanel.Children.Add(githubHeader);
+
+                if (!string.IsNullOrEmpty(_viewModel.RepoDescription))
+                {
+                    var descText = new TextBlock
+                    {
+                        Text = _viewModel.RepoDescription,
+                        TextWrapping = TextWrapping.Wrap,
+                        Opacity = 0.7,
+                        FontSize = 12
+                    };
+                    githubInfoPanel.Children.Add(descText);
+                }
+
+                var homepagePanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Visibility = Visibility.Collapsed };
+                var homepageIcon = new FontIcon { Glyph = "\uE774", FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
+                homepagePanel.Children.Add(homepageIcon);
+                var homepageLink = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
+                var homepageBinding = new Binding { Source = _viewModel, Path = new PropertyPath("RepoHomepage"), Mode = BindingMode.OneWay };
+                BindingOperations.SetBinding(homepageLink, TextBlock.TextProperty, homepageBinding);
+                homepagePanel.Children.Add(homepageLink);
+                githubInfoPanel.Children.Add(homepagePanel);
+
+                // Wire visibility for GitHub info card
+                _viewModel.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName == nameof(AddEditAppDialogViewModel.ShowGitHubInfo))
+                    {
+                        githubInfoCard.Visibility = _viewModel.ShowGitHubInfo ? Visibility.Visible : Visibility.Collapsed;
+                    }
+                    else if (e.PropertyName == nameof(AddEditAppDialogViewModel.RepoHomepage))
+                    {
+                        homepagePanel.Visibility = string.IsNullOrWhiteSpace(_viewModel.RepoHomepage) ? Visibility.Collapsed : Visibility.Visible;
+                    }
+                };
+
+                panel.Children.Add(githubInfoCard);
 
         // Update Kind combo — items follow the UpdateKind enum order 1:1
         // (fixes pre-existing bug: winget label at index 2 saved as Installer enum)

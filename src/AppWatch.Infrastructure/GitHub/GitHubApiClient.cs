@@ -45,6 +45,38 @@ public sealed class GitHubApiClient : IGitHubClient
         _downloadMirrors = downloadMirrors?.ToList() ?? [];
     }
 
+    public async Task<GitHubRepoInfo?> GetRepoInfoAsync(string owner, string repo, CancellationToken cancellationToken = default)
+    {
+        var url = $"repos/{owner}/{repo}";
+        if (_cache.TryGetValue<GitHubRepoInfo>(url, out var cached) && cached is not null)
+            return cached;
+
+        if (IsRateLimited)
+            throw new HttpRequestException($"GitHub API rate limit exceeded until {RateLimitResetUtc:HH:mm:ss}");
+
+        var json = await GetStringWithRetryAsync(url, cancellationToken);
+        var dto = JsonSerializer.Deserialize<RepoDto>(json, JsonOptions);
+        if (dto is null) return null;
+
+        var info = new GitHubRepoInfo
+        {
+            Name = dto.Name,
+            Description = dto.Description,
+            HtmlUrl = dto.HtmlUrl,
+            Homepage = dto.Homepage,
+            AvatarUrl = dto.Owner.AvatarUrl,
+            OwnerLogin = dto.Owner.Login,
+            OwnerAvatarUrl = dto.Owner.AvatarUrl,
+        };
+
+        _cache.Set(url, info, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = CacheDuration,
+            Size = 1,
+        });
+        return info;
+    }
+
     public async Task<IReadOnlyList<ReleaseInfo>> GetReleasesAsync(
         string owner, string repo, CancellationToken cancellationToken = default,
         bool skipCache = false)
@@ -251,5 +283,20 @@ public sealed class GitHubApiClient : IGitHubClient
         [JsonPropertyName("browser_download_url")] public string DownloadUrl { get; set; } = "";
         [JsonPropertyName("size")] public long Size { get; set; }
         [JsonPropertyName("digest")] public string? Digest { get; set; }
+    }
+
+    private sealed class RepoDto
+    {
+        [JsonPropertyName("name")] public string Name { get; set; } = "";
+        [JsonPropertyName("description")] public string? Description { get; set; }
+        [JsonPropertyName("html_url")] public string HtmlUrl { get; set; } = "";
+        [JsonPropertyName("homepage")] public string? Homepage { get; set; }
+        [JsonPropertyName("owner")] public OwnerDto Owner { get; set; } = new();
+    }
+
+    private sealed class OwnerDto
+    {
+        [JsonPropertyName("login")] public string Login { get; set; } = "";
+        [JsonPropertyName("avatar_url")] public string AvatarUrl { get; set; } = "";
     }
 }

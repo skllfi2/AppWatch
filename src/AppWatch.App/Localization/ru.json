@@ -340,5 +340,10 @@
   "FooterWinget": "winget: {0}",
   "NavHomeCatalog": "Приложения",
   "TabHome": "Главная",
-  "TabCatalog": "Каталог"
+  "TabCatalog": "Каталог",
+  "FetchFromGitHub": "Получить из GitHub",
+  "OpenInGitHub": "Открыть в GitHub",
+  "RepoOwnerNameRequired": "Укажите владельца и имя репозитория",
+  "RepoNotFound": "Репозиторий не найден",
+  "RepoFetchFailed": "Ошибка получения данных репозитория"
 }

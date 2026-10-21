@@ -11,6 +11,8 @@ public interface IGitHubClient
         string url, string destinationPath,
         IProgress<double>? progress = null, CancellationToken cancellationToken = default);
 
+    Task<GitHubRepoInfo?> GetRepoInfoAsync(string owner, string repo, CancellationToken cancellationToken = default);
+
     /// <summary>True when GitHub API rate limit is exhausted; wait for RateLimitResetUtc.</summary>
     bool IsRateLimited { get; }
 
@@ -19,6 +21,17 @@ public interface IGitHubClient
 
     /// <summary>Remaining requests in the current window; null when unknown.</summary>
     int? RemainingRequests { get; }
+}
+
+public sealed class GitHubRepoInfo
+{
+    public required string Name { get; init; }
+    public string? Description { get; init; }
+    public required string HtmlUrl { get; init; }
+    public string? Homepage { get; init; }
+    public required string AvatarUrl { get; init; }
+    public required string OwnerLogin { get; init; }
+    public required string OwnerAvatarUrl { get; init; }
 }
 
 public interface IUpdateEngine

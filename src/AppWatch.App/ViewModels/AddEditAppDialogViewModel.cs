@@ -1,8 +1,10 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using AppWatch.Core.Abstractions;
 using AppWatch.Core.Domain.Models;
 using AppWatch.Localization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace AppWatch.ViewModels;
 
@@ -10,8 +12,9 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
 {
     private readonly TrackedApp _app;
     private readonly bool _isNew;
+    private readonly IGitHubClient _github;
 
-    public AddEditAppDialogViewModel(TrackedApp? app = null)
+    public AddEditAppDialogViewModel(TrackedApp? app = null, IGitHubClient? github = null)
     {
         _app = app ?? new TrackedApp
         {
@@ -28,6 +31,7 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
             Strategy = UpdateStrategy.Auto,
         };
         _isNew = app is null;
+        _github = github ?? App.Resolve<IGitHubClient>();
 
         // Initialize from app
         Name = _app.Name;
@@ -102,6 +106,25 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
     [ObservableProperty]
     public partial bool AutoDetectVersion { get; set; } = true;
 
+    // GitHub repo info (fetched on demand)
+    [ObservableProperty]
+    public partial string? RepoDescription { get; set; }
+
+    [ObservableProperty]
+    public partial string? RepoHomepage { get; set; }
+
+    [ObservableProperty]
+    public partial string? RepoAvatarUrl { get; set; }
+
+    [ObservableProperty]
+    public partial string? RepoHtmlUrl { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsFetchingRepoInfo { get; set; }
+
+    [ObservableProperty]
+    public partial string? RepoFetchError { get; set; }
+
     public bool ShowUpdateStrategy => SelectedUpdateKindIndex != (int)UpdateKind.WingetPackage;
 
     public bool ShowExecutableName => SelectedUpdateKindIndex != (int)UpdateKind.WingetPackage;
@@ -110,12 +133,80 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
 
     public bool ShowWingetPackageId => SelectedUpdateKindIndex == (int)UpdateKind.WingetPackage;
 
+    public bool ShowGitHubInfo => !string.IsNullOrWhiteSpace(RepoAvatarUrl) || !string.IsNullOrWhiteSpace(RepoDescription);
+
     partial void OnSelectedUpdateKindIndexChanged(int value)
     {
         OnPropertyChanged(nameof(ShowUpdateStrategy));
         OnPropertyChanged(nameof(ShowExecutableName));
         OnPropertyChanged(nameof(ShowProcessName));
         OnPropertyChanged(nameof(ShowWingetPackageId));
+    }
+
+    partial void OnRepoAvatarUrlChanged(string? value) => OnPropertyChanged(nameof(ShowGitHubInfo));
+    partial void OnRepoDescriptionChanged(string? value) => OnPropertyChanged(nameof(ShowGitHubInfo));
+
+    [RelayCommand]
+    public async Task FetchRepoInfoAsync()
+    {
+        if (string.IsNullOrWhiteSpace(RepoOwner) || string.IsNullOrWhiteSpace(RepoName))
+        {
+            RepoFetchError = Loc.Instance["RepoOwnerNameRequired"];
+            return;
+        }
+
+        IsFetchingRepoInfo = true;
+        RepoFetchError = null;
+        RepoDescription = null;
+        RepoHomepage = null;
+        RepoAvatarUrl = null;
+        RepoHtmlUrl = null;
+
+        try
+        {
+            var info = await _github.GetRepoInfoAsync(RepoOwner.Trim(), RepoName.Trim());
+            if (info is not null)
+            {
+                RepoDescription = info.Description;
+                RepoHomepage = info.Homepage;
+                RepoAvatarUrl = info.OwnerAvatarUrl;
+                RepoHtmlUrl = info.HtmlUrl;
+
+                // Auto-fill app name if empty
+                if (string.IsNullOrWhiteSpace(Name))
+                    Name = info.Name;
+            }
+            else
+            {
+                RepoFetchError = Loc.Instance["RepoNotFound"];
+            }
+        }
+        catch (Exception ex)
+        {
+            RepoFetchError = $"{Loc.Instance["RepoFetchFailed"]}: {ex.Message}";
+        }
+        finally
+        {
+            IsFetchingRepoInfo = false;
+        }
+    }
+
+    [RelayCommand]
+    public void OpenRepoInBrowser()
+    {
+        if (!string.IsNullOrWhiteSpace(RepoHtmlUrl))
+        {
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = RepoHtmlUrl,
+                    UseShellExecute = true
+                };
+                System.Diagnostics.Process.Start(psi);
+            }
+            catch { }
+        }
     }
 
     public TrackedApp ToTrackedApp()
