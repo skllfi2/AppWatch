@@ -12,8 +12,9 @@
         <conv:FirstCharToBrushConverter x:Key="FirstCharToBrush" xmlns:conv="using:AppWatch.Converters" />
         <conv:StringNotEmptyToVisibilityConverter x:Key="StringNotEmptyToVisibility" xmlns:conv="using:AppWatch.Converters" />
         <conv:InverseCountToVisibilityConverter x:Key="InverseCountToVisibility" xmlns:conv="using:AppWatch.Converters" />
+                <conv:StringToImageSourceConverter x:Key="StringToImageSource" xmlns:conv="using:AppWatch.Converters" />
 
-        <!-- AppCardTemplate from AppsPage -->
+                <!-- AppCardTemplate from AppsPage -->
         <DataTemplate x:Key="AppCardTemplate" x:DataType="vm:TrackedAppItem">
             <Grid Padding="12" ColumnSpacing="12" Margin="0,0,0,8"
                   Background="{StaticResource CardBackgroundBrush}" CornerRadius="8">
