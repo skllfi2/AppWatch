@@ -778,10 +778,18 @@ private void ApplyCatalogFilter()
     {
         FilteredCatalogApps.Clear();
         var query = CatalogSearchQuery?.Trim() ?? "";
+        // category gate applies to both paths (0 = all)
+        var category = CatalogCategoryIndex > 0 && CatalogCategoryIndex <= CatalogCategories.Count
+            ? CatalogCategories[CatalogCategoryIndex - 1]
+            : null;
+
         if (query.Length == 0)
         {
             foreach (var item in CatalogApps)
-                FilteredCatalogApps.Add(item);
+            {
+                if (category is null || item.Entry.Category == category)
+                    FilteredCatalogApps.Add(item);
+            }
             return;
         }
 
@@ -794,6 +802,8 @@ private void ApplyCatalogFilter()
             : CatalogSearch.Rank(entries, query);
         foreach (var entry in ranked)
         {
+            if (category is not null && entry.Category != category)
+                continue;
             var vm = CatalogApps.First(c => ReferenceEquals(c.Entry, entry));
             FilteredCatalogApps.Add(vm);
         }
@@ -997,7 +1007,23 @@ private void ApplyCatalogFilter()
                     StatusText = _loc.Format("Updating", item.Name);
                     item.Stage = UpdateStage.Downloading;
                     item.ProgressValue = 0;
-                    var download = new Progress<double>(p => item.ProgressValue = p);
+                    // same live percent+speed label as the single-update flow
+                    var totalBytes = check.ChosenAsset?.Size ?? 0;
+                    var lastPct = 0.0;
+                    var lastAt = DateTimeOffset.UtcNow;
+                    var download = new Progress<double>(p =>
+                    {
+                        item.ProgressValue = p;
+                        var now = DateTimeOffset.UtcNow;
+                        var dt = (now - lastAt).TotalSeconds;
+                        if (totalBytes > 0 && p > lastPct && dt >= 0.4)
+                        {
+                            var bytesPerSec = (p - lastPct) / 100.0 * totalBytes / dt;
+                            item.StatusText = $"{_loc["StageDownloading"]} {(int)p}% · {FormatSpeed(bytesPerSec)}";
+                            lastPct = p;
+                            lastAt = now;
+                        }
+                    });
                     var history = await _engine.ApplyAsync(item.App, check, download, _updateAllCts.Token);
                     _history.Append(history);
                     if (history.Success)
@@ -1011,6 +1037,7 @@ private void ApplyCatalogFilter()
                     else
                     {
                         item.Stage = UpdateStage.Error;
+                        item.StatusDetail = UpdateErrorHints.WithHint(history.Detail, k => _loc[k]); // D5
                         failedNames.Add(item.Name);
                     }
                     item.StatusText = history.Success ? _loc["Updated"] : _loc["UpdateFailed"];
@@ -1094,7 +1121,7 @@ private void ApplyCatalogFilter()
         {
             item.Stage = UpdateStage.Error;
         }
-        item.StatusDetail = history.Success ? check.Detail : history.Detail; // D5: failure reason in tooltip
+        item.StatusDetail = history.Success ? check.Detail : UpdateErrorHints.WithHint(history.Detail, k => _loc[k]); // D5: failure reason + hint in tooltip
         item.StatusText = history.Success ? _loc["updated"] : _loc["updateFailed"];
         UpdatesAvailableCount = Apps.Count(a => a.UpdateAvailable);
         _configStore.Save(_config);
@@ -1106,6 +1133,14 @@ private void ApplyCatalogFilter()
         >= 1024 * 1024 => $"{bytesPerSec / (1024 * 1024):F1} МБ/с",
         >= 1024 => $"{bytesPerSec / 1024:F0} КБ/с",
         _ => $"{bytesPerSec:F0} Б/с",
+    };
+
+    private static string FormatBytes(long bytes) => bytes switch
+    {
+        >= 1024 * 1024 * 1024 => $"{bytes / (1024.0 * 1024 * 1024):F1} ГБ",
+        >= 1024 * 1024 => $"{bytes / (1024.0 * 1024):F1} МБ",
+        >= 1024 => $"{bytes / 1024.0:F0} КБ",
+        _ => $"{bytes} Б",
     };
 
     [RelayCommand]
@@ -1193,11 +1228,13 @@ private void ApplyCatalogFilter()
             ticker.Tick += (_, _) => item.ElapsedText = FormatElapsed(stopwatch.Elapsed);
             ticker.Start();
 
-            var progress = new Progress<AppWatch.Core.Domain.WingetPhase>(phase =>
+            var progress = new Progress<AppWatch.Core.Domain.WingetProgress>(p =>
             {
-                item.Status = phase switch
+                item.Status = p.Phase switch
                 {
-                    AppWatch.Core.Domain.WingetPhase.Downloading => _loc["WingetPhDownload"],
+                    AppWatch.Core.Domain.WingetPhase.Downloading => p.Bytes is { } bytes
+                        ? $"{_loc["WingetPhDownload"]} {FormatBytes(bytes)} · {FormatSpeed(p.BytesPerSec ?? 0)}"
+                        : _loc["WingetPhDownload"],
                     AppWatch.Core.Domain.WingetPhase.Verifying => _loc["WingetPhVerify"],
                     AppWatch.Core.Domain.WingetPhase.Downloaded => _loc["WingetPhDownloaded"],
                     AppWatch.Core.Domain.WingetPhase.Installing => _loc["WingetPhInstall"],
@@ -1206,14 +1243,15 @@ private void ApplyCatalogFilter()
             });
             var (ok, message) = await _winget.UpgradePackageAsync(item.Id, item.Name, progress, cancellationToken);
             ticker.Stop();
+            var detailed = ok ? null : UpdateErrorHints.WithHint(message, k => _loc[k]);
             _history.Append(new UpdateHistoryEntry(
                 item.Name, item.Row.Update.CurrentVersion, item.Row.Update.AvailableVersion,
-                DateTimeOffset.UtcNow, ok, ok ? null : message));
+                DateTimeOffset.UtcNow, ok, detailed));
             item.IsUpdating = false;
             item.ElapsedText = ok ? FormatElapsed(stopwatch.Elapsed) : "";
             item.ProgressValue = ok ? 100 : item.ProgressValue;
-            item.Status = ok ? _loc["WingetDone"] : $"{_loc["WingetFailed"]}: {message}";
-            if (ok) updatedNames.Add(item.Name); else failedNames.Add($"{item.Name} — {message}");
+            item.Status = ok ? _loc["WingetDone"] : $"{_loc["WingetFailed"]}: {detailed}";
+            if (ok) updatedNames.Add(item.Name); else failedNames.Add($"{item.Name} — {detailed}");
         }
         StatusText = _loc["WingetBatchDone"];
 

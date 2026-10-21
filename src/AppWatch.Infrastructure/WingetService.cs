@@ -31,7 +31,7 @@ public sealed class WingetService
     /// </summary>
     public async Task<(bool Ok, string Message)> UpgradePackageAsync(
         string packageId, string packageName,
-        IProgress<WingetPhase>? progress = null, CancellationToken cancellationToken = default)
+        IProgress<WingetProgress>? progress = null, CancellationToken cancellationToken = default)
     {
         if (!IsAvailable)
             throw new InvalidOperationException("winget is not available");
@@ -58,6 +58,7 @@ public sealed class WingetService
 
         async Task<int> RunUpgradeAsync(string args)
         {
+            var tempWatcher = new WingetTempDownloadWatcher(packageId);
             return await RunWingetStreamingAsync(
                 args,
                 line =>
@@ -67,10 +68,92 @@ public sealed class WingetService
                         && WingetOutputParser.TryParseProgressPercent(trimmed) is null
                         && WingetOutputParser.TryParsePhase(trimmed) is null)
                         lastMessage = trimmed;
-                    if (WingetOutputParser.TryParsePhase(line) is { } phase)
-                        progress?.Report(phase);
+                    if (WingetOutputParser.TryParsePhase(line) is not { } phase) return;
+                    if (phase is WingetPhase.Downloading or WingetPhase.Downloaded)
+                        tempWatcher.Start(cancellationToken);
+                    else
+                        tempWatcher.Stop();
+                    progress?.Report(WingetProgress.Of(phase));
                 },
-                cancellationToken);
+                cancellationToken,
+                () =>
+                {
+                    // heartbeat: while winget is silent (its download prints no lines at all),
+                    // report bytes + speed from the growing temp folder
+                    var snapshot = tempWatcher.Snapshot();
+                    if (snapshot is { } s)
+                        progress?.Report(new WingetProgress(WingetPhase.Downloading, s.Bytes, s.BytesPerSec));
+                },
+                heartbeatInterval: TimeSpan.FromMilliseconds(500));
+        }
+    }
+
+    /// <summary>
+    /// winget downloads installers to %TEMP%\{PackageId}_{Version}\ — while winget itself
+    /// prints nothing, the growing folder is the only honest progress signal available.
+    /// </summary>
+    private sealed class WingetTempDownloadWatcher
+    {
+        private readonly string _packageId;
+        private CancellationTokenSource? _cts;
+        private Task? _poll;
+        private long _lastBytes;
+        private DateTimeOffset _lastAt;
+        private string? _dir;
+
+        public WingetTempDownloadWatcher(string packageId) => _packageId = packageId;
+
+        public void Start(CancellationToken outer)
+        {
+            if (_poll is not null) return;
+            _cts = CancellationTokenSource.CreateLinkedTokenSource(outer);
+            _dir = null;
+            _lastBytes = 0;
+            _lastAt = DateTimeOffset.UtcNow;
+            var token = _cts.Token;
+            _poll = Task.Run(async () =>
+            {
+                var temp = Path.Combine(Path.GetTempPath(), "");
+                while (!token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        _dir ??= Directory.EnumerateDirectories(temp, $"{_packageId}_*")
+                            .OrderByDescending(Directory.GetLastWriteTimeUtc)
+                            .FirstOrDefault();
+                        if (_dir is not null && Directory.Exists(_dir))
+                        {
+                            long bytes = 0;
+                            foreach (var f in Directory.EnumerateFiles(_dir, "*", SearchOption.AllDirectories))
+                            {
+                                try { bytes += new FileInfo(f).Length; } catch (IOException) { }
+                            }
+                            _lastBytes = bytes;
+                        }
+                    }
+                    catch { /* best effort */ }
+                    await Task.Delay(400, token);
+                }
+            }, token);
+        }
+
+        public void Stop()
+        {
+            _cts?.Cancel();
+            try { _poll?.Wait(100); } catch { }
+            _cts?.Dispose();
+            _cts = null;
+            _poll = null;
+        }
+
+        public (long Bytes, double BytesPerSec)? Snapshot()
+        {
+            if (_cts is null || _poll is null) return null; // not running
+            var now = DateTimeOffset.UtcNow;
+            var dt = (now - _lastAt).TotalSeconds;
+            var bps = dt > 0 ? _lastBytes / dt : 0;
+            _lastAt = now;
+            return (_lastBytes, bps);
         }
     }
 
@@ -157,7 +240,8 @@ public sealed class WingetService
     }
 
     private async Task<int> RunWingetStreamingAsync(
-        string arguments, Action<string>? onLine, CancellationToken cancellationToken)
+        string arguments, Action<string>? onLine, CancellationToken cancellationToken,
+        Action? heartbeat = null, TimeSpan heartbeatInterval = default)
     {
         var psi = new ProcessStartInfo
         {
@@ -173,9 +257,28 @@ public sealed class WingetService
         using var process = Process.Start(psi)
             ?? throw new InvalidOperationException("failed to start winget");
         _ = process.StandardError.ReadToEndAsync(cancellationToken);
+
+        using var heartbeatCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        if (heartbeat is not null && heartbeatInterval > TimeSpan.Zero)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    while (!heartbeatCts.Token.IsCancellationRequested)
+                    {
+                        await Task.Delay(heartbeatInterval, heartbeatCts.Token);
+                        heartbeat();
+                    }
+                }
+                catch (OperationCanceledException) { /* expected on exit */ }
+            }, heartbeatCts.Token);
+        }
+
         while (await process.StandardOutput.ReadLineAsync(cancellationToken) is { } line)
             onLine?.Invoke(line);
         await process.WaitForExitAsync(cancellationToken);
+        heartbeatCts.Cancel();
         return process.ExitCode;
     }
 }

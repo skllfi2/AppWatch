@@ -193,3 +193,15 @@ public enum WingetPhase
     Downloaded,
     Installing,
 }
+
+/// <summary>
+/// Live winget operation state. winget reports no percents, so during the download
+/// phase the service polls winget's temp folder and reports bytes + speed instead.
+/// </summary>
+public sealed record WingetProgress(
+    WingetPhase Phase,
+    long? Bytes = null,
+    double? BytesPerSec = null)
+{
+    public static WingetProgress Of(WingetPhase phase) => new(phase);
+}

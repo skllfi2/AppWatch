@@ -65,16 +65,7 @@
                                                 <TextBlock Text="{x:Bind Loc.BtnClearMyCatalog, Mode=OneWay}" FontSize="12"/>
                                             </StackPanel>
                                         </Button>
-                                        <ComboBox Grid.Column="4" SelectedIndex="{x:Bind ViewModel.CatalogCategoryIndex, Mode=TwoWay}"
-                                                  MinWidth="150" VerticalAlignment="Center" Padding="8,4" FontSize="12">
-                                            <ComboBoxItem Content="{x:Bind Loc.CategoryAll, Mode=OneWay}" />
-                                            <ComboBoxItem Content="{x:Bind Loc.CategoryUtility, Mode=OneWay}" />
-                                            <ComboBoxItem Content="{x:Bind Loc.CategoryMedia, Mode=OneWay}" />
-                                            <ComboBoxItem Content="{x:Bind Loc.CategoryNetwork, Mode=OneWay}" />
-                                            <ComboBoxItem Content="{x:Bind Loc.CategorySecurity, Mode=OneWay}" />
-                                            <ComboBoxItem Content="{x:Bind Loc.CategoryProductivity, Mode=OneWay}" />
-                                            <ComboBoxItem Content="{x:Bind Loc.CategoryDevelopment, Mode=OneWay}" />
-                                        </ComboBox>
+                                        
                                         <ComboBox Grid.Column="4" SelectedIndex="{x:Bind ViewModel.CatalogCategoryIndex, Mode=TwoWay}"
                                                   MinWidth="150" VerticalAlignment="Center" Padding="8,4" FontSize="12">
                                             <ComboBoxItem Content="{x:Bind Loc.CategoryAll, Mode=OneWay}" />

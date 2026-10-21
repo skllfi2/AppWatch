@@ -320,5 +320,12 @@
   "WingetPhDownload": "Downloading…",
   "WingetPhVerify": "Verifying hash…",
   "WingetPhDownloaded": "Downloaded — starting installer…",
-  "WingetPhInstall": "Installing…"
+  "WingetPhInstall": "Installing…",
+  "HintWingetInstallFailed": "The installer was interrupted. Usually the app is currently running, or administrator rights are required. Close the app and retry.",
+  "HintWingetNotApplicable": "winget considers the new version not applicable to your system (a known source quirk). Update manually from the vendor's site.",
+  "HintRateLimited": "GitHub API rate limit exhausted — the limit is shared across your IP (VPN). Add a Personal Access Token in Settings or retry later.",
+  "HintKillFailed": "The process runs elevated. Stop it manually or run AppWatch as administrator.",
+  "HintAlreadyUpdating": "An update of this app is already in progress — wait for it to finish.",
+  "HintHealthCheck": "The new version failed to start, so the previous version was restored automatically.",
+  "HintDigestMismatch": "The downloaded file did not match the release checksum — the download is corrupted or tampered. Retry later."
 }
