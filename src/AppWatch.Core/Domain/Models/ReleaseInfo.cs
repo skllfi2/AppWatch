@@ -8,6 +8,9 @@ public sealed class ReleaseInfo
     public bool IsPreRelease { get; init; }
     public DateTimeOffset PublishedAt { get; init; }
     public IReadOnlyList<ReleaseAsset> Assets { get; init; } = [];
+
+    /// <summary>Release notes (markdown body from the GitHub release) — shown in the details dialog.</summary>
+    public string? Body { get; init; }
 }
 
 public enum UpdateStatus

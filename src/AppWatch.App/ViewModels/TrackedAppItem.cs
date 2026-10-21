@@ -28,6 +28,9 @@ public partial class TrackedAppItem : ObservableObject
     /// <summary>True when the launch button makes sense (install dir + exe known).</summary>
     public bool HasLaunchInfo => App.InstallDirectory is not null && App.ExecutableName is not null;
 
+    /// <summary>Layer-1: Launch is the primary action only when there is nothing to update.</summary>
+    public bool CanLaunchPrimary => !UpdateAvailable && HasLaunchInfo;
+
     /// <summary>True when the stage shows a file-operation progress bar.</summary>
     public bool IsStageProgress => Stage is UpdateStage.Downloading or UpdateStage.Replacing;
 
@@ -87,6 +90,13 @@ public partial class TrackedAppItem : ObservableObject
     /// <summary>A1: newest release tag from the last check (drives "skip this version").</summary>
     [ObservableProperty]
     public partial string? LatestTag { get; set; }
+
+    /// <summary>Layer-1 UI: release notes of the pending update (markdown body, shown in the details dialog).</summary>
+    [ObservableProperty]
+    public partial string? PendingNotes { get; set; }
+
+    /// <summary>Layer-1 UI: the pending version, or null when up to date.</summary>
+    public string? AvailableVersion => UpdateAvailable ? LatestTag : null;
 
     /// <summary>A1: true when the user pinned the current version (engine returns Pinned).</summary>
     public bool IsPinned => App.PinnedVersion is not null;
@@ -192,6 +202,9 @@ public partial class TrackedAppItem : ObservableObject
     public IRelayCommand SkipVersionCommand => global::AppWatch.App.Resolve<MainViewModel>().SkipVersionCommand;
     public IRelayCommand PinCurrentCommand => global::AppWatch.App.Resolve<MainViewModel>().PinCurrentCommand;
     public IRelayCommand ResetRulesCommand => global::AppWatch.App.Resolve<MainViewModel>().ResetRulesCommand;
+
+    /// <summary>Layer-1 UI: opens the app details dialog (versions, release notes, history, automation).</summary>
+    public IRelayCommand ShowDetailsCommand => global::AppWatch.App.Resolve<MainViewModel>().ShowAppDetailsCommand;
 
     private static Brush MakeBrush(byte r, byte g, byte b) =>
         new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, r, g, b));

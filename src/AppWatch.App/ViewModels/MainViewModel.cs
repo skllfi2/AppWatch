@@ -65,7 +65,11 @@ public partial class MainViewModel : ObservableObject
             _ = EnsureSemanticReadyAsync();
 
         foreach (var app in _config.TrackedApps)
-            Apps.Add(new TrackedAppItem(app));
+        {
+            var item = new TrackedAppItem(app);
+            item.PropertyChanged += OnHomeItemChanged;
+            Apps.Add(item);
+        }
 
         foreach (var entry in _catalog.Entries)
         {
@@ -84,7 +88,7 @@ public partial class MainViewModel : ObservableObject
         CatalogUpdatesAvailable = CatalogApps.Count(c => c.UpdateAvailable);
         RefreshSources();
         ApplyCatalogFilter();
-        ApplyHomeFilter(); // initial populate of FilteredApps
+        RecomputeHomeGroups(); // initial population of the four home sections
         RefreshNextCheckText();
 
                 AppsTrackedCount = Apps.Count;
@@ -92,24 +96,75 @@ public partial class MainViewModel : ObservableObject
                                 WingetUpdatesAvailable = 0;
                                 WingetPendingUpdates = 0;
 
-        // Keep FilteredApps in sync whenever Apps changes (add/remove from any path)
-        Apps.CollectionChanged += (_, _) => ApplyHomeFilter();
+        // Keep the home groups in sync whenever apps are added/removed from any path
+        Apps.CollectionChanged += (_, args) =>
+        {
+            if (args.NewItems is not null)
+                foreach (TrackedAppItem added in args.NewItems)
+                    added.PropertyChanged += OnHomeItemChanged;
+            RecomputeHomeGroups();
+        };
                         }
 
                     public ObservableCollection<TrackedAppItem> Apps { get; } = [];
 
-    // === Home page: filter + sort + next-check (P-UI informative-lite) ===
+    // === Home page: grouped sections (Layer-1 operation-centric rework) ===
+    // Filters/sort combos are gone — apps are always visible, split by what
+    // they need from the user: update / attention / fine / off.
 
-    /// <summary>Filtered+sorted view of <see cref="Apps"/> for the ListView.</summary>
-    public ObservableCollection<TrackedAppItem> FilteredApps { get; } = [];
+    public ObservableCollection<TrackedAppItem> UpdatesGroup { get; } = [];
+    public ObservableCollection<TrackedAppItem> ErrorsGroup { get; } = [];
+    public ObservableCollection<TrackedAppItem> UpToDateGroup { get; } = [];
+    public ObservableCollection<TrackedAppItem> DisabledGroup { get; } = [];
 
-    /// <summary>0 = all, 1 = updates, 2 = errors, 3 = disabled.</summary>
-    [ObservableProperty]
-    public partial int HomeFilterIndex { get; set; }
+    public bool HasUpdates => UpdatesGroup.Count > 0;
+    public bool HasErrors => ErrorsGroup.Count > 0;
+    public bool HasUpToDate => UpToDateGroup.Count > 0;
+    public bool HasDisabled => DisabledGroup.Count > 0;
 
-    /// <summary>0 = by name, 1 = by status (updates first, then errors).</summary>
-    [ObservableProperty]
-    public partial int HomeSortIndex { get; set; }
+    public string UpdatesHeaderText => _loc.Format("GroupUpdates", UpdatesGroup.Count);
+    public string ErrorsHeaderText => _loc.Format("GroupErrors", ErrorsGroup.Count);
+    public string UpToDateHeaderText => _loc.Format("GroupUpToDate", UpToDateGroup.Count);
+    public string DisabledHeaderText => _loc.Format("GroupDisabled", DisabledGroup.Count);
+
+    /// <summary>Recomputes the four home groups from the live item state.</summary>
+    private void RecomputeHomeGroups()
+    {
+        FillGroup(UpdatesGroup, Apps
+            .Where(a => a.App.Enabled && a.UpdateAvailable)
+            .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase));
+        FillGroup(ErrorsGroup, Apps
+            .Where(a => a.App.Enabled && !a.UpdateAvailable && a.Stage == UpdateStage.Error)
+            .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase));
+        FillGroup(UpToDateGroup, Apps
+            .Where(a => a.App.Enabled && !a.UpdateAvailable && a.Stage != UpdateStage.Error)
+            .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase));
+        FillGroup(DisabledGroup, Apps
+            .Where(a => !a.App.Enabled)
+            .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase));
+
+        foreach (var p in new[]
+                 {
+                     nameof(HasUpdates), nameof(HasErrors), nameof(HasUpToDate), nameof(HasDisabled),
+                     nameof(UpdatesHeaderText), nameof(ErrorsHeaderText),
+                     nameof(UpToDateHeaderText), nameof(DisabledHeaderText),
+                 })
+            OnPropertyChanged(p);
+    }
+
+    private static void FillGroup(ObservableCollection<TrackedAppItem> group, IEnumerable<TrackedAppItem> items)
+    {
+        group.Clear();
+        foreach (var i in items)
+            group.Add(i);
+    }
+
+    /// <summary>Item state changed (stage/update flag) — keep the groups live.</summary>
+    private void OnHomeItemChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(TrackedAppItem.UpdateAvailable) or nameof(TrackedAppItem.Stage))
+            RecomputeHomeGroups();
+    }
 
     [ObservableProperty]
     public partial string NextCheckText { get; set; } = "";
@@ -598,8 +653,6 @@ public partial class MainViewModel : ObservableObject
             ApplyCatalogFilter();
     }
 
-    partial void OnHomeFilterIndexChanged(int value) => ApplyHomeFilter();
-    partial void OnHomeSortIndexChanged(int value) => ApplyHomeFilter();
     partial void OnCatalogCategoryIndexChanged(int value) => ApplyCatalogFilter();
 
     private async Task EnsureSemanticReadyAsync()
@@ -655,29 +708,9 @@ public partial class MainViewModel : ObservableObject
 
     private void ApplyHomeFilter()
     {
-        FilteredApps.Clear();
-        var items = HomeFilterIndex switch
-        {
-            1 => Apps.Where(a => a.UpdateAvailable),
-            2 => Apps.Where(a => a.Stage == UpdateStage.Error),
-            3 => Apps.Where(a => !a.App.Enabled),
-            _ => Apps.AsEnumerable(),
-        };
-        items = HomeSortIndex switch
-        {
-            1 => items.OrderBy(StatusRank).ThenBy(a => a.Name, StringComparer.OrdinalIgnoreCase),
-            _ => items.OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase),
-        };
-        foreach (var i in items)
-            FilteredApps.Add(i);
+        // Legacy hook kept for callers; grouping replaced the flat filter.
+        RecomputeHomeGroups();
     }
-
-    private static int StatusRank(TrackedAppItem a) => a switch
-    {
-        _ when a.UpdateAvailable => 0,
-        _ when a.Stage == UpdateStage.Error => 1,
-        _ => 2,
-    };
 
     /// <summary>Localized "next check at HH:mm" from the monitor's persisted schedule.</summary>
     public void RefreshNextCheckText()
@@ -690,6 +723,37 @@ public partial class MainViewModel : ObservableObject
 
     [RelayCommand]
     private void GoToCatalog() => App.MainWindow!.NavigateTo(typeof(Views.CatalogPage));
+
+    /// <summary>
+    /// Layer-1 UI: app details dialog — versions, pending release notes, per-app
+    /// history, automation consent and actions. Primary = update, Secondary = rollback.
+    /// </summary>
+    [RelayCommand]
+    private async Task ShowAppDetailsAsync(TrackedAppItem? item)
+    {
+        if (item is null) return;
+
+        var appHistory = _history.Load()
+            .Where(h => string.Equals(h.AppName, item.App.Name, StringComparison.OrdinalIgnoreCase))
+            .TakeLast(5)
+            .Reverse()
+            .ToList();
+
+        var dialog = new Views.AppDetailsDialog(item, appHistory, consent =>
+        {
+            item.App.AutoApplyConsent = consent;
+            _configStore.Save(_config); // same instance the VM holds — persists the flag
+        })
+        {
+            XamlRoot = App.MainWindow!.Content.XamlRoot,
+        };
+
+        var result = await dialog.ShowAsync();
+        if (result == ContentDialogResult.Primary && item.UpdateAvailable)
+            await UpdateOneAsync(item, default);
+        else if (result == ContentDialogResult.Secondary && item.RollbackAvailable)
+            await RollbackAppAsync(item);
+    }
 
     public async Task ShowOnboardingIfNeededAsync()
     {
@@ -886,6 +950,7 @@ private void ApplyCatalogFilter()
             vm.StatusDetail = result.Detail; // D5: error/decision reason for the card tooltip
             vm.UpdateAvailable = result.Status == UpdateStatus.UpdateAvailable;
             vm.LatestTag = result.NewRelease?.TagName; // A1: for "skip this version"
+            vm.PendingNotes = result.NewRelease?.Body; // Layer-1: release notes
             vm.ReportVersionChanged(); // P3: auto-detect may have updated CurrentVersion during the check
             vm.Stage = result.Status switch
             {
@@ -922,6 +987,7 @@ private void ApplyCatalogFilter()
                     item.StatusDetail = check.Detail; // D5
                     item.UpdateAvailable = check.Status == UpdateStatus.UpdateAvailable;
                     item.LatestTag = check.NewRelease?.TagName; // A1
+                    item.PendingNotes = check.NewRelease?.Body; // Layer-1: release notes
                     if (check.Status != UpdateStatus.UpdateAvailable)
                     {
                         item.Stage = check.Status == UpdateStatus.Error ? UpdateStage.Error : UpdateStage.Done;
@@ -1280,6 +1346,7 @@ private void ApplyCatalogFilter()
             item.StatusText = Describe(check.Status);
             item.UpdateAvailable = check.Status == UpdateStatus.UpdateAvailable;
             item.LatestTag = check.NewRelease?.TagName; // A1: for "skip this version"
+            item.PendingNotes = check.NewRelease?.Body; // Layer-1: release notes
             item.StatusDetail = check.Detail; // reviewer: stale-detail cleanup on every plain check
             if (check.Status != UpdateStatus.UpdateAvailable)
             {

@@ -221,6 +221,7 @@ public sealed class GitHubApiClient : IGitHubClient
         TagName = dto.TagName,
         IsPreRelease = dto.PreRelease,
         PublishedAt = dto.PublishedAt ?? DateTimeOffset.MinValue,
+        Body = dto.Body,
         Assets = dto.Assets
             .Select(a => new ReleaseAsset(a.Name, a.DownloadUrl, a.Size, ParseDigest(a.Digest)))
             .ToList(),
@@ -240,6 +241,7 @@ public sealed class GitHubApiClient : IGitHubClient
         [JsonPropertyName("tag_name")] public string TagName { get; set; } = "";
         [JsonPropertyName("prerelease")] public bool PreRelease { get; set; }
         [JsonPropertyName("published_at")] public DateTimeOffset? PublishedAt { get; set; }
+        [JsonPropertyName("body")] public string? Body { get; set; }
         [JsonPropertyName("assets")] public List<AssetDto> Assets { get; set; } = [];
     }
 
