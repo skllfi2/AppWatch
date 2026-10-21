@@ -32,4 +32,8 @@ public partial class WingetItem : ObservableObject
 
     [ObservableProperty]
     public partial bool IsUpdating { get; set; }
+
+    /// <summary>Running clock "2:14" while the winget operation is in flight (winget gives no percents).</summary>
+    [ObservableProperty]
+    public partial string ElapsedText { get; set; } = "";
 }

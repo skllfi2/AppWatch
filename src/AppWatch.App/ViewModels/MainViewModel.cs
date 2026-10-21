@@ -1063,7 +1063,24 @@ private void ApplyCatalogFilter()
 
         item.Stage = UpdateStage.Downloading;
         item.ProgressValue = 0;
-        var download = new Progress<double>(p => item.ProgressValue = p);
+        // live "Скачивание 45% · 3.2 МБ/с": percent from the engine (bytes),
+        // speed computed from percent deltas over the asset size.
+        var totalBytes = check.ChosenAsset?.Size ?? 0;
+        var lastPct = 0.0;
+        var lastAt = DateTimeOffset.UtcNow;
+        var download = new Progress<double>(p =>
+        {
+            item.ProgressValue = p;
+            var now = DateTimeOffset.UtcNow;
+            var dt = (now - lastAt).TotalSeconds;
+            if (totalBytes > 0 && p > lastPct && dt >= 0.4)
+            {
+                var bytesPerSec = (p - lastPct) / 100.0 * totalBytes / dt;
+                item.StatusText = $"{_loc["StageDownloading"]} {(int)p}% · {FormatSpeed(bytesPerSec)}";
+                lastPct = p;
+                lastAt = now;
+            }
+        });
         var history = await _engine.ApplyAsync(item.App, check, download, cancellationToken);
         _history.Append(history);
         if (history.Success)
@@ -1083,6 +1100,13 @@ private void ApplyCatalogFilter()
         _configStore.Save(_config);
         StatusText = _loc["checkDone"];
     }
+
+    private static string FormatSpeed(double bytesPerSec) => bytesPerSec switch
+    {
+        >= 1024 * 1024 => $"{bytesPerSec / (1024 * 1024):F1} МБ/с",
+        >= 1024 => $"{bytesPerSec / 1024:F0} КБ/с",
+        _ => $"{bytesPerSec:F0} Б/с",
+    };
 
     [RelayCommand]
     private void LaunchApp(TrackedAppItem? item)
@@ -1159,19 +1183,34 @@ private void ApplyCatalogFilter()
             StatusText = _loc.Format("WingetUpdating", item.Name, i + 1, total); // main bar: "Обновление Telegram (1/3)…"
             item.Status = _loc["WingetStarting"];
             item.ProgressValue = 0;
+            item.ElapsedText = "";
             item.IsUpdating = true;
-            var progress = new Progress<double>(p =>
+
+            // honest live feedback: winget gives no percents (redirected stdout),
+            // so show real phases + a running clock instead of a dead bar.
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            var ticker = new Microsoft.UI.Xaml.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            ticker.Tick += (_, _) => item.ElapsedText = FormatElapsed(stopwatch.Elapsed);
+            ticker.Start();
+
+            var progress = new Progress<AppWatch.Core.Domain.WingetPhase>(phase =>
             {
-                item.ProgressValue = p < 100 ? p : Math.Min(100, p - 100);
-                item.Status = p < 100
-                    ? _loc.Format("WingetDownloading", (int)p)
-                    : _loc.Format("WingetInstalling", (int)Math.Min(100, p - 100));
+                item.Status = phase switch
+                {
+                    AppWatch.Core.Domain.WingetPhase.Downloading => _loc["WingetPhDownload"],
+                    AppWatch.Core.Domain.WingetPhase.Verifying => _loc["WingetPhVerify"],
+                    AppWatch.Core.Domain.WingetPhase.Downloaded => _loc["WingetPhDownloaded"],
+                    AppWatch.Core.Domain.WingetPhase.Installing => _loc["WingetPhInstall"],
+                    _ => item.Status,
+                };
             });
             var (ok, message) = await _winget.UpgradePackageAsync(item.Id, item.Name, progress, cancellationToken);
+            ticker.Stop();
             _history.Append(new UpdateHistoryEntry(
                 item.Name, item.Row.Update.CurrentVersion, item.Row.Update.AvailableVersion,
                 DateTimeOffset.UtcNow, ok, ok ? null : message));
             item.IsUpdating = false;
+            item.ElapsedText = ok ? FormatElapsed(stopwatch.Elapsed) : "";
             item.ProgressValue = ok ? 100 : item.ProgressValue;
             item.Status = ok ? _loc["WingetDone"] : $"{_loc["WingetFailed"]}: {message}";
             if (ok) updatedNames.Add(item.Name); else failedNames.Add($"{item.Name} — {message}");
@@ -1181,6 +1220,9 @@ private void ApplyCatalogFilter()
         // Summary dialog: what updated, what failed, then re-scan on close
         await ShowWingetBatchSummaryAsync(updatedNames, failedNames);
     }
+
+    private static string FormatElapsed(TimeSpan t) =>
+        t.TotalHours >= 1 ? $"{(int)t.TotalHours}:{t.Minutes:D2}:{t.Seconds:D2}" : $"{(int)t.TotalMinutes}:{t.Seconds:D2}";
 
     /// <summary>
     /// Post-batch summary dialog (C# ContentDialog — XAML ContentDialog crashes the compiler

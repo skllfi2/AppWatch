@@ -316,5 +316,9 @@
   "DetailsConsentHint": "Обновление ставится без запроса, только если включено и общее разрешение в Настройках.",
   "DetailsHistory": "ИСТОРИЯ ОБНОВЛЕНИЙ",
   "On": "Вкл",
-  "Off": "Выкл"
+  "Off": "Выкл",
+  "WingetPhDownload": "Скачивание…",
+  "WingetPhVerify": "Проверка хэша…",
+  "WingetPhDownloaded": "Скачано — запуск установщика…",
+  "WingetPhInstall": "Установка…"
 }

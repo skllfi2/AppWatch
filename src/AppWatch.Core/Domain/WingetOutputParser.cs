@@ -160,4 +160,36 @@ public static class WingetOutputParser
         && value is >= 0 and <= 100
             ? value
             : null;
+
+    /// <summary>
+    /// winget with redirected stdout prints NO progress bar at all (verified live:
+    /// a 65 MB download produced zero percent/speed lines). It DOES print plain
+    /// phase lines — this maps them. Lines are matched in order; the first hit wins.
+    /// </summary>
+    public static WingetPhase? TryParsePhase(string line)
+    {
+        if (line.Length == 0) return null;
+        var s = line.AsSpan().Trim();
+        if (s.Length == 0) return null;
+
+        if (Contains(s, "Скачивание") || Contains(s, "Downloading")) return WingetPhase.Downloading;
+        if (Contains(s, "Хэш установщика") || Contains(s, "hash")) return WingetPhase.Verifying;
+        if (Contains(s, "Установщик скачан") || Contains(s, "installer downloaded")) return WingetPhase.Downloaded;
+        if (Contains(s, "Установка") || Contains(s, "Installing") || Contains(s, "Установлено") || Contains(s, "installed"))
+            return WingetPhase.Installing;
+        return null;
+
+        static bool Contains(ReadOnlySpan<char> hay, ReadOnlySpan<char> needle)
+            => hay.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+}
+
+/// <summary>Honest winget phases (redirected stdout never carries percents — see TryParsePhase).</summary>
+public enum WingetPhase
+{
+    Starting,
+    Downloading,
+    Verifying,
+    Downloaded,
+    Installing,
 }

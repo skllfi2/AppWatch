@@ -73,6 +73,7 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="2*" />
                                         <ColumnDefinition Width="1.5*" />
+                                        <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="2*" />
                                     </Grid.ColumnDefinitions>
                                     <CheckBox Grid.Column="0" IsChecked="{x:Bind IsSelected, Mode=TwoWay}" VerticalAlignment="Center" />
@@ -81,11 +82,16 @@
                                         <TextBlock Text="{x:Bind Status, Mode=OneWay}" Opacity="0.7" FontSize="12" />
                                     </StackPanel>
                                     <TextBlock Grid.Column="2" Text="{x:Bind Versions}" VerticalAlignment="Center" Opacity="0.8" />
-                                    <ProgressBar Grid.Column="3" VerticalAlignment="Center" MinWidth="140"
+                                    <!-- live clock while winget works (it never reports percents to redirected stdout) -->
+                                    <TextBlock Grid.Column="3" Text="{x:Bind ElapsedText, Mode=OneWay}" VerticalAlignment="Center"
+                                               FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"
+                                               Visibility="{x:Bind ElapsedText, Converter={StaticResource StringNotEmptyToVisibility}, Mode=OneWay}"/>
+                                    <ProgressBar Grid.Column="4" VerticalAlignment="Center" MinWidth="140"
                                                  Height="8"
                                                  Visibility="{x:Bind IsUpdating, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"
-                                                 IsIndeterminate="False"
-                                                 Value="{x:Bind ProgressValue, Mode=OneWay}" />
+                                                 IsIndeterminate="{x:Bind IsUpdating, Mode=OneWay}"
+                                                 Maximum="100"
+                                                 Value="{x:Bind ProgressValue, Mode=OneWay}"/>
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>

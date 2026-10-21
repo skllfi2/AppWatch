@@ -24,13 +24,14 @@ public sealed class WingetService
     }
 
     /// <summary>
-    /// Updates one package. Progress values: 0–100 = download phase, 100–200 = install phase
-    /// (winget restarts the progress bar for install; the service tags install-phase values
-    /// with +100 so the UI can map them).
+    /// Updates one package. winget with redirected stdout prints no progress bar
+    /// (no percent/speed — verified live), but plain phase lines: Скачивание/хэш/
+    /// установка. We report those as WingetPhase so the UI can show honest,
+    /// live status instead of a stuck "Запуск…" and a dead bar.
     /// </summary>
     public async Task<(bool Ok, string Message)> UpgradePackageAsync(
         string packageId, string packageName,
-        IProgress<double>? progress = null, CancellationToken cancellationToken = default)
+        IProgress<WingetPhase>? progress = null, CancellationToken cancellationToken = default)
     {
         if (!IsAvailable)
             throw new InvalidOperationException("winget is not available");
@@ -57,20 +58,17 @@ public sealed class WingetService
 
         async Task<int> RunUpgradeAsync(string args)
         {
-            var lastPercent = 0.0;
-            var installPhase = false;
             return await RunWingetStreamingAsync(
                 args,
                 line =>
                 {
                     var trimmed = line.Trim();
                     if (trimmed.Length > 0 && trimmed.Replace("\0", string.Empty).Length > 0
-                        && WingetOutputParser.TryParseProgressPercent(trimmed) is null)
+                        && WingetOutputParser.TryParseProgressPercent(trimmed) is null
+                        && WingetOutputParser.TryParsePhase(trimmed) is null)
                         lastMessage = trimmed;
-                    if (WingetOutputParser.TryParseProgressPercent(line) is not { } percent) return;
-                    if (percent < lastPercent) installPhase = true;
-                    lastPercent = percent;
-                    progress?.Report(installPhase ? 100 + percent : percent);
+                    if (WingetOutputParser.TryParsePhase(line) is { } phase)
+                        progress?.Report(phase);
                 },
                 cancellationToken);
         }

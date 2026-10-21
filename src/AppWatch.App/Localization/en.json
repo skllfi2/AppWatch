@@ -316,5 +316,9 @@
   "DetailsConsentHint": "Installs without asking — requires the global toggle in Settings as well.",
   "DetailsHistory": "UPDATE HISTORY",
   "On": "On",
-  "Off": "Off"
+  "Off": "Off",
+  "WingetPhDownload": "Downloading…",
+  "WingetPhVerify": "Verifying hash…",
+  "WingetPhDownloaded": "Downloaded — starting installer…",
+  "WingetPhInstall": "Installing…"
 }
