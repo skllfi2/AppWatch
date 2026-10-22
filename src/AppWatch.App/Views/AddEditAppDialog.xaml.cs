@@ -1,14 +1,25 @@
 using AppWatch.Core.Domain.Models;
+using AppWatch.Converters;
 using AppWatch.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Media;
 
 namespace AppWatch.Views;
 
 /// <summary>
 /// Add/Edit custom app dialog — built entirely in C# to avoid XamlCompiler
 /// crashes with ContentDialog x:Class on Russian locale (WMC9999 masks errors).
+///
+/// Layout v2 (progressive disclosure):
+///   1. Single repo input (owner/repo OR full github.com URL) + fetch button
+///   2. Live repo card: avatar, name, description, homepage, detected kind/exe
+///   3. Essentials: app name, update kind, exe name, install dir
+///   4. Checkboxes vertical (no truncation at 480px)
+///   5. «Дополнительно» expander: strategy, process name, winget id,
+///      version-file fields, unsigned-installer consent
+/// Primary button is gated by VM.CanAdd.
 /// </summary>
 public sealed class AddEditAppDialog : ContentDialog
 {
@@ -25,6 +36,14 @@ public sealed class AddEditAppDialog : ContentDialog
 
         Content = BuildContent();
         MinWidth = 480;
+
+        // Gate the primary button: disabled until name + repo (or winget id) present
+        IsPrimaryButtonEnabled = _viewModel.CanAdd;
+        _viewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AddEditAppDialogViewModel.CanAdd))
+                IsPrimaryButtonEnabled = _viewModel.CanAdd;
+        };
     }
 
     public AddEditAppDialogViewModel ViewModel => _viewModel;
@@ -32,112 +51,165 @@ public sealed class AddEditAppDialog : ContentDialog
     private ScrollViewer BuildContent()
     {
         var loc = AppWatch.Localization.Loc.Instance;
-                var panel = new StackPanel { Spacing = 14, Padding = new Thickness(0, 8, 0, 0) };
+        var panel = new StackPanel { Spacing = 14, Padding = new Thickness(0, 8, 0, 0) };
 
-                panel.Children.Add(Field(loc["AppName"], TextBox("Name", loc["AppNamePlaceholder"])));
+        // ── 1. Repo input: accepts owner/repo, github.com/owner/repo, full URL ──
+        var repoGrid = new Grid { ColumnSpacing = 8 };
+        repoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        repoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-                // Repo owner + name row with fetch button
-                var repoGrid = new Grid { ColumnSpacing = 8 };
-                repoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                repoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                repoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var repoBox = new TextBox { PlaceholderText = loc["RepoInputPlaceholder"] };
+        repoBox.Text = _viewModel.RepoInput;
+        repoBox.TextChanged += (_, _) => _viewModel.RepoInput = repoBox.Text;
+        Grid.SetColumn(repoBox, 0);
+        repoGrid.Children.Add(repoBox);
 
-                var ownerBox = TextBox("RepoOwner", "owner");
-                Grid.SetColumn(ownerBox, 0);
-                repoGrid.Children.Add(ownerBox);
+        var fetchStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        var fetchBtn = new Button
+        {
+            Content = loc["FetchFromGitHub"],
+            Padding = new Thickness(12, 4, 12, 4),
+            CornerRadius = new CornerRadius(4),
+        };
+        var fetchRing = new ProgressRing
+        {
+            Width = 14, Height = 14,
+            IsActive = false,
+            Visibility = Visibility.Collapsed,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        fetchStack.Children.Add(fetchBtn);
+        fetchStack.Children.Add(fetchRing);
+        fetchBtn.Click += async (_, _) => await _viewModel.FetchRepoInfoAsync();
+        Grid.SetColumn(fetchStack, 1);
+        repoGrid.Children.Add(fetchStack);
 
-                var nameBox = TextBox("RepoName", "repo");
-                Grid.SetColumn(nameBox, 1);
-                repoGrid.Children.Add(nameBox);
+        panel.Children.Add(Field(loc["RepoInputLabel"], repoGrid));
 
-                var fetchBtn = new Button
-                {
-                    Content = loc["FetchFromGitHub"],
-                    Padding = new Thickness(12, 4, 12, 4),
-                    CornerRadius = new CornerRadius(4),
-                    VerticalAlignment = VerticalAlignment.Bottom
-                };
-                fetchBtn.Click += async (_, _) => await _viewModel.FetchRepoInfoAsync();
-                Grid.SetColumn(fetchBtn, 2);
-                repoGrid.Children.Add(fetchBtn);
+        // Fetch state: button busy + ring visible
+        _viewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AddEditAppDialogViewModel.IsFetchingRepoInfo))
+            {
+                fetchBtn.IsEnabled = !_viewModel.IsFetchingRepoInfo;
+                fetchRing.IsActive = _viewModel.IsFetchingRepoInfo;
+                fetchRing.Visibility = _viewModel.IsFetchingRepoInfo ? Visibility.Visible : Visibility.Collapsed;
+            }
+        };
 
-                panel.Children.Add(Field(loc["RepoOwner"], repoGrid));
+        // Fetch error (red, live-updating)
+        var errorText = new TextBlock
+        {
+            Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 0xD8, 0x3B, 0x01)),
+            FontSize = 12,
+            TextWrapping = TextWrapping.Wrap,
+            Visibility = Visibility.Collapsed,
+        };
+        BindLive(errorText, TextBlock.TextProperty, nameof(AddEditAppDialogViewModel.RepoFetchError));
+        _viewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AddEditAppDialogViewModel.RepoFetchError))
+                errorText.Visibility = string.IsNullOrWhiteSpace(_viewModel.RepoFetchError)
+                    ? Visibility.Collapsed : Visibility.Visible;
+        };
+        panel.Children.Add(errorText);
 
-                // GitHub repo info card (shown after fetch)
-                var githubInfoCard = new Border
-                {
-                    Background = (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["CardBackgroundBrush"],
-                    CornerRadius = new CornerRadius(8),
-                    Padding = new Thickness(12),
-                    Margin = new Thickness(0, 4, 0, 0),
-                    Visibility = Visibility.Collapsed
-                };
-                var githubInfoPanel = new StackPanel { Spacing = 8 };
-                githubInfoCard.Child = githubInfoPanel;
+        // ── 2. GitHub repo card (live bindings) ──
+        var repoCard = new Border
+        {
+            Background = (Brush)App.Current.Resources["CardBackgroundBrush"],
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(12),
+            Visibility = Visibility.Collapsed,
+        };
+        var repoCardPanel = new StackPanel { Spacing = 8 };
+        repoCard.Child = repoCardPanel;
 
-                var githubHeader = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-                var avatarImage = new Microsoft.UI.Xaml.Controls.Image
-                {
-                    Width = 40,
-                    Height = 40,
-                    Stretch = Microsoft.UI.Xaml.Media.Stretch.UniformToFill
-                };
-                var avatarBinding = new Binding { Source = _viewModel, Path = new PropertyPath("RepoAvatarUrl"), Mode = BindingMode.OneWay };
-                BindingOperations.SetBinding(avatarImage, Microsoft.UI.Xaml.Controls.Image.SourceProperty, avatarBinding);
-                githubHeader.Children.Add(avatarImage);
-                var githubTitle = new TextBlock { FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = 14, VerticalAlignment = VerticalAlignment.Center };
-                var titleBinding = new Binding { Source = _viewModel, Path = new PropertyPath("Name"), Mode = BindingMode.OneWay };
-                BindingOperations.SetBinding(githubTitle, TextBlock.TextProperty, titleBinding);
-                githubHeader.Children.Add(githubTitle);
-                var openRepoBtn = new Button
-                {
-                    Content = loc["OpenInGitHub"],
-                    Padding = new Thickness(10, 4, 10, 4),
-                    CornerRadius = new CornerRadius(4),
-                    Margin = new Thickness(8, 0, 0, 0)
-                };
-                openRepoBtn.Click += (_, _) => _viewModel.OpenRepoInBrowser();
-                githubHeader.Children.Add(openRepoBtn);
-                githubInfoPanel.Children.Add(githubHeader);
+        var repoHeader = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+        var avatarImage = new Image { Width = 40, Height = 40, Stretch = Stretch.UniformToFill };
+        var avatarBinding = new Binding
+        {
+            Source = _viewModel,
+            Path = new PropertyPath(nameof(AddEditAppDialogViewModel.RepoAvatarUrl)),
+            Mode = BindingMode.OneWay,
+            Converter = new StringToImageSourceConverter(),
+        };
+        BindingOperations.SetBinding(avatarImage, Image.SourceProperty, avatarBinding);
+        repoHeader.Children.Add(avatarImage);
 
-                if (!string.IsNullOrEmpty(_viewModel.RepoDescription))
-                {
-                    var descText = new TextBlock
-                    {
-                        Text = _viewModel.RepoDescription,
-                        TextWrapping = TextWrapping.Wrap,
-                        Opacity = 0.7,
-                        FontSize = 12
-                    };
-                    githubInfoPanel.Children.Add(descText);
-                }
+        var repoTitle = new TextBlock
+        {
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            FontSize = 14,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        BindLive(repoTitle, TextBlock.TextProperty, nameof(AddEditAppDialogViewModel.Name));
+        repoHeader.Children.Add(repoTitle);
 
-                var homepagePanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Visibility = Visibility.Collapsed };
-                var homepageIcon = new FontIcon { Glyph = "\uE774", FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
-                homepagePanel.Children.Add(homepageIcon);
-                var homepageLink = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
-                var homepageBinding = new Binding { Source = _viewModel, Path = new PropertyPath("RepoHomepage"), Mode = BindingMode.OneWay };
-                BindingOperations.SetBinding(homepageLink, TextBlock.TextProperty, homepageBinding);
-                homepagePanel.Children.Add(homepageLink);
-                githubInfoPanel.Children.Add(homepagePanel);
+        var openRepoBtn = new Button
+        {
+            Content = loc["OpenInGitHub"],
+            Padding = new Thickness(10, 4, 10, 4),
+            CornerRadius = new CornerRadius(4),
+            Margin = new Thickness(8, 0, 0, 0),
+        };
+        openRepoBtn.Click += (_, _) => _viewModel.OpenRepoInBrowser();
+        repoHeader.Children.Add(openRepoBtn);
+        repoCardPanel.Children.Add(repoHeader);
 
-                // Wire visibility for GitHub info card
-                _viewModel.PropertyChanged += (_, e) =>
-                {
-                    if (e.PropertyName == nameof(AddEditAppDialogViewModel.ShowGitHubInfo))
-                    {
-                        githubInfoCard.Visibility = _viewModel.ShowGitHubInfo ? Visibility.Visible : Visibility.Collapsed;
-                    }
-                    else if (e.PropertyName == nameof(AddEditAppDialogViewModel.RepoHomepage))
-                    {
-                        homepagePanel.Visibility = string.IsNullOrWhiteSpace(_viewModel.RepoHomepage) ? Visibility.Collapsed : Visibility.Visible;
-                    }
-                };
+        var descText = new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap,
+            Opacity = 0.7,
+            FontSize = 12,
+        };
+        BindLive(descText, TextBlock.TextProperty, nameof(AddEditAppDialogViewModel.RepoDescription));
+        repoCardPanel.Children.Add(descText);
 
-                panel.Children.Add(githubInfoCard);
+        var homepagePanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal, Spacing = 8,
+            Visibility = Visibility.Collapsed,
+        };
+        homepagePanel.Children.Add(new FontIcon { Glyph = "\uE774", FontSize = 12, VerticalAlignment = VerticalAlignment.Center });
+        var homepageLink = new TextBlock { VerticalAlignment = VerticalAlignment.Center, FontSize = 12, Opacity = 0.7 };
+        BindLive(homepageLink, TextBlock.TextProperty, nameof(AddEditAppDialogViewModel.RepoHomepage));
+        homepagePanel.Children.Add(homepageLink);
+        repoCardPanel.Children.Add(homepagePanel);
 
-        // Update Kind combo — items follow the UpdateKind enum order 1:1
-        // (fixes pre-existing bug: winget label at index 2 saved as Installer enum)
+        // Detected kind/exe line (accent)
+        var detectedText = new TextBlock
+        {
+            FontSize = 12,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = (Brush)App.Current.Resources["AccentBrush"],
+        };
+        BindLive(detectedText, TextBlock.TextProperty, nameof(AddEditAppDialogViewModel.DetectedText));
+        repoCardPanel.Children.Add(detectedText);
+
+        // Card + homepage visibility react to VM changes
+        _viewModel.PropertyChanged += (_, e) =>
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(AddEditAppDialogViewModel.ShowGitHubInfo):
+                    repoCard.Visibility = _viewModel.ShowGitHubInfo ? Visibility.Visible : Visibility.Collapsed;
+                    break;
+                case nameof(AddEditAppDialogViewModel.RepoHomepage):
+                    homepagePanel.Visibility = string.IsNullOrWhiteSpace(_viewModel.RepoHomepage)
+                        ? Visibility.Collapsed : Visibility.Visible;
+                    break;
+                case nameof(AddEditAppDialogViewModel.RepoAvatarUrl):
+                    repoCard.Visibility = _viewModel.ShowGitHubInfo ? Visibility.Visible : Visibility.Collapsed;
+                    break;
+            }
+        };
+        panel.Children.Add(repoCard);
+
+        // ── 3. Essentials ──
+        var nameBox = TextBox("Name", loc["AppNamePlaceholder"]);
+        panel.Children.Add(Field(loc["AppName"], nameBox));
+
         var kindCombo = new ComboBox { MinWidth = 320, SelectedIndex = _viewModel.SelectedUpdateKindIndex };
         kindCombo.Items.Add(new ComboBoxItem { Content = loc["UpdateKindPortableZip"] });
         kindCombo.Items.Add(new ComboBoxItem { Content = loc["UpdateKindPortableExe"] });
@@ -151,38 +223,11 @@ public sealed class AddEditAppDialog : ContentDialog
         };
         panel.Children.Add(Field(loc["UpdateKind"], kindCombo));
 
-        // Update Strategy combo (hidden for winget)
-        var strategyCombo = new ComboBox { MinWidth = 320, SelectedIndex = _viewModel.SelectedUpdateStrategyIndex };
-        strategyCombo.Items.Add(new ComboBoxItem { Content = loc["SettingsUpdateStrategyAuto"] });
-        strategyCombo.Items.Add(new ComboBoxItem { Content = loc["SettingsUpdateStrategyBuiltIn"] });
-        strategyCombo.Items.Add(new ComboBoxItem { Content = loc["SettingsUpdateStrategySilent"] });
-        strategyCombo.Items.Add(new ComboBoxItem { Content = loc["SettingsUpdateStrategyPortable"] });
-        strategyCombo.Items.Add(new ComboBoxItem { Content = loc["SettingsUpdateStrategyExternal"] });
-        strategyCombo.Items.Add(new ComboBoxItem { Content = loc["SettingsUpdateStrategyManual"] });
-        strategyCombo.SelectionChanged += (_, _) =>
-            _viewModel.SelectedUpdateStrategyIndex = strategyCombo.SelectedIndex;
-        _strategyPanel = Field(loc["UpdateStrategy"], strategyCombo);
-        panel.Children.Add(_strategyPanel);
-
-        // Executable name (hidden for winget)
-        _exePanel = Field(loc["ExecutableName"], TextBox("ExecutableName", "app.exe"));
+        var exeBox = TextBox("ExecutableName", "app.exe");
+        _exePanel = Field(loc["ExecutableName"], exeBox);
         panel.Children.Add(_exePanel);
 
-        // Process name (hidden for winget)
-        _procPanel = Field(loc["ProcessName"], TextBox("ProcessName", "process"));
-        panel.Children.Add(_procPanel);
-
-        // Winget package id (visible only for winget)
-        _wingetPanel = Field(loc["WingetPackageId"], TextBox("WingetPackageId", "Microsoft.PowerToys"));
-        panel.Children.Add(_wingetPanel);
-
-        // P3: version file fields (visible only for External kind — Battle.net case)
-        _versionFilePanel = new StackPanel { Spacing = 14 };
-        _versionFilePanel.Children.Add(Field(loc["VersionFilePath"], TextBox("VersionFilePath", loc["VersionFilePathPlaceholder"])));
-        _versionFilePanel.Children.Add(Field(loc["VersionFileRegex"], TextBox("VersionFileRegex", loc["VersionFileRegexPlaceholder"])));
-        panel.Children.Add(_versionFilePanel);
-
-        // Install directory
+        // Install directory + browse
         var dirGrid = new Grid { ColumnSpacing = 8 };
         dirGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         dirGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -207,41 +252,82 @@ public sealed class AddEditAppDialog : ContentDialog
         dirGrid.Children.Add(browseBtn);
         panel.Children.Add(Field(loc["InstallDirectory"], dirGrid));
 
-        // Options row
-        var options = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 14, Margin = new Thickness(0, 8, 0, 0) };
-        var launchCheck = new CheckBox { Content = loc["LaunchAfterUpdate"], IsChecked = _viewModel.LaunchAfterUpdate };
-        launchCheck.Checked += (_, _) => _viewModel.LaunchAfterUpdate = true;
-        launchCheck.Unchecked += (_, _) => _viewModel.LaunchAfterUpdate = false;
-        options.Children.Add(launchCheck);
-
-        var preRelCheck = new CheckBox { Content = loc["IgnorePreReleases"], IsChecked = _viewModel.IgnorePreReleases };
-        preRelCheck.Checked += (_, _) => _viewModel.IgnorePreReleases = true;
-        preRelCheck.Unchecked += (_, _) => _viewModel.IgnorePreReleases = false;
-        options.Children.Add(preRelCheck);
-
-        var autoDetectCheck = new CheckBox { Content = loc["AutoDetectVersion"], IsChecked = _viewModel.AutoDetectVersion };
-        autoDetectCheck.Checked += (_, _) => _viewModel.AutoDetectVersion = true;
-        autoDetectCheck.Unchecked += (_, _) => _viewModel.AutoDetectVersion = false;
-        options.Children.Add(autoDetectCheck);
+        // ── 4. Options: vertical (row layout truncated the third label at 480px) ──
+        var options = new StackPanel { Spacing = 8, Margin = new Thickness(0, 4, 0, 0) };
+        options.Children.Add(Check(loc["LaunchAfterUpdate"],
+            v => _viewModel.LaunchAfterUpdate = v, _viewModel.LaunchAfterUpdate));
+        options.Children.Add(Check(loc["IgnorePreReleases"],
+            v => _viewModel.IgnorePreReleases = v, _viewModel.IgnorePreReleases));
+        options.Children.Add(Check(loc["AutoDetectVersion"],
+            v => _viewModel.AutoDetectVersion = v, _viewModel.AutoDetectVersion));
         panel.Children.Add(options);
 
-        // B7: per-app consent for unsigned installers (separate row — security-relevant)
-        var unsignedCheck = new CheckBox
+        // ── 5. «Дополнительно» expander: rare fields out of the way ──
+        var advanced = new StackPanel { Spacing = 14 };
+
+        var strategyCombo = new ComboBox { MinWidth = 320, SelectedIndex = _viewModel.SelectedUpdateStrategyIndex };
+        strategyCombo.Items.Add(new ComboBoxItem { Content = loc["SettingsUpdateStrategyAuto"] });
+        strategyCombo.Items.Add(new ComboBoxItem { Content = loc["SettingsUpdateStrategyBuiltIn"] });
+        strategyCombo.Items.Add(new ComboBoxItem { Content = loc["SettingsUpdateStrategySilent"] });
+        strategyCombo.Items.Add(new ComboBoxItem { Content = loc["SettingsUpdateStrategyPortable"] });
+        strategyCombo.Items.Add(new ComboBoxItem { Content = loc["SettingsUpdateStrategyExternal"] });
+        strategyCombo.Items.Add(new ComboBoxItem { Content = loc["SettingsUpdateStrategyManual"] });
+        strategyCombo.SelectionChanged += (_, _) =>
+            _viewModel.SelectedUpdateStrategyIndex = strategyCombo.SelectedIndex;
+        _strategyPanel = Field(loc["UpdateStrategy"], strategyCombo);
+        advanced.Children.Add(_strategyPanel);
+
+        _procPanel = Field(loc["ProcessName"], TextBox("ProcessName", "process"));
+        advanced.Children.Add(_procPanel);
+
+        _wingetPanel = Field(loc["WingetPackageId"], TextBox("WingetPackageId", "Microsoft.PowerToys"));
+        advanced.Children.Add(_wingetPanel);
+
+        _versionFilePanel = new StackPanel { Spacing = 14 };
+        _versionFilePanel.Children.Add(Field(loc["VersionFilePath"], TextBox("VersionFilePath", loc["VersionFilePathPlaceholder"])));
+        _versionFilePanel.Children.Add(Field(loc["VersionFileRegex"], TextBox("VersionFileRegex", loc["VersionFileRegexPlaceholder"])));
+        advanced.Children.Add(_versionFilePanel);
+
+        var unsignedCheck = Check(loc["AllowUnsignedInstaller"],
+            v => _viewModel.AllowUnsignedInstaller = v, _viewModel.AllowUnsignedInstaller);
+        advanced.Children.Add(unsignedCheck);
+
+        var expander = new Expander
         {
-            Content = loc["AllowUnsignedInstaller"],
-            IsChecked = _viewModel.AllowUnsignedInstaller,
-            Margin = new Thickness(0, 4, 0, 0),
+            Header = loc["AdvancedSection"],
+            Content = advanced,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            IsExpanded = _viewModel.IsNewApp is false && _viewModel.SelectedUpdateKindIndex == (int)UpdateKind.WingetPackage,
         };
-        unsignedCheck.Checked += (_, _) => _viewModel.AllowUnsignedInstaller = true;
-        unsignedCheck.Unchecked += (_, _) => _viewModel.AllowUnsignedInstaller = false;
-        panel.Children.Add(unsignedCheck);
+        panel.Children.Add(expander);
 
         UpdateVisibility(_viewModel.SelectedUpdateKindIndex);
+
+        // VM → controls sync: fetch auto-fills Name/ExecutableName/Kind in the VM,
+        // but these boxes were built before the fetch (one-way box→VM only).
+        _viewModel.PropertyChanged += (_, e) =>
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(AddEditAppDialogViewModel.Name):
+                    if (nameBox.Text != _viewModel.Name)
+                        nameBox.Text = _viewModel.Name;
+                    break;
+                case nameof(AddEditAppDialogViewModel.ExecutableName):
+                    if (exeBox.Text != _viewModel.ExecutableName)
+                        exeBox.Text = _viewModel.ExecutableName;
+                    break;
+                case nameof(AddEditAppDialogViewModel.SelectedUpdateKindIndex):
+                    if (kindCombo.SelectedIndex != _viewModel.SelectedUpdateKindIndex)
+                        kindCombo.SelectedIndex = _viewModel.SelectedUpdateKindIndex;
+                    break;
+            }
+        };
 
         return new ScrollViewer
         {
             Content = panel,
-            MaxHeight = 520,
+            MaxHeight = 560,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         };
     }
@@ -263,6 +349,18 @@ public sealed class AddEditAppDialog : ContentDialog
         if (_versionFilePanel is not null) _versionFilePanel.Visibility = isExternal ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    /// <summary>Live OneWay binding to a VM property (classic {Binding}: no x:Bind in runtime-built trees).</summary>
+    private void BindLive(FrameworkElement target, DependencyProperty property, string vmProperty)
+    {
+        var binding = new Binding
+        {
+            Source = _viewModel,
+            Path = new PropertyPath(vmProperty),
+            Mode = BindingMode.OneWay,
+        };
+        BindingOperations.SetBinding(target, property, binding);
+    }
+
     private static StackPanel Field(string label, FrameworkElement input)
     {
         return new StackPanel
@@ -274,6 +372,14 @@ public sealed class AddEditAppDialog : ContentDialog
                 input,
             },
         };
+    }
+
+    private static CheckBox Check(string label, Action<bool> set, bool initial)
+    {
+        var box = new CheckBox { Content = label, IsChecked = initial };
+        box.Checked += (_, _) => set(true);
+        box.Unchecked += (_, _) => set(false);
+        return box;
     }
 
     private TextBox TextBox(string propertyName, string placeholder)

@@ -327,7 +327,9 @@ public partial class MainViewModel : ObservableObject
                         var installRoot = Path.Combine(
                             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                             "AppWatch", "Apps", app.RepoName);
-                        app.InstallDirectory = installRoot;
+                        // Default only when the user didn't pick/enter a directory in the dialog
+                        if (string.IsNullOrWhiteSpace(app.InstallDirectory))
+                            app.InstallDirectory = installRoot;
                         _config.TrackedApps.Add(app);
                         _configStore.Save(_config);
                         Apps.Add(new TrackedAppItem(app));

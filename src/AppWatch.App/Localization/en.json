@@ -348,5 +348,10 @@
   "RepoFetchFailed": "Failed to fetch repository data",
   "SourceEnabled": "Enabled",
   "SourceDisabled": "Disabled",
-  "BtnRemoveSource": "Remove"
+  "BtnRemoveSource": "Remove",
+  "RepoInputLabel": "GitHub repository",
+  "RepoInputPlaceholder": "owner/repo or https://github.com/owner/repo",
+  "RepoInputInvalid": "Format: owner/repo or github.com/owner/repo link",
+  "AdvancedSection": "Advanced",
+  "DetectedLabel": "Detected: {0} · {1}"
 }

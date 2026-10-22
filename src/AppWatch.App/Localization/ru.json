@@ -348,5 +348,10 @@
   "RepoFetchFailed": "Ошибка получения данных репозитория",
   "SourceEnabled": "Включён",
   "SourceDisabled": "Отключён",
-  "BtnRemoveSource": "Удалить"
+  "BtnRemoveSource": "Удалить",
+  "RepoInputLabel": "Репозиторий GitHub",
+  "RepoInputPlaceholder": "owner/repo или https://github.com/owner/repo",
+  "RepoInputInvalid": "Формат: owner/repo или ссылка github.com/owner/repo",
+  "AdvancedSection": "Дополнительно",
+  "DetectedLabel": "Обнаружено: {0} · {1}"
 }

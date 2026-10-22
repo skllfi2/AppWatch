@@ -50,6 +50,8 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
         IgnorePreReleases = _app.IgnorePreReleases;
         AllowUnsignedInstaller = _app.AllowUnsignedInstaller;
         AutoDetectVersion = _app.AutoDetectVersion;
+        RepoInput = !string.IsNullOrWhiteSpace(_app.RepoOwner) && !string.IsNullOrWhiteSpace(_app.RepoName)
+            ? $"{_app.RepoOwner}/{_app.RepoName}" : "";
     }
 
     // Expose AvatarUrl for binding to Image in dialog
@@ -61,6 +63,48 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
     public string PrimaryButtonText => _isNew ? LocalizationService.Instance["BtnAdd"] : LocalizationService.Instance["BtnSave"];
 
     public Loc Loc => Loc.Instance;
+
+    /// <summary>Single repo input: accepts "owner/repo", "github.com/owner/repo", full https URL, or "owner repo".</summary>
+    [ObservableProperty]
+    public partial string RepoInput { get; set; } = "";
+
+    /// <summary>Parsed from RepoInput — shown after fetch: "PortableZip · rg.exe".</summary>
+    [ObservableProperty]
+    public partial string? DetectedText { get; set; }
+
+    /// <summary>Primary button gate: name + (owner & repo) for GitHub kinds; name + winget id for winget.</summary>
+    public bool CanAdd
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Name)) return false;
+            if (SelectedUpdateKindIndex == (int)UpdateKind.WingetPackage)
+                return !string.IsNullOrWhiteSpace(WingetPackageId);
+            return !string.IsNullOrWhiteSpace(RepoOwner) && !string.IsNullOrWhiteSpace(RepoName);
+        }
+    }
+
+    public static (string? Owner, string? Repo) ParseRepoInput(string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return (null, null);
+        var s = input.Trim();
+
+        // URL: https://github.com/owner/repo(.git)?/?
+        var m = System.Text.RegularExpressions.Regex.Match(s,
+            @"(?:https?://)?(?:www\.)?github\.com/([A-Za-z0-9_.\-]+)/([A-Za-z0-9_.\-]+?)(?:\.git)?/?$",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (m.Success) return (m.Groups[1].Value, m.Groups[2].Value);
+
+        // owner/repo
+        var parts = s.Split('/', System.StringSplitOptions.TrimEntries | System.StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 2) return (parts[0], parts[1]);
+
+        // "owner repo" — copy-paste tolerance
+        parts = s.Split(' ', System.StringSplitOptions.TrimEntries | System.StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 2) return (parts[0], parts[1]);
+
+        return (null, null);
+    }
 
     [ObservableProperty]
     public partial string Name { get; set; } = "";
@@ -145,7 +189,13 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowExecutableName));
         OnPropertyChanged(nameof(ShowProcessName));
         OnPropertyChanged(nameof(ShowWingetPackageId));
+        OnPropertyChanged(nameof(CanAdd));
     }
+
+    partial void OnNameChanged(string value) => OnPropertyChanged(nameof(CanAdd));
+    partial void OnRepoOwnerChanged(string value) => OnPropertyChanged(nameof(CanAdd));
+    partial void OnRepoNameChanged(string value) => OnPropertyChanged(nameof(CanAdd));
+    partial void OnWingetPackageIdChanged(string value) => OnPropertyChanged(nameof(CanAdd));
 
     partial void OnRepoAvatarUrlChanged(string? value) => OnPropertyChanged(nameof(ShowGitHubInfo));
     partial void OnRepoDescriptionChanged(string? value) => OnPropertyChanged(nameof(ShowGitHubInfo));
@@ -153,11 +203,14 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
     [RelayCommand]
     public async Task FetchRepoInfoAsync()
     {
-        if (string.IsNullOrWhiteSpace(RepoOwner) || string.IsNullOrWhiteSpace(RepoName))
+        var (owner, repo) = ParseRepoInput(RepoInput);
+        if (owner is null || repo is null)
         {
-            RepoFetchError = Loc.Instance["RepoOwnerNameRequired"];
+            RepoFetchError = Loc.Instance["RepoInputInvalid"];
             return;
         }
+        RepoOwner = owner;
+        RepoName = repo;
 
         IsFetchingRepoInfo = true;
         RepoFetchError = null;
@@ -165,10 +218,11 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
         RepoHomepage = null;
         RepoAvatarUrl = null;
         RepoHtmlUrl = null;
+        DetectedText = null;
 
         try
         {
-            var info = await _github.GetRepoInfoAsync(RepoOwner.Trim(), RepoName.Trim());
+            var info = await _github.GetRepoInfoAsync(owner, repo);
             if (info is not null)
             {
                 RepoDescription = info.Description;
@@ -183,7 +237,7 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
                 // Auto-detect UpdateKind and ExecutableName from latest release
                 if (_isNew) // only for new apps, don't override user's existing choices
                 {
-                    await AutoDetectFromLatestReleaseAsync(RepoOwner.Trim(), RepoName.Trim());
+                    await AutoDetectFromLatestReleaseAsync(owner, repo);
                 }
             }
             else
@@ -222,6 +276,19 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
                     var suggestedExe = StarsImportHeuristics.SuggestExecutableName(assetNames, suggestedKind.Value);
                     if (!string.IsNullOrWhiteSpace(suggestedExe))
                         ExecutableName = suggestedExe;
+
+                    // Show the user what was detected
+                    var kindLabel = suggestedKind.Value switch
+                    {
+                        UpdateKind.PortableZip => Loc.Instance["UpdateKindPortableZip"],
+                        UpdateKind.PortableExe => Loc.Instance["UpdateKindPortableExe"],
+                        UpdateKind.Installer => Loc.Instance["UpdateKindInstaller"],
+                        UpdateKind.WingetPackage => Loc.Instance["UpdateKindWingetPackage"],
+                        UpdateKind.External => Loc.Instance["UpdateKindExternal"],
+                        _ => suggestedKind.Value.ToString(),
+                    };
+                    DetectedText = string.Format(LocalizationService.Instance["DetectedLabel"],
+                        kindLabel, suggestedExe ?? "—");
                 }
             }
         }
