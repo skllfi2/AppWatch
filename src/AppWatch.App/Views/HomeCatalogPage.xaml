@@ -292,7 +292,8 @@
                             </StackPanel>
                         </Border>
                         <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="6" Padding="12,6"
-                                BorderThickness="1" BorderBrush="{StaticResource BorderDefaultBrush}">
+                                BorderThickness="1" BorderBrush="{StaticResource BorderDefaultBrush}"
+                                Visibility="{x:Bind ViewModel.UpdatedTodayCount, Converter={StaticResource CountToVisibility}, Mode=OneWay}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon Glyph="&#xE73E;" FontSize="11" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
                                 <TextBlock Text="{x:Bind Loc.HeroMetricUpdatedToday, Mode=OneWay}" FontSize="12" Opacity="0.7" VerticalAlignment="Center"/>
