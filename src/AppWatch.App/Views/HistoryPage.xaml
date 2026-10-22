@@ -81,7 +81,7 @@
 
                 <!-- Empty state -->
                 <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="8" Padding="24"
-                        Visibility="{x:Bind EmptyStateVisible, Mode=OneWay}">
+                        Visibility="{x:Bind EmptyStateVisible, Mode=OneTime}">
                     <StackPanel Spacing="8" HorizontalAlignment="Center">
                         <FontIcon Glyph="&#xE81C;" FontSize="24" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center"/>
                         <TextBlock Text="{x:Bind Loc.HistoryEmpty, Mode=OneWay}" FontSize="12"

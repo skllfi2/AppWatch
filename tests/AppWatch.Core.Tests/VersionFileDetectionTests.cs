@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using AppWatch.Core.Domain.Models;
 using AppWatch.Core.Domain.VersionDetection;
 using Xunit;
@@ -8,6 +9,7 @@ namespace AppWatch.Core.Tests;
 /// P3: version extracted from a data file via regex — for apps that hide
 /// their version from FVI and the registry (Battle.net .product.db case).
 /// </summary>
+[SupportedOSPlatform("windows")]
 public class VersionFileDetectionTests : IDisposable
 {
     private readonly string _dir;
@@ -54,7 +56,7 @@ public class VersionFileDetectionTests : IDisposable
             a.VersionFileRegex = @"(\d+\.\d+\.\d+\.\d+)";
         });
 
-        var detected = await VersionDetector.DetectAsync(app);
+        var detected = await VersionDetector.DetectAsync(app, TestContext.Current.CancellationToken);
 
         Assert.NotNull(detected);
         Assert.Equal("2.53.4.17896", detected!.Version);
@@ -74,7 +76,7 @@ public class VersionFileDetectionTests : IDisposable
             a.ExecutableName = null;
         });
 
-        var detected = await VersionDetector.DetectAsync(app);
+        var detected = await VersionDetector.DetectAsync(app, TestContext.Current.CancellationToken);
 
         Assert.Null(detected);
     }
@@ -91,7 +93,7 @@ public class VersionFileDetectionTests : IDisposable
             a.VersionFileRegex = @"\d+\.\d+\.\d+"; // no capture group
         });
 
-        var detected = await VersionDetector.DetectAsync(app);
+        var detected = await VersionDetector.DetectAsync(app, TestContext.Current.CancellationToken);
 
         Assert.NotNull(detected);
         Assert.Equal("3.2.1", detected!.Version);
@@ -107,7 +109,7 @@ public class VersionFileDetectionTests : IDisposable
             a.ExecutableName = null;
         });
 
-        var detected = await VersionDetector.DetectAsync(app);
+        var detected = await VersionDetector.DetectAsync(app, TestContext.Current.CancellationToken);
 
         Assert.Null(detected);
     }
@@ -123,7 +125,7 @@ public class VersionFileDetectionTests : IDisposable
             a.VersionFileRegex = "([unclosed"; // malformed
         });
 
-        var detected = await VersionDetector.DetectAsync(app);
+        var detected = await VersionDetector.DetectAsync(app, TestContext.Current.CancellationToken);
 
         Assert.Null(detected);
     }
@@ -140,7 +142,7 @@ public class VersionFileDetectionTests : IDisposable
             a.VersionFileRegex = @"(\d+)"; // matches a bare number — not a version
         });
 
-        var detected = await VersionDetector.DetectAsync(app);
+        var detected = await VersionDetector.DetectAsync(app, TestContext.Current.CancellationToken);
 
         // sanity check (VersionRegex = \d+\.\d+...) rejects a bare number → falls through
         Assert.Null(detected);

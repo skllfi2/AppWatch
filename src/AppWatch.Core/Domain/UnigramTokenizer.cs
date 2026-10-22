@@ -137,7 +137,7 @@ public sealed class UnigramTokenizer
         if (_lowercase) s = s.ToLowerInvariant();
 
         var ids = new List<int> { _clsId };
-        foreach (var word in s.Split((char[])null, StringSplitOptions.RemoveEmptyEntries))
+        foreach (var word in s.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
         {
             var w = _addPrefixSpace ? _spaceReplacement + word : word;
             EncodeWord(w, ids);

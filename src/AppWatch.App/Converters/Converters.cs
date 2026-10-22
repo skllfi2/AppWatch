@@ -190,12 +190,12 @@ public sealed class StringToImageSourceConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, string language)
     {
         if (value is not string url || string.IsNullOrWhiteSpace(url))
-            return null;
+            return null!;
         try
         {
             return new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(url));
         }
-        catch { return null; }
+        catch { return null!; }
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language)

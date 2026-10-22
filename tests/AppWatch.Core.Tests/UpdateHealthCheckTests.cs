@@ -48,7 +48,7 @@ public class UpdateHealthCheckTests
 
         var outcome = await UpdateHealthCheck.VerifyStartupAsync(
             @"C:\apps\MyApp\app.exe", "app", process, launcher,
-            windowSeconds: 2, delay: NoDelay);
+            windowSeconds: 2, delay: NoDelay, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(outcome.Healthy);
         Assert.Null(outcome.Reason);
@@ -62,7 +62,7 @@ public class UpdateHealthCheckTests
 
         var outcome = await UpdateHealthCheck.VerifyStartupAsync(
             "exe", "app", process, new RecordingLauncher(),
-            windowSeconds: 2, delay: NoDelay);
+            windowSeconds: 2, delay: NoDelay, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.False(outcome.Healthy);
         Assert.Contains("did not start", outcome.Reason);
@@ -75,7 +75,7 @@ public class UpdateHealthCheckTests
 
         var outcome = await UpdateHealthCheck.VerifyStartupAsync(
             "exe", "app", process, new RecordingLauncher(),
-            windowSeconds: 2, delay: NoDelay);
+            windowSeconds: 2, delay: NoDelay, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.False(outcome.Healthy);
         Assert.Contains("exited within", outcome.Reason);
@@ -86,7 +86,7 @@ public class UpdateHealthCheckTests
     {
         var outcome = await UpdateHealthCheck.VerifyStartupAsync(
             null, "app", new FakeProcessService(false), new RecordingLauncher(),
-            windowSeconds: 2, delay: NoDelay);
+            windowSeconds: 2, delay: NoDelay, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(outcome.Healthy);
     }
@@ -96,7 +96,7 @@ public class UpdateHealthCheckTests
     {
         var outcome = await UpdateHealthCheck.VerifyStartupAsync(
             "exe", null, new FakeProcessService(false), new RecordingLauncher(),
-            windowSeconds: 2, delay: NoDelay);
+            windowSeconds: 2, delay: NoDelay, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(outcome.Healthy);
     }
