@@ -14,7 +14,14 @@
         <conv:InverseCountToVisibilityConverter x:Key="InverseCountToVisibility" xmlns:conv="using:AppWatch.Converters" />
                 <conv:StringToImageSourceConverter x:Key="StringToImageSource" xmlns:conv="using:AppWatch.Converters" />
 
-                <!-- AppCardTemplate from AppsPage -->
+        <!-- TabView: заметные вкладки — акцентный фон/текст/подчёркивание у выбранной, шрифт крупнее -->
+        <SolidColorBrush x:Key="TabViewItemHeaderBackgroundSelected" Color="{ThemeResource SystemAccentColor}" Opacity="0.16"/>
+        <SolidColorBrush x:Key="TabViewItemHeaderBackgroundPointerOver" Color="{ThemeResource SystemAccentColor}" Opacity="0.07"/>
+        <StaticResource x:Key="TabViewItemHeaderForegroundSelected" ResourceKey="AccentBrush"/>
+        <SolidColorBrush x:Key="TabViewSelectionIndicatorForeground" Color="{ThemeResource SystemAccentColor}"/>
+        <x:Double x:Key="TabViewItemHeaderFontSize">13</x:Double>
+
+        <!-- AppCardTemplate from AppsPage -->
         <DataTemplate x:Key="AppCardTemplate" x:DataType="vm:TrackedAppItem">
             <Grid Padding="12" ColumnSpacing="12" Margin="0,0,0,8"
                   Background="{StaticResource CardBackgroundBrush}" CornerRadius="8">
