@@ -12,7 +12,8 @@ namespace AppWatch.Infrastructure;
 
 public interface IToastService
 {
-    void ShowUpdateAvailable(string appName, string version);
+    /// <summary>Single summary toast: "updates available: N". No per-app toasts — the
+    /// background/catalog monitors batch their findings into one notification per cycle.</summary>
     void ShowSummary(int count);
 }
 
@@ -110,7 +111,6 @@ public sealed class BackgroundMonitor : BackgroundService
                         if (result.Status == UpdateStatus.UpdateAvailable)
                         {
                             updatesFound++;
-                            _toast.ShowUpdateAvailable(app.Name, result.NewRelease?.TagName ?? "?");
 
                             // P1: consent gate via the shared Core policy (default OFF)
                             if (UpdatePolicy.ShouldAutoApply(config, app))
@@ -151,6 +151,7 @@ public sealed class BackgroundMonitor : BackgroundService
                         // A4: jitter the next run by ±10% so the client fleet desynchronizes
                         nextDelay = CheckSchedule.WithJitter(nextDelay);
                         config.BackgroundCheckNextRunUtc = DateTimeOffset.UtcNow.Add(nextDelay);
+                        config.LastCheckUtc = DateTimeOffset.UtcNow; // footer: «Последняя проверка»
                         _configStore.Save(config);
                         await Task.Delay(nextDelay, stoppingToken);
                     }

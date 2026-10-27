@@ -13,6 +13,14 @@ public sealed class WingetService
 
     public bool IsAvailable => File.Exists(WingetPath);
 
+    /// <summary>
+    /// Exit code: winget itself crashed with E_INVALIDARG. Seen when Microsoft's catalog data
+    /// is broken (e.g. Microsoft.PowerShell overlapping version ranges, winget-cli#6613):
+    /// `winget upgrade`/`list` die during package correlation for ALL users until the
+    /// CDN data is fixed. Scoped commands (search / install --id / show) keep working.
+    /// </summary>
+    public const int CatalogBrokenExitCode = unchecked((int)0x80070057);
+
     public async Task<IReadOnlyList<WingetPackageUpdate>> GetUpgradesAsync(CancellationToken cancellationToken = default)
     {
         if (!IsAvailable)
@@ -20,6 +28,8 @@ public sealed class WingetService
         var output = await RunWingetAsync(
             "upgrade --include-unknown --disable-interactivity --accept-source-agreements",
             cancellationToken);
+        if (LastExitCode == CatalogBrokenExitCode)
+            throw new WingetCatalogBrokenException(output);
         return WingetOutputParser.ParseUpgrades(output);
     }
 

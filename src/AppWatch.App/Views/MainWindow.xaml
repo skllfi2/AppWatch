@@ -32,22 +32,27 @@
                 <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="Transparent"/>
             </NavigationView.Resources>
             <NavigationView.MenuItems>
-                <NavigationViewItem x:Name="NavItemHomeCatalog" Tag="homecatalog" Content="{x:Bind Loc.NavHomeCatalog, Mode=OneWay}">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE80F;"/>
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem Tag="winget" Content="{x:Bind Loc.WingetUpdates, Mode=OneWay}">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE753;"/>
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem Tag="history" Content="{x:Bind Loc.NavHistory, Mode=OneWay}">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE81C;"/>
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-            </NavigationView.MenuItems>
+                            <NavigationViewItem x:Name="NavItemTrackedApps" Tag="trackedapps" Content="Мои приложения">
+                                <NavigationViewItem.Icon>
+                                    <FontIcon Glyph="&#xE710;"/>
+                                </NavigationViewItem.Icon>
+                            </NavigationViewItem>
+                            <NavigationViewItem x:Name="NavItemUpdates" Tag="updates" Content="Обновления приложений">
+                                <NavigationViewItem.Icon>
+                                    <FontIcon Glyph="&#xE74A;"/>
+                                </NavigationViewItem.Icon>
+                            </NavigationViewItem>
+                            <NavigationViewItem Tag="winget" Content="{x:Bind Loc.WingetUpdates, Mode=OneWay}">
+                                <NavigationViewItem.Icon>
+                                    <FontIcon Glyph="&#xE753;"/>
+                                </NavigationViewItem.Icon>
+                            </NavigationViewItem>
+                            <NavigationViewItem Tag="history" Content="{x:Bind Loc.NavHistory, Mode=OneWay}">
+                                <NavigationViewItem.Icon>
+                                    <FontIcon Glyph="&#xE81C;"/>
+                                </NavigationViewItem.Icon>
+                            </NavigationViewItem>
+                        </NavigationView.MenuItems>
             <NavigationView.FooterMenuItems>
                 <NavigationViewItem Tag="settings" Content="{x:Bind Loc.NavSettings, Mode=OneWay}">
                     <NavigationViewItem.Icon>

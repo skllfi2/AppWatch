@@ -17,6 +17,9 @@ public sealed class AppConfig
     public DateTimeOffset? BackgroundCheckNextRunUtc { get; set; }
     public DateTimeOffset? CatalogCheckNextRunUtc { get; set; }
 
+    /// <summary>UTC time of the last completed check cycle (manual or background) — footer "Последняя проверка".</summary>
+    public DateTimeOffset? LastCheckUtc { get; set; }
+
     /// <summary>
     /// B8: ghproxy-style mirror prefixes tried (in order) when a direct github.com
     /// release download fails. Mirror serves the full GitHub URL as a path suffix.
@@ -26,17 +29,6 @@ public sealed class AppConfig
 
     /// <summary>B10: how many old versions to keep per app in the version cache (newest first).</summary>
     public int VersionCacheCount { get; set; } = 3;
-
-    // === P-Sem: semantic catalog search (off by default; readiness for large catalogs) ===
-
-    /// <summary>User opt-in for semantic (embedding-based) catalog search.</summary>
-    public bool SemanticSearchEnabled { get; set; } = false;
-
-    /// <summary>Model download URL override (ONNX, int8-quantized sentence-transformer). Null = built-in default.</summary>
-    public string? EmbeddingModelUrl { get; set; }
-
-    /// <summary>HF tokenizer.json URL override. Null = built-in default.</summary>
-    public string? EmbeddingTokenizerUrl { get; set; }
 
     /// <summary>Show the onboarding dialog on first launch.</summary>
     public bool ShowOnboarding { get; set; } = true;

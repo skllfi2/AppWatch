@@ -27,6 +27,7 @@ public sealed class Loc : INotifyPropertyChanged
             public string UpdateAll => LocalizationService.Instance["updateAll"];
             public string Stop => LocalizationService.Instance["Stop"];
             public string BtnStop => LocalizationService.Instance["BtnStop"];
+        public string Browse => this["Browse"];
             public string AddApp => LocalizationService.Instance["AddApp"];
         public string CatalogSearchPlaceholder => LocalizationService.Instance["CatalogSearchPlaceholder"];
                 public string SourcesSection => LocalizationService.Instance["SourcesSection"];
@@ -57,17 +58,16 @@ public sealed class Loc : INotifyPropertyChanged
     public string TabHome => LocalizationService.Instance["TabHome"];
     public string NavHomeCatalog => LocalizationService.Instance["NavHomeCatalog"];
     public string TabCatalog => LocalizationService.Instance["TabCatalog"];
+        public string TabUpdates => this["TabUpdates"];
+        public string TabInstalledApps => this["TabInstalledApps"];
     public string SourceEnabled => LocalizationService.Instance["SourceEnabled"];
     public string SourceDisabled => LocalizationService.Instance["SourceDisabled"];
     public string BtnRemoveSource => LocalizationService.Instance["BtnRemoveSource"];
+    public string InstalledSearchPlaceholder => LocalizationService.Instance["InstalledSearchPlaceholder"];
+    public string InstalledCount => LocalizationService.Instance["InstalledCount"];
         public string NavHome => LocalizationService.Instance["NavHome"];
             public string BtnClearMyCatalog => LocalizationService.Instance["BtnClearMyCatalog"];
             public string SettingsCatalogSection => LocalizationService.Instance["SettingsCatalogSection"];
-            public string SettingsSemanticSearch => LocalizationService.Instance["SettingsSemanticSearch"];
-            public string SettingsSemanticOn => LocalizationService.Instance["SettingsSemanticOn"];
-            public string SettingsSemanticOff => LocalizationService.Instance["SettingsSemanticOff"];
-            public string SettingsSemanticHint => LocalizationService.Instance["SettingsSemanticHint"];
-            public string SemanticModelDownload => LocalizationService.Instance["SemanticModelDownload"];
             public string AppsPageSubtitle => LocalizationService.Instance["appsPageSubtitle"];
             public string CatalogPageSubtitle => LocalizationService.Instance["catalogPageSubtitle"];
             public string WingetPageSubtitle => LocalizationService.Instance["wingetPageSubtitle"];
@@ -178,10 +178,13 @@ public sealed class Loc : INotifyPropertyChanged
         public string HeroMetricUpdatedToday => LocalizationService.Instance["HeroMetricUpdatedToday"];
 
         // Quick actions
-        public string QuickCheck => LocalizationService.Instance["QuickCheck"];
-        public string QuickStatus => LocalizationService.Instance["QuickStatus"];
+                public string QuickCheck => LocalizationService.Instance["QuickCheck"];
+                public string QuickStatus => LocalizationService.Instance["QuickStatus"];
+                public string BtnRefresh => LocalizationService.Instance["BtnRefresh"];
+                public string NoUpdatesAvailable => LocalizationService.Instance["NoUpdatesAvailable"];
+                public string NoInstalledApps => LocalizationService.Instance["NoInstalledApps"];
 
-        // Stage texts
+                // Stage texts
         public string StageChecking => LocalizationService.Instance["StageChecking"];
         public string StageDownloading => LocalizationService.Instance["StageDownloading"];
         public string StageReplacing => LocalizationService.Instance["StageReplacing"];

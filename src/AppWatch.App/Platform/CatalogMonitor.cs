@@ -100,7 +100,6 @@ public sealed class CatalogMonitor : BackgroundService, ICatalogMonitor
                         // Compare with locally stored version (if any)
                         // For catalog, we just notify about new releases
                         updatesFound++;
-                        _toast.ShowUpdateAvailable(entry.Name, latest.TagName);
                         _logger.LogInformation("Catalog update: {App} -> {Version}", entry.Name, latest.TagName);
                     }
                 }
@@ -180,7 +179,6 @@ public sealed class CatalogMonitor : BackgroundService, ICatalogMonitor
                 {
                     var latest = releases[0];
                     updatesFound++;
-                    _toast.ShowUpdateAvailable(entry.Name, latest.TagName);
                     _logger.LogInformation("Manual catalog update: {App} -> {Version}", entry.Name, latest.TagName);
                 }
             }

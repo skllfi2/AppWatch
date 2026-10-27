@@ -6,6 +6,7 @@ using AppWatch.Localization;
 using AppWatch.Core.Abstractions;
 using AppWatch.Core.Domain.Models;
 using AppWatch.Infrastructure;
+using AppWatch.Platform;
 using AppWatch.Views;  // for AddEditAppDialog
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -30,9 +31,6 @@ public partial class MainViewModel : ObservableObject
     private readonly LocalizationService _loc;
     private readonly AppConfig _config;
     private readonly SystemVersionResolver _systemVersion;
-    private readonly IEmbeddingService _embedding;
-    private readonly SemanticModelStore _semanticStore;
-    private readonly SemanticCatalogIndex _semanticIndex;
     private readonly UpdateJournalStore _journal;
     private readonly Infrastructure.System.FileStore _files;
 
@@ -40,7 +38,6 @@ public partial class MainViewModel : ObservableObject
         IConfigStore configStore, IUpdateEngine engine, WingetService winget,
         CatalogService catalog, UpdateHistoryStore history, IAppLauncher launcher,
         LocalizationService loc, SystemVersionResolver systemVersion, IProcessService process,
-        IEmbeddingService embedding, SemanticModelStore semanticStore, SemanticCatalogIndex semanticIndex,
         UpdateJournalStore journal, Infrastructure.System.FileStore files)
     {
         _configStore = configStore;
@@ -52,17 +49,10 @@ public partial class MainViewModel : ObservableObject
         _process = process;
         _loc = loc;
         _systemVersion = systemVersion;
-        _embedding = embedding;
-        _semanticStore = semanticStore;
-        _semanticIndex = semanticIndex;
         _journal = journal;
         _files = files;
         _config = configStore.Load();
         WingetAvailable = winget.IsAvailable;
-        SemanticSearchEnabled = _config.SemanticSearchEnabled;
-        IsSemanticModelInstalled = _semanticStore.IsInstalled;
-        if (SemanticSearchEnabled && IsSemanticModelInstalled)
-            _ = EnsureSemanticReadyAsync();
 
         foreach (var app in _config.TrackedApps)
         {
@@ -90,6 +80,7 @@ public partial class MainViewModel : ObservableObject
         ApplyCatalogFilter();
         RecomputeHomeGroups(); // initial population of the four home sections
         RefreshNextCheckText();
+        RefreshLastCheckText();
 
         _footerTimer.Tick += (_, _) => RefreshFooter();
         _statusResetTimer.Tick += (_, _) => StatusText = "";
@@ -107,10 +98,10 @@ public partial class MainViewModel : ObservableObject
                 foreach (TrackedAppItem added in args.NewItems)
                     added.PropertyChanged += OnHomeItemChanged;
             RecomputeHomeGroups();
-        };
-                        }
+                    };
+                }
 
-                    public ObservableCollection<TrackedAppItem> Apps { get; } = [];
+                public ObservableCollection<TrackedAppItem> Apps { get; } = [];
 
     // === Home page: grouped sections (Layer-1 operation-centric rework) ===
     // Filters/sort combos are gone — apps are always visible, split by what
@@ -197,20 +188,23 @@ public partial class MainViewModel : ObservableObject
 
     private string BuildFooterSummary()
     {
-        var updates = Apps.Count(a => a.UpdateAvailable);
-        var parts = new List<string>
-        {
-            _loc.Format("FooterApps", Apps.Count),
-            _loc.Format("FooterUpdates", updates),
-        };
-        if (WingetUpdatesAvailable > 0)
-            parts.Add(_loc.Format("FooterWinget", WingetUpdatesAvailable));
+        // Quiet state = schedule info only (user-facing decision 2026-10-24):
+        // «Следующая проверка» + «Последняя проверка: дата и время».
+        var parts = new List<string>();
         if (!string.IsNullOrEmpty(NextCheckText))
             parts.Add(NextCheckText);
+        if (!string.IsNullOrEmpty(LastCheckText))
+            parts.Add(LastCheckText);
         return string.Join("  ·  ", parts);
     }
 
-    private void RefreshFooter() => OnPropertyChanged(nameof(FooterText));
+    private void RefreshFooter()
+    {
+        // keep the schedule texts fresh alongside the footer itself (30 s tick)
+        RefreshNextCheckText();
+        RefreshLastCheckText();
+        OnPropertyChanged(nameof(FooterText));
+    }
 
     public ObservableCollection<CatalogItem> CatalogApps { get; } = [];
 
@@ -285,9 +279,10 @@ public partial class MainViewModel : ObservableObject
                     }
 
                     public string HeroTitle => LocalizationService.Instance["HeroTitle"];
-        public string HeroMetricTracked => string.Format(LocalizationService.Instance["HeroMetricTracked"], AppsTrackedCount);
-        public string HeroMetricUpdates => string.Format(LocalizationService.Instance["HeroMetricUpdates"], UpdatesAvailableCount);
-        public string HeroMetricUpdatedToday => string.Format(LocalizationService.Instance["HeroMetricUpdatedToday"], UpdatedTodayCount);
+        public string AppsTrackedDisplay => string.Format(Loc.Instance["HeroMetricTracked"], AppsTrackedCount);
+                public string UpdatesAvailableDisplay => string.Format(Loc.Instance["HeroMetricUpdates"], UpdatesAvailableCount);
+                public string UpdatedTodayDisplay => string.Format(Loc.Instance["HeroMetricUpdatedToday"], UpdatedTodayCount);
+                public string NextCheckDisplay => string.Format(Loc.Instance["HeroMetricNextCheck"], NextCheckText);
 
         public string CatalogHeroTitle => LocalizationService.Instance["CatalogHeroTitle"];
         public string CatalogMetricTotal => string.Format(LocalizationService.Instance["CatalogMetricTotal"], CatalogTotalCount);
@@ -299,9 +294,9 @@ public partial class MainViewModel : ObservableObject
         public string WingetMetricUpdates => string.Format(LocalizationService.Instance["WingetMetricUpdates"], WingetUpdatesAvailable);
         public string WingetMetricPending => string.Format(LocalizationService.Instance["WingetMetricPending"], WingetPendingUpdates);
 
-            partial void OnAppsTrackedCountChanged(int value) => OnPropertyChanged(nameof(HeroMetricTracked));
-            partial void OnUpdatesAvailableCountChanged(int value) => OnPropertyChanged(nameof(HeroMetricUpdates));
-            partial void OnUpdatedTodayCountChanged(int value) => OnPropertyChanged(nameof(HeroMetricUpdatedToday));
+            partial void OnAppsTrackedCountChanged(int value) => OnPropertyChanged(nameof(AppsTrackedDisplay));
+                    partial void OnUpdatesAvailableCountChanged(int value) => OnPropertyChanged(nameof(UpdatesAvailableDisplay));
+                    partial void OnUpdatedTodayCountChanged(int value) => OnPropertyChanged(nameof(UpdatedTodayDisplay));
             partial void OnCatalogTotalCountChanged(int value) => OnPropertyChanged(nameof(CatalogMetricTotal));
             partial void OnCatalogTrackedCountChanged(int value) => OnPropertyChanged(nameof(CatalogMetricTracked));
             partial void OnCatalogUpdatesAvailableChanged(int value) => OnPropertyChanged(nameof(CatalogMetricUpdates));
@@ -663,96 +658,13 @@ public partial class MainViewModel : ObservableObject
 
     partial void OnCatalogSearchQueryChanged(string value)
     {
-        _semanticQueryVector = null; // the old vector belongs to the old query
-        _semanticSearchVersion++;
         ApplyCatalogFilter();
     }
 
-    /// <summary>Filtered catalog: lexical tiers, optionally merged with semantic cosine.</summary>
+    /// <summary>Filtered catalog: lexical fuzzy tiers (CatalogSearch).</summary>
     public ObservableCollection<CatalogItem> FilteredCatalogApps { get; } = [];
 
-    // === P-Sem: semantic catalog search (settings-gated, model downloaded on demand) ===
-
-    [ObservableProperty]
-    public partial bool SemanticSearchEnabled { get; set; }
-
-    [ObservableProperty]
-    public partial bool IsSemanticModelInstalled { get; set; }
-
-    [ObservableProperty]
-    public partial bool IsDownloadingModel { get; set; }
-
-    [ObservableProperty]
-    public partial string SemanticModelStatusText { get; set; } = "";
-
-    private float[]? _semanticQueryVector;
-    private string _semanticQueryForVector = "";
-    private int _semanticSearchVersion;
-
-    partial void OnSemanticSearchEnabledChanged(bool value)
-    {
-        _config.SemanticSearchEnabled = value;
-        _configStore.Save(_config);
-        _semanticSearchVersion++;
-        _semanticQueryVector = null;
-        if (value)
-            _ = EnsureSemanticReadyAsync();
-        else
-            ApplyCatalogFilter();
-    }
-
     partial void OnCatalogCategoryIndexChanged(int value) => ApplyCatalogFilter();
-
-    private async Task EnsureSemanticReadyAsync()
-    {
-        if (!IsSemanticModelInstalled)
-        {
-            SemanticModelStatusText = _loc["SemanticModelMissing"];
-            return;
-        }
-        if (!_embedding.IsReady)
-        {
-            SemanticModelStatusText = _loc["SemanticModelLoading"];
-            if (!await _embedding.LoadAsync(_semanticStore.ModelPath, _semanticStore.TokenizerPath))
-            {
-                SemanticModelStatusText = _loc.Format("SemanticModelLoadFailed", _embedding.LastError ?? "?");
-                return;
-            }
-        }
-
-        var indexed = await _semanticIndex.BuildAsync(_catalog.Entries.ToList());
-        SemanticModelStatusText = _loc.Format("SemanticModelReady", indexed);
-        ApplyCatalogFilter();
-    }
-
-    [RelayCommand]
-    private async Task DownloadSemanticModelAsync()
-    {
-        if (IsDownloadingModel) return;
-        IsDownloadingModel = true;
-        SemanticModelStatusText = _loc["SemanticModelDownloading"];
-        var progress = new Progress<double>(p =>
-            SemanticModelStatusText = _loc.Format("SemanticModelDownloadingPercent", (int)p));
-        try
-        {
-            await _semanticStore.DownloadAsync(progress);
-            IsSemanticModelInstalled = true;
-            if (SemanticSearchEnabled)
-                await EnsureSemanticReadyAsync();
-            else
-                SemanticModelStatusText = _loc["SemanticModelDownloaded"];
-        }
-        catch (System.Exception ex)
-        {
-            SemanticModelStatusText = _loc.Format("SemanticModelDownloadFailed", ex.Message);
-        }
-        finally
-        {
-            IsDownloadingModel = false;
-        }
-    }
-
-    
 
     private void ApplyHomeFilter()
     {
@@ -769,14 +681,22 @@ public partial class MainViewModel : ObservableObject
             : "";
     }
 
-    [RelayCommand]
-    private void GoToCatalog() => App.MainWindow!.NavigateTo(typeof(Views.CatalogPage));
+    [ObservableProperty]
+    public partial string LastCheckText { get; set; } = "";
+
+    public void RefreshLastCheckText()
+    {
+        var last = _configStore.Load().LastCheckUtc;
+        LastCheckText = last is { } l
+            ? _loc.Format("LastCheckAt", l.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))
+            : "";
+    }
 
     [RelayCommand]
-    private void GoToHomeCatalog() => App.MainWindow!.NavigateTo(typeof(Views.HomeCatalogPage));
+        private void GoToCatalog() => App.MainWindow!.NavigateTo(typeof(Views.CatalogPage));
 
-    [RelayCommand]
-    private void GoToWinget() => App.MainWindow!.NavigateTo(typeof(Views.WingetPage));
+        [RelayCommand]
+        private void GoToWinget() => App.MainWindow!.NavigateTo(typeof(Views.WingetPage));
 
     [RelayCommand]
     private void GoToHistory() => App.MainWindow!.NavigateTo(typeof(Views.HistoryPage));
@@ -832,21 +752,117 @@ public partial class MainViewModel : ObservableObject
             StatusText = _loc.Format("UninstallDone", item.Name);
         }
         else
-        {
-            StatusText = _loc["UninstallFailed"] + ": " + UpdateErrorHints.WithHint(history.Detail, k => _loc[k]);
-        }
-    }
+                    {
+                        StatusText = _loc["UninstallFailed"] + ": " + UpdateErrorHints.WithHint(history.Detail, k => _loc[k]);
+                    }
+                }
 
-    /// <summary>
-    /// Layer-1 UI: app details dialog — versions, pending release notes, per-app
-    /// history, automation consent and actions. Primary = update, Secondary = rollback.
-    /// </summary>
-    [RelayCommand]
-    private async Task ShowAppDetailsAsync(TrackedAppItem? item)
-    {
-        if (item is null) return;
+            /// <summary>
+                        /// Uninstall a system-installed app (from ARP/WMI) via winget or MSI.
+                        /// </summary>
+                        [RelayCommand]
+                        internal async Task UninstallInstalledAppAsync(InstalledApp app, CancellationToken cancellationToken = default)
+                        {
+                            if (app is null) return;
 
-        var appHistory = _history.Load()
+                            var confirm = new ContentDialog
+                            {
+                                Title = _loc.Format("UninstallConfirmTitle", app.Name),
+                                Content = _loc["UninstallConfirmWinget"],
+                                PrimaryButtonText = _loc["MenuUninstall"],
+                                CloseButtonText = _loc["Cancel"],
+                                DefaultButton = ContentDialogButton.Close,
+                                XamlRoot = App.MainWindow!.Content.XamlRoot,
+                            };
+                            if (await confirm.ShowAsync() != ContentDialogResult.Primary)
+                                return;
+
+                            // Try winget uninstall first
+                                                        if (WingetAvailable)
+                                                                                                                {
+                                                                                                                    var (exitCode, output) = await _winget.UninstallAsync(app.Name, cancellationToken);
+                                                                                                                    if (exitCode == 0)
+                                                                                                                    {
+                                                                                                                        StatusText = _loc.Format("UninstallDone", app.Name);
+                                                                                                                        return;
+                                                                                                                    }
+                                                                                                                    StatusText = _loc["UninstallFailed"] + ": " + (output ?? "Unknown error");
+                                                                                                                    return;
+                                                                                                                }
+
+                                                                                                                StatusText = _loc["UninstallFailed"] + ": winget not available";
+                                                                                                                                        }
+
+                                                                                                                            /// <summary>
+                                                                                                                            /// Check updates for a single tracked app.
+                                                                                                                            /// </summary>
+                                                                                                                            [RelayCommand]
+                                                                                                                            private async Task CheckSingleAppUpdateAsync(TrackedAppItem? item, CancellationToken cancellationToken = default)
+                                                                                                                            {
+                                                                                                                                if (item is null) return;
+                                                                                                                                await CheckAppAsync(item, cancellationToken);
+                                                                                                                            }
+
+                                                                                                                            /// <summary>
+                                                                                                                            /// Check updates for a single tracked app (extracted from CheckUpdatesAsync).
+                                                                                                                            /// </summary>
+                                                                                                                            private async Task CheckAppAsync(TrackedAppItem item, CancellationToken cancellationToken)
+                                                                                                                            {
+                                                                                                                                item.Stage = UpdateStage.Checking;
+                                                                                                                                var result = await _engine.CheckAsync(item.App, cancellationToken);
+                                                                                                                                BackgroundCheckOrder.RecordOutcome(item.App, result.Status);
+                                                                                                                                item.StatusText = Describe(result.Status);
+                                                                                                                                item.StatusDetail = result.Detail;
+                                                                                                                                item.UpdateAvailable = result.Status == UpdateStatus.UpdateAvailable;
+                                                                                                                                item.LatestTag = result.NewRelease?.TagName;
+                                                                                                                                item.PendingNotes = result.NewRelease?.Body;
+                                                                                                                                item.ReportVersionChanged();
+                                                                                                                                item.Stage = result.Status switch
+                                                                                                                                {
+                                                                                                                                    UpdateStatus.Error => UpdateStage.Error,
+                                                                                                                                    UpdateStatus.UpdateAvailable => UpdateStage.Idle,
+                                                                                                                                    _ => UpdateStage.Done,
+                                                                                                                                };
+                                                                                                                                UpdatesAvailableCount = Apps.Count(a => a.UpdateAvailable);
+                                                                                                                            }
+
+                                                                                                                            /// <summary>
+                                                                                                                            /// Remove an app from tracking (does NOT uninstall files, just stops monitoring).
+                                                                                                                            /// </summary>
+                                                                                                                            [RelayCommand]
+                                                                                                                            private async Task RemoveTrackedAppAsync(TrackedAppItem? item)
+                                                                                                                            {
+                                                                                                                                if (item is null) return;
+
+                                                                                                                                var confirm = new ContentDialog
+                                                                                                                                {
+                                                                                                                                    Title = _loc.Format("RemoveTrackedConfirmTitle", item.App.Name),
+                                                                                                                                    Content = _loc["RemoveTrackedConfirm"],
+                                                                                                                                    PrimaryButtonText = _loc["Remove"],
+                                                                                                                                    CloseButtonText = _loc["Cancel"],
+                                                                                                                                    DefaultButton = ContentDialogButton.Close,
+                                                                                                                                    XamlRoot = App.MainWindow!.Content.XamlRoot,
+                                                                                                                                };
+                                                                                                                                if (await confirm.ShowAsync() != ContentDialogResult.Primary)
+                                                                                                                                    return;
+
+                                                                                                                                _config.TrackedApps.Remove(item.App);
+                                                                                                                                _configStore.Save(_config);
+                                                                                                                                Apps.Remove(item);
+                                                                                                                                AppsTrackedCount = Apps.Count;
+                                                                                                                                StatusText = _loc.Format("RemoveTrackedDone", item.App.Name);
+                                                                                                                            }
+
+                                                                                                                            /// <summary>
+                                                                                                                            /// Layer-1 UI: app details dialog — versions, pending release notes, per-app
+                                                                                                                            /// history, automation consent and actions. Primary = update, Secondary = rollback.
+                                                                                                                            /// </summary>
+                                                                                                                            [RelayCommand]
+                                                                                                                            private async Task ShowAppDetailsAsync(TrackedAppItem? item)
+                                                                                                                            {
+                                                                                                                                if (item is null) return;
+
+                                                                                                                                var appHistory = _history.Load()
             .Where(h => string.Equals(h.AppName, item.App.Name, StringComparison.OrdinalIgnoreCase))
             .TakeLast(5)
             .Reverse()
@@ -907,12 +923,7 @@ private void ApplyCatalogFilter()
         }
 
         var entries = CatalogApps.Select(i => i.Entry).ToList();
-        // Lexical tiers, boosted/rescued by cosine — only if the vector is for THIS query
-        var ranked = SemanticSearchEnabled && _semanticQueryVector is not null
-            && string.Equals(_semanticQueryForVector, query, StringComparison.Ordinal)
-            ? SemanticSearch.Rank(entries, query, e => e.Name, e => e.Description,
-                _semanticIndex.VectorOf, _semanticQueryVector)
-            : CatalogSearch.Rank(entries, query);
+        var ranked = CatalogSearch.Rank(entries, query);
         foreach (var entry in ranked)
         {
             if (category is not null && entry.Category != category)
@@ -920,40 +931,6 @@ private void ApplyCatalogFilter()
             var vm = CatalogApps.First(c => ReferenceEquals(c.Entry, entry));
             FilteredCatalogApps.Add(vm);
         }
-
-        MaybeStartSemanticRefresh(query);
-    }
-
-    /// <summary>
-    /// Lexical results show instantly; the query embedding lands ~300 ms later
-    /// (CPU WinML, debounced) and re-ranks the list. Best-effort — never blocks typing.
-    /// </summary>
-    private void MaybeStartSemanticRefresh(string query)
-    {
-        if (!SemanticSearchEnabled || !_embedding.IsReady || query.Length < 3) return;
-        // Already have a vector for exactly this query → no refresh loop
-        if (string.Equals(_semanticQueryForVector, query, StringComparison.Ordinal)) return;
-        var version = ++_semanticSearchVersion;
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                await Task.Delay(300); // debounce keystrokes
-                if (version != _semanticSearchVersion) return;
-
-                var vector = await _embedding.EmbedAsync(query);
-                if (vector is null || version != _semanticSearchVersion) return;
-
-                _semanticQueryVector = vector;
-                _semanticQueryForVector = query;
-                App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
-                {
-                    if (version != _semanticSearchVersion) return;
-                    ApplyCatalogFilter();
-                });
-            }
-            catch { /* semantic refresh is best-effort */ }
-        });
     }
 
     // === W1–W3: winget search & install ("Установить из winget") ===
@@ -1083,6 +1060,7 @@ private void ApplyCatalogFilter()
             };
         }
         UpdatesAvailableCount = Apps.Count(a => a.UpdateAvailable);
+        _config.LastCheckUtc = DateTimeOffset.UtcNow; // footer: «Последняя проверка: …»
         _configStore.Save(_config);   // B9: persist LastCheckStatus for background priority
         StatusText = _loc["CheckDone"];
     }
@@ -1294,6 +1272,16 @@ private void ApplyCatalogFilter()
                     ? _loc.Format("WingetFoundHidden", filtered.Visible.Count, filtered.Hidden.Count)
                     : _loc.Format("WingetFound", filtered.Visible.Count);
             }
+            catch (WingetCatalogBrokenException)
+            {
+                // Known Microsoft-side catalog bug (winget-cli#6613): winget dies for everyone.
+                // Scoped ops (search / install --id) still work — say it plainly, not "error".
+                Log.Warning("winget catalog is broken (E_INVALIDARG, winget-cli#6613)");
+                StatusText = _loc["WingetCatalogBroken"];
+                WingetTotalCount = 0;
+                WingetUpdatesAvailable = 0;
+                WingetPendingUpdates = 0;
+            }
             catch (InvalidOperationException)
             {
                 StatusText = _loc["WingetUnavailable"];
@@ -1454,31 +1442,32 @@ private void ApplyCatalogFilter()
     /// App check is gated by AutoCheckEnabled (same consent as the background monitor);
     /// the 15-min GitHub response cache keeps the monitor's own 30s cycle from double-burning quota.
     /// </summary>
-    public async Task RunStartupTasksAsync()
-    {
-        try
+        public async Task RunStartupTasksAsync()
         {
-            // UPD-02: crash recovery first — a leftover journal means the last
-            // update died mid-apply; restore before anything else touches files.
-            await RecoverInterruptedUpdateAsync();
-
-            await Task.Delay(TimeSpan.FromSeconds(3));
-
-            if (WingetAvailable)
-                await ScanWingetAsync(default);
-
-            if (_config.AutoCheckEnabled && Apps.Count > 0)
+            try
             {
-                StatusText = _loc["checking"];
-                await RunBackgroundCheckAsync();
-                StatusText = _loc["checkDone"];
+                // UPD-02: crash recovery first — a leftover journal means the last
+                // update died mid-apply; restore before anything else touches files.
+                await RecoverInterruptedUpdateAsync();
+
+                // Small delay to let the UI render fully before background work
+                await Task.Delay(TimeSpan.FromSeconds(1));
+
+                if (WingetAvailable)
+                    await ScanWingetAsync(default);
+
+                if (_config.AutoCheckEnabled && Apps.Count > 0)
+                {
+                    StatusText = _loc["checking"];
+                    await RunBackgroundCheckAsync();
+                    StatusText = _loc["checkDone"];
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "startup check failed");
             }
         }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "startup check failed");
-        }
-    }
 
     /// <summary>
     /// UPD-02: detects an update interrupted by a hard kill (power loss, crash,
@@ -1582,13 +1571,13 @@ private void ApplyCatalogFilter()
     }
 
     private string Describe(UpdateStatus status) => status switch
-    {
-        UpdateStatus.UpToDate => _loc["UpToDate"],
-        UpdateStatus.UpdateAvailable => _loc["UpdateAvailable"],
-        UpdateStatus.Pinned => _loc["Pinned"],
-        UpdateStatus.NoMatchingAsset => _loc["NoMatchingAsset"],
-        UpdateStatus.Disabled => _loc["Disabled"],
-        UpdateStatus.Error => _loc["Error"],
-        _ => status.ToString(),
-    };
-}
+        {
+            UpdateStatus.UpToDate => _loc["UpToDate"],
+            UpdateStatus.UpdateAvailable => _loc["UpdateAvailable"],
+            UpdateStatus.Pinned => _loc["Pinned"],
+            UpdateStatus.NoMatchingAsset => _loc["NoMatchingAsset"],
+            UpdateStatus.Disabled => _loc["Disabled"],
+            UpdateStatus.Error => _loc["Error"],
+                _ => status.ToString(),
+            };
+    }

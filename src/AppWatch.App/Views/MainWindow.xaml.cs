@@ -15,61 +15,61 @@ public sealed partial class MainWindow : Window
     public Loc Loc => Loc.Instance;
 
     public MainWindow()
-    {
-        InitializeComponent();
-
-        // ZuiV2 pattern: extend content into the title bar area so Mica
-        // covers the whole window and the system caption buttons overlay
-        // our transparent TitleBar control instead of a separate band.
-        ExtendsContentIntoTitleBar = true;
-        SetTitleBar(AppTitleBar);
-
-        CenterWindowOnScreen();
-
-        // Initial selection drives the first navigation via SelectionChanged.
-        Nav.SelectedItem = NavItemHomeCatalog;
-
-        WireNavBadges();
-    }
-
-    // === Nav badges: update counters on Home and Winget ===
-    // NavigationViewItem.InfoBadge crashes the XAML compiler (WMC9999) when
-    // declared in XAML, but works fine instantiated from code-behind.
-
-    private void WireNavBadges()
-    {
-        var vm = global::AppWatch.App.Resolve<ViewModels.MainViewModel>();
-
-        var homeBadge = NewBadge();
-        NavItemHomeCatalog.InfoBadge = homeBadge;
-
-        var wingetItem = Nav.MenuItems.OfType<NavigationViewItem>()
-            .FirstOrDefault(i => (string?)i.Tag == "winget");
-        InfoBadge? wingetBadge = null;
-        if (wingetItem is not null)
         {
-            wingetBadge = NewBadge();
-            wingetItem.InfoBadge = wingetBadge;
+            InitializeComponent();
+
+            // ZuiV2 pattern: extend content into the title bar area so Mica
+            // covers the whole window and the system caption buttons overlay
+            // our transparent TitleBar control instead of a separate band.
+            ExtendsContentIntoTitleBar = true;
+            SetTitleBar(AppTitleBar);
+
+            CenterWindowOnScreen();
+
+            // Initial selection drives the first navigation via SelectionChanged.
+                        Nav.SelectedItem = NavItemTrackedApps;
+
+            WireNavBadges();
         }
 
-        vm.PropertyChanged += (_, e) =>
-        {
-            switch (e.PropertyName)
-            {
-                case nameof(ViewModels.MainViewModel.UpdatesAvailableCount):
-                    DispatcherQueue.TryEnqueue(() => SyncBadge(homeBadge, vm.UpdatesAvailableCount));
-                    break;
-                case nameof(ViewModels.MainViewModel.WingetUpdatesAvailable):
-                    if (wingetBadge is not null)
-                        DispatcherQueue.TryEnqueue(() => SyncBadge(wingetBadge, vm.WingetUpdatesAvailable));
-                    break;
-            }
-        };
+    // === Nav badges: update counters on Updates and Winget ===
+        // NavigationViewItem.InfoBadge crashes the XAML compiler (WMC9999) when
+        // declared in XAML, but works fine instantiated from code-behind.
 
-        SyncBadge(homeBadge, vm.UpdatesAvailableCount);
-        if (wingetBadge is not null)
-            SyncBadge(wingetBadge, vm.WingetUpdatesAvailable);
-    }
+        private void WireNavBadges()
+        {
+            var vm = global::AppWatch.App.Resolve<ViewModels.MainViewModel>();
+
+            var updatesBadge = NewBadge();
+            NavItemUpdates.InfoBadge = updatesBadge;
+
+            var wingetItem = Nav.MenuItems.OfType<NavigationViewItem>()
+                .FirstOrDefault(i => (string?)i.Tag == "winget");
+            InfoBadge? wingetBadge = null;
+            if (wingetItem is not null)
+            {
+                wingetBadge = NewBadge();
+                wingetItem.InfoBadge = wingetBadge;
+            }
+
+            vm.PropertyChanged += (_, e) =>
+            {
+                switch (e.PropertyName)
+                {
+                    case nameof(ViewModels.MainViewModel.UpdatesAvailableCount):
+                        DispatcherQueue.TryEnqueue(() => SyncBadge(updatesBadge, vm.UpdatesAvailableCount));
+                        break;
+                    case nameof(ViewModels.MainViewModel.WingetUpdatesAvailable):
+                        if (wingetBadge is not null)
+                            DispatcherQueue.TryEnqueue(() => SyncBadge(wingetBadge, vm.WingetUpdatesAvailable));
+                        break;
+                }
+            };
+
+            SyncBadge(updatesBadge, vm.UpdatesAvailableCount);
+            if (wingetBadge is not null)
+                SyncBadge(wingetBadge, vm.WingetUpdatesAvailable);
+        }
 
     private static InfoBadge NewBadge() => new()
     {
@@ -86,13 +86,14 @@ public sealed partial class MainWindow : Window
     // === Navigation (NavigationView-driven) ===
 
     private static readonly System.Collections.Generic.Dictionary<string, Type> PageByTag = new()
-    {
-        ["homecatalog"] = typeof(Views.HomeCatalogPage),
-        ["winget"] = typeof(WingetPage),
-        ["history"] = typeof(HistoryPage),
-        ["settings"] = typeof(SettingsPage),
-        ["about"] = typeof(AboutPage),
-    };
+            {
+                ["trackedapps"] = typeof(Views.TrackedAppsPage),
+                ["updates"] = typeof(Views.UpdatesPage),
+                ["winget"] = typeof(WingetPage),
+                ["history"] = typeof(HistoryPage),
+                ["settings"] = typeof(SettingsPage),
+                ["about"] = typeof(AboutPage),
+            };
 
     private void Nav_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {

@@ -316,6 +316,23 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
         }
     }
 
+    [RelayCommand]
+    public async Task SearchWingetPackageAsync()
+    {
+        // Open winget search in browser - user can search for package ID
+        var url = "https://winget.run/";
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(psi);
+        }
+        catch { }
+    }
+
     public TrackedApp ToTrackedApp()
     {
         _app.Name = Name.Trim();

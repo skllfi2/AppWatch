@@ -24,29 +24,6 @@ public sealed class ToastService : IToastService
     /// <summary>User gate; read fresh so the Settings toggle applies without restart.</summary>
     private bool Enabled => _configStore.Load().ToastNotificationsEnabled;
 
-    public void ShowUpdateAvailable(string appName, string version)
-    {
-        if (!Enabled) return;
-        try
-        {
-            var loc = LocalizationService.Instance;
-            var notification = new AppNotificationBuilder()
-                .AddText(loc["ToastUpdateTitle"])
-                .AddText(string.Format(loc["ToastUpdateBody"], appName, version))
-                .AddButton(new AppNotificationButton(loc["ToastBtnOpen"])
-                    .AddArgument("action", "open"))
-                .AddButton(new AppNotificationButton(loc["ToastBtnUpdate"])
-                    .AddArgument("action", "update")
-                    .AddArgument("app", appName))
-                .BuildNotification();
-            AppNotificationManager.Default.Show(notification);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[Toast] Failed: {ex.Message}");
-        }
-    }
-
     public void ShowSummary(int count)
     {
         if (!Enabled) return;

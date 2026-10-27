@@ -194,6 +194,15 @@ public partial class TrackedAppItem : ObservableObject
     /// <summary>Localized "Edit" menu item label (P-UI).</summary>
     public string MenuEdit => LocalizationService.Instance["MenuEdit"];
 
+    /// <summary>Human-readable source display: GitHub / winget / Installer / External.</summary>
+    public string SourceDisplay => App.UpdateKind switch
+    {
+        UpdateKind.WingetPackage => LocalizationService.Instance["SourceWinget"],
+        UpdateKind.Installer => LocalizationService.Instance["SourceInstaller"],
+        UpdateKind.External => LocalizationService.Instance["SourceExternal"],
+        _ => LocalizationService.Instance["SourceGitHub"], // PortableZip, PortableExe
+    };
+
     /// <summary>B10: true when the version cache holds at least one older snapshot for this app.</summary>
     public bool RollbackAvailable =>
         App.InstallDirectory is not null

@@ -66,6 +66,16 @@ public sealed class StringNotEmptyToVisibilityConverter : IValueConverter
         => throw new NotSupportedException();
 }
 
+/// <summary>Inverse of StringNotEmptyToVisibilityConverter: empty/null string → Visible.</summary>
+public sealed class StringEmptyToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+        => value is not string s || s.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+        => throw new NotSupportedException();
+}
+
 public sealed class InverseCountToVisibilityConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
@@ -74,6 +84,24 @@ public sealed class InverseCountToVisibilityConverter : IValueConverter
         if (value is System.Collections.IList list) return list.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
         return Visibility.Collapsed;
     }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+        => throw new NotSupportedException();
+}
+
+public sealed class ObjectToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+        => value is not null ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+        => throw new NotSupportedException();
+}
+
+public sealed class NullToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+        => value is null ? Visibility.Visible : Visibility.Collapsed;
 
     public object ConvertBack(object value, Type targetType, object parameter, string language)
         => throw new NotSupportedException();

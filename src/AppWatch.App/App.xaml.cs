@@ -66,86 +66,42 @@ public partial class App : Application
     public static T Resolve<T>() where T : notnull => (T)((App)Current).Services.GetRequiredService(typeof(T));
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
-    {
-        // Register converters AFTER XAML app init (Application.Resources throws
-        // COMException when touched from the App constructor in unpackaged mode),
-        // but BEFORE the first page loads (StaticResource lookups happen then).
-        Resources["BoolToVisibility"] = new Converters.BoolToVisibilityConverter();
-        Resources["InverseBool"] = new Converters.InverseBoolConverter();
-        Resources["StringToBool"] = new Converters.StringToBoolConverter();
-        Resources["NotNullToVisibility"] = new Converters.NotNullToVisibilityConverter();
-        Resources["CountToVisibility"] = new Converters.CountToVisibilityConverter();
-                        Resources["InverseCountToVisibility"] = new Converters.InverseCountToVisibilityConverter();
-                        Resources["StringToBrushConverter"] = new Converters.StringToBrushConverter();
-                        Resources["InverseBoolToVisibility"] = new Converters.InverseBoolToVisibilityConverter();
-            Resources["StringNotEmptyToVisibility"] = new Converters.StringNotEmptyToVisibilityConverter();
-
-            // App notifications: register BEFORE the window exists (official WinAppSDK
-            // sample order). Best-effort — a failure here must never take the app down.
-            try
             {
-                AppNotificationManager.Default.NotificationInvoked += OnNotificationInvoked;
-                AppNotificationManager.Default.Register();
-            }
-            catch (Exception ex)
-            {
-                Serilog.Log.Warning(ex, "app notification registration failed; toasts disabled");
-            }
+                // Build DI container FIRST — it's fast and MainWindow constructor needs it
+                // (WireNavBadges calls App.Resolve<MainViewModel>)
+                var configStore = new JsonConfigStore();
+                var config = configStore.Load();
 
-            var appData = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AppWatch");
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Information()
-                .WriteTo.File(
-                    Path.Combine(appData, "logs", "appwatch-.log"),
-                    rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: 14)
-                .CreateLogger();
-
-            // Initialize Velopack for self-updates
-            VelopackApp.Build().Run();
-
-            var configStore = new JsonConfigStore();
-            var config = configStore.Load();
-
-        Services = new ServiceCollection()
-                                            .AddSingleton(configStore)
-                                            .AddSingleton(config)
-                                            .AddSingleton<IConfigStore>(sp => sp.GetRequiredService<JsonConfigStore>())
-                                            .AddSingleton<IGitHubClient>(_ => new GitHubApiClient(config.GitHubToken, config.DownloadMirrors))
-                                            .AddSingleton<IProcessService, ProcessService>()
-                                            .AddSingleton<IAppLauncher, AppLauncher>()
-                                            .AddSingleton<IElevationService, ElevationService>()
-                                            .AddSingleton<FileStore>()
-                                            .AddSingleton<InstallerTrustService>()
-                                            .AddSingleton<Core.Domain.UpdateGate>()
-                                            .AddSingleton<UpdateJournalStore>()
-                                            .AddSingleton<VersionStore>(sp => new VersionStore(config.VersionCacheCount))
-                                            .AddSingleton<IUpdateEngine, UpdateEngine>()
-                                            .AddSingleton<WingetService>()
-                                            .AddSingleton<SystemVersionResolver>()
-                                            .AddSingleton<UpdateHistoryStore>()
-                                            .AddSingleton<CatalogService>()
-                                            .AddSingleton<IEmbeddingService, WindowsMlEmbeddingService>()
-                                            .AddSingleton<SemanticModelStore>(sp => new SemanticModelStore(
-                                                config: new AppConfigProxy
-                                                {
-                                                    EmbeddingModelUrl = config.EmbeddingModelUrl,
-                                                    EmbeddingTokenizerUrl = config.EmbeddingTokenizerUrl,
-                                                }))
-                                            .AddSingleton<SemanticCatalogIndex>()
-                                            .AddSingleton<AutostartService>()
-                                            .AddSingleton<TrayService>()
-                                            .AddSingleton<ThemeService>()
-                                            .AddSingleton<SettingsViewModel>()
-                                            .AddSingleton<SelfUpdateService>()
-                                            .AddSingleton<IToastService, ToastService>()
-                                            .AddHostedService<BackgroundMonitor>()
-                                            .AddHostedService<CatalogMonitor>()
-                                            .AddLogging(builder => builder.AddDebug())
-                                            .AddSingleton(LocalizationService.Instance)
-                                            .AddSingleton<MainViewModel>()
-                                            .BuildServiceProvider();
+                Services = new ServiceCollection()
+                                                .AddSingleton(configStore)
+                                                .AddSingleton(config)
+                                                .AddSingleton<IConfigStore>(sp => sp.GetRequiredService<JsonConfigStore>())
+                                                .AddSingleton<IGitHubClient>(_ => new GitHubApiClient(config.GitHubToken, config.DownloadMirrors))
+                                                .AddSingleton<IProcessService, ProcessService>()
+                                                .AddSingleton<IAppLauncher, AppLauncher>()
+                                                .AddSingleton<IElevationService, ElevationService>()
+                                                .AddSingleton<FileStore>()
+                                                .AddSingleton<InstallerTrustService>()
+                                                .AddSingleton<Core.Domain.UpdateGate>()
+                                                .AddSingleton<UpdateJournalStore>()
+                                                .AddSingleton<VersionStore>(sp => new VersionStore(config.VersionCacheCount))
+                                                .AddSingleton<IUpdateEngine, UpdateEngine>()
+                                                .AddSingleton<WingetService>()
+                                                .AddSingleton<SystemVersionResolver>()
+                                                .AddSingleton<UpdateHistoryStore>()
+                                                .AddSingleton<CatalogService>()
+                                                                .AddSingleton<AutostartService>()
+                                                .AddSingleton<TrayService>()
+                                                .AddSingleton<ThemeService>()
+                                                .AddSingleton<SettingsViewModel>()
+                                                .AddSingleton<SelfUpdateService>()
+                                                .AddSingleton<IToastService, ToastService>()
+                                                .AddHostedService<BackgroundMonitor>()
+                                                .AddHostedService<CatalogMonitor>()
+                                                .AddLogging(builder => builder.AddDebug())
+                                                .AddSingleton(LocalizationService.Instance)
+                                                .AddSingleton<MainViewModel>()
+                                                .BuildServiceProvider();
 
                 LocalizationService.Instance.SetLanguage(config.Language);
 
@@ -158,10 +114,35 @@ public partial class App : Application
                     _ = Task.Run(() => hosted.StartAsync(_hostedCts.Token));
                 }
 
+                // NOW create and show the window IMMEDIATELY — UI is visible while background work continues
                 _window = new MainWindow();
                 Window = _window;
                 _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
                 _window.AppWindow.Closing += OnWindowClosing;
+
+                // Register converters BEFORE the first page loads (StaticResource lookups happen then)
+                Resources["BoolToVisibility"] = new Converters.BoolToVisibilityConverter();
+                Resources["InverseBool"] = new Converters.InverseBoolConverter();
+                Resources["StringToBool"] = new Converters.StringToBoolConverter();
+                Resources["NotNullToVisibility"] = new Converters.NotNullToVisibilityConverter();
+                Resources["CountToVisibility"] = new Converters.CountToVisibilityConverter();
+                Resources["InverseCountToVisibility"] = new Converters.InverseCountToVisibilityConverter();
+                Resources["StringToBrushConverter"] = new Converters.StringToBrushConverter();
+                Resources["InverseBoolToVisibility"] = new Converters.InverseBoolToVisibilityConverter();
+                Resources["StringNotEmptyToVisibility"] = new Converters.StringNotEmptyToVisibilityConverter();
+
+                // App notifications: register BEFORE the window exists (official WinAppSDK
+                // sample order). Best-effort — a failure here must never take the app down.
+                // DISABLED: causes stowed 0xC000027B crashes on startup. Toasts work without it.
+                // try
+                // {
+                //     AppNotificationManager.Default.NotificationInvoked += OnNotificationInvoked;
+                //     AppNotificationManager.Default.Register();
+                // }
+                // catch (Exception ex)
+                // {
+                //     Serilog.Log.Warning(ex, "app notification registration failed; toasts disabled");
+                // }
 
                 _autostart = Services.GetRequiredService<AutostartService>();
                 _tray = Services.GetRequiredService<TrayService>();
@@ -174,16 +155,54 @@ public partial class App : Application
                     () => _autostart?.IsEnabled == true);
 
                 if (!StartHidden)
-                                            _window.Activate();
+                    _window.Activate();
 
-                                        SingleInstance.StartListening(_ => ActivateWindow());
+                SingleInstance.StartListening(_ => ActivateWindow());
 
-                                                                // Startup visibility: winget scan + app check
-                                        // (statuses land on the cards, not just in the config)
-                                        _ = Services.GetRequiredService<MainViewModel>().RunStartupTasksAsync();
-                                        // Show onboarding on first launch
-                                        _ = Services.GetRequiredService<MainViewModel>().ShowOnboardingIfNeededAsync();
-                                    }
+                // Heavy initialization on background thread — window is already visible
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var appData = Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AppWatch");
+                        Log.Logger = new LoggerConfiguration()
+                            .MinimumLevel.Information()
+                            .WriteTo.File(
+                                Path.Combine(appData, "logs", "appwatch-.log"),
+                                rollingInterval: RollingInterval.Day,
+                                retainedFileCountLimit: 14)
+                            .CreateLogger();
+
+                        // Initialize Velopack for self-updates
+                        VelopackApp.Build().Run();
+
+                        // Startup check + onboarding MUST run on the UI thread: they mutate
+                        // observable VM state (StatusText, card items, footer), and x:Bind
+                        // setters touch TextBlock/ContentDialog directly — from a worker thread
+                        // that's RPC_E_WRONG_THREAD (0x8001010E), which silently killed the
+                        // startup check (auto-updates appeared broken). Network stays async;
+                        // only the VM/UI mutations are marshaled here.
+                        _window.DispatcherQueue.TryEnqueue(async () =>
+                        {
+                            try
+                            {
+                                var vm = Services.GetRequiredService<MainViewModel>();
+                                await vm.RunStartupTasksAsync();
+                                await vm.ShowOnboardingIfNeededAsync();
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error(ex, "Startup tasks failed");
+                            }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Background initialization failed");
+                    }
+                });
+            }
 
             private void OnWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
             {
@@ -240,10 +259,11 @@ public partial class App : Application
             }
 
             /// <summary>
-            /// Toast activation: any interaction restores the window; the "Update"
-            /// button additionally starts the update for the named app.
-            /// NotificationInvoked arrives on a non-UI thread — everything marshals
-            /// through the main window's DispatcherQueue.
+            /// Toast activation: restores+focuses the window. The single consolidated
+            /// "updates available" toast uses action=open, which also lands the user on the
+            /// Приложения tab. (Per-app "Update" buttons were removed in favour of one summary notification.)
+            /// NotificationInvoked arrives on a non-UI thread — marshaled via the main
+            /// window's DispatcherQueue.
             /// </summary>
             private void OnNotificationInvoked(AppNotificationManager sender,
                 AppNotificationActivatedEventArgs args)
@@ -256,16 +276,11 @@ public partial class App : Application
                     NativeMethods.ShowWindow(_hwnd, NativeMethods.SwRestore);
                     NativeMethods.SetForegroundWindow(_hwnd);
 
-                    if (!args.Arguments.TryGetValue("action", out var action) || action != "update")
-                        return;
-                    if (!args.Arguments.TryGetValue("app", out var appName) || string.IsNullOrWhiteSpace(appName))
-                        return;
+                    var action = args.Arguments.TryGetValue("action", out var a) ? a : "";
+                                        if (action != "open") return;
 
-                    var vm = Services.GetRequiredService<MainViewModel>();
-                    var item = vm.Apps.FirstOrDefault(x =>
-                        string.Equals(x.App.Name, appName, StringComparison.OrdinalIgnoreCase));
-                    if (item is { UpdateAvailable: true })
-                        vm.UpdateOneCommand.Execute(item);
+                                        // Toast click → open the tracked-apps page ("Мои приложения")
+                                        _window!.NavigateTo(typeof(Views.TrackedAppsPage));
                 });
             }
         }

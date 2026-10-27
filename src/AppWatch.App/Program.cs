@@ -25,15 +25,8 @@ public static class Program
             "AppWatch", "logs", "crash.log");
         try
         {
-            // Unpackaged app: load the WindowsAppSDK framework package explicitly.
-            // Without this the first WinRT activation dies natively (combase E_FAIL 0x8000ffff).
-            if (!Microsoft.Windows.ApplicationModel.DynamicDependency.Bootstrap.TryInitialize(
-                    Microsoft.WindowsAppSDK.Release.MajorMinor,
-                    out _))
-            {
-                throw new InvalidOperationException(
-                    "WindowsAppSDK bootstrap failed: is the WindowsAppRuntime framework package installed?");
-            }
+            // Unpackaged self-contained app: Windows App SDK bootstraps automatically via WindowsAppSDKSelfContained.
+            // No manual Bootstrap.TryInitialize needed.
 
             WinRT.ComWrappersSupport.InitializeComWrappers();
 
