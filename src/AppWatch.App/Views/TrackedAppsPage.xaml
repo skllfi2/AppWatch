@@ -39,7 +39,7 @@
                             <FontIcon Glyph="&#xE72A;" FontSize="10" Opacity="0.6"/>
                             <TextBlock Text="{x:Bind LatestTag, Mode=OneTime}" FontSize="12" FontWeight="SemiBold" 
                                        Foreground="{StaticResource AccentBrush}"
-                                       Visibility="{x:Bind UpdateAvailable, Mode=OneTime}"/>
+                                       Visibility="{x:Bind UpdateAvailable, Mode=OneTime, Converter={StaticResource BoolToVisibility}}"/>
                         </StackPanel>
                         <TextBlock Text="{x:Bind SourceDisplay, Mode=OneTime}" FontSize="11" Opacity="0.5"/>
                     </StackPanel>
