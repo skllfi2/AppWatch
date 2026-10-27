@@ -1,0 +1,43 @@
+name: Build
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:  # allow manual trigger
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      DOTNET_NOLOGO: 1
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Add Microsoft public feed (WinUI 2.5.1+)
+        run: dotnet nuget add source "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-public/nuget/v3/index.json" -n "dotnet-public"
+
+      - name: Restore
+        run: dotnet restore src/AppWatch.App/AppWatch.App.csproj
+
+      - name: Build
+        run: dotnet build src/AppWatch.App/AppWatch.App.csproj -c Release -p:Platform=x64
+
+      - name: Test
+        run: dotnet test tests/AppWatch.Core.Tests/AppWatch.Core.Tests.csproj -c Release --no-build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppWatch-${{ github.run_number }}
+          path: src/AppWatch.App/bin/x64/Release/net10.0-windows10.0.26100.0/win-x64/AppWatch.exe
+          if-no-files-found: warn
