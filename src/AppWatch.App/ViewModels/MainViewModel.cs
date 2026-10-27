@@ -1030,7 +1030,7 @@ private void ApplyCatalogFilter()
     }
 
     [RelayCommand]
-    private async Task CheckUpdatesAsync(CancellationToken cancellationToken)
+    private async Task CheckUpdatesAsync(CancellationToken cancellationToken = default)
     {
         StatusText = _loc["Checking"];
         // B9: known-pending updates first — same priority as the background cycle
@@ -1066,7 +1066,7 @@ private void ApplyCatalogFilter()
     }
 
     [RelayCommand]
-        private async Task UpdateAllAsync(CancellationToken cancellationToken)
+        private async Task UpdateAllAsync(CancellationToken cancellationToken = default)
         {
             _updateAllCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             IsUpdateAllRunning = true;
