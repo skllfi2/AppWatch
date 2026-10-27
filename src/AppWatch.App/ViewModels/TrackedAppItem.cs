@@ -195,13 +195,32 @@ public partial class TrackedAppItem : ObservableObject
     public string MenuEdit => LocalizationService.Instance["MenuEdit"];
 
     /// <summary>Human-readable source display: GitHub / winget / Installer / External.</summary>
-    public string SourceDisplay => App.UpdateKind switch
+    [ObservableProperty]
+    private string _sourceDisplay = string.Empty;
+
+    public string SourceDisplay
     {
-        UpdateKind.WingetPackage => LocalizationService.Instance["SourceWinget"],
-        UpdateKind.Installer => LocalizationService.Instance["SourceInstaller"],
-        UpdateKind.External => LocalizationService.Instance["SourceExternal"],
-        _ => LocalizationService.Instance["SourceGitHub"], // PortableZip, PortableExe
-    };
+        get
+        {
+            if (!string.IsNullOrEmpty(_sourceDisplay))
+                return _sourceDisplay;
+
+            return App.UpdateKind switch
+            {
+                UpdateKind.WingetPackage => LocalizationService.Instance["SourceWinget"],
+                UpdateKind.Installer => LocalizationService.Instance["SourceInstaller"],
+                UpdateKind.External => LocalizationService.Instance["SourceExternal"],
+                _ => LocalizationService.Instance["SourceGitHub"],
+            };
+        }
+        private set => SetProperty(ref _sourceDisplay, value);
+    }
+
+    partial void OnAppChanged(Core.Domain.Models.TrackedApp? oldValue, Core.Domain.Models.TrackedApp? newValue)
+    {
+        // Refresh SourceDisplay when UpdateKind changes
+        OnPropertyChanged(nameof(SourceDisplay));
+    }
 
     /// <summary>B10: true when the version cache holds at least one older snapshot for this app.</summary>
     public bool RollbackAvailable =>
