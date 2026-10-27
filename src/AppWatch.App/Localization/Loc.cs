@@ -159,6 +159,14 @@ public sealed class Loc : INotifyPropertyChanged
                                 public string AutoDetectVersion => LocalizationService.Instance["AutoDetectVersion"];
                                                                 public string Cancel => LocalizationService.Instance["Cancel"];
                                                                 public string NavHistory => LocalizationService.Instance["NavHistory"];
+                                public string SourceGitHub => LocalizationService.Instance["SourceGitHub"];
+                                public string SourceWinget => LocalizationService.Instance["SourceWinget"];
+                                public string SourceInstaller => LocalizationService.Instance["SourceInstaller"];
+                                public string SourceExternal => LocalizationService.Instance["SourceExternal"];
+                                public string RemoveTrackedConfirm => LocalizationService.Instance["RemoveTrackedConfirm"];
+                                public string RemoveTrackedConfirmTitle => LocalizationService.Instance["RemoveTrackedConfirmTitle"];
+                                public string RemoveTrackedDone => LocalizationService.Instance["RemoveTrackedDone"];
+                                public string Remove => LocalizationService.Instance["Remove"];
                                                                 public string HistoryPageTitle => LocalizationService.Instance["HistoryPageTitle"];
                                                                 public string HistoryPageSubtitle => LocalizationService.Instance["HistoryPageSubtitle"];
                                                                 public string HistorySection => LocalizationService.Instance["HistorySection"];
