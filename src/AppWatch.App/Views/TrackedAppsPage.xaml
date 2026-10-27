@@ -46,7 +46,7 @@
 
                     <!-- Check update button (only if not currently checking) -->
                     <Button Grid.Column="2"
-                            Command="{Binding CheckSingleAppUpdateAsyncCommand, ElementName=PageRoot}"
+                            Command="{Binding ViewModel.CheckSingleAppUpdateAsyncCommand, ElementName=PageRoot}"
                             CommandParameter="{x:Bind}"
                             Padding="10,5" CornerRadius="6" FontSize="12"
                             Background="{StaticResource CardBackgroundBrush}" BorderThickness="1"
@@ -56,7 +56,7 @@
 
                     <!-- Uninstall from tracking button -->
                     <Button Grid.Column="3"
-                            Command="{Binding RemoveTrackedAppAsyncCommand, ElementName=PageRoot}"
+                            Command="{Binding ViewModel.RemoveTrackedAppAsyncCommand, ElementName=PageRoot}"
                             CommandParameter="{x:Bind}"
                             Padding="10,5" CornerRadius="6" FontSize="12"
                             Background="#26D83B01" BorderThickness="1"

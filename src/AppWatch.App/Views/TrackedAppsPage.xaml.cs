@@ -17,5 +17,6 @@ public sealed partial class TrackedAppsPage : Page
     {
         ViewModel = App.Resolve<MainViewModel>();
         InitializeComponent();
+        DataContext = ViewModel;
     }
 }
