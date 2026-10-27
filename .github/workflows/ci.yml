@@ -14,6 +14,8 @@ env:
 jobs:
   build-test:
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -68,13 +70,23 @@ jobs:
             --outputDir dist
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
-      - name: GitHub Release
+      - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
-        shell: pwsh
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: AppWatch ${{ github.ref_name }}
+          body: |
+            AppWatch ${{ github.ref_name }}
+
+            Assets:
+            - AppWatch-win-Portable.zip — portable build (self-update target)
+            - AppWatch-win-Setup.exe — Velopack installer
+            - *.nupkg + releases.win.json — Velopack update feed
+          files: |
+            dist/AppWatch-win-Portable.zip
+            dist/AppWatch-win-Setup.exe
+            dist/*.nupkg
+            dist/releases.win.json
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $tag = "${{ github.ref_name }}"
-          $notes = "AppWatch $tag`n`nAssets:`n- AppWatch-win-Portable.zip — portable build (self-update target)`n- AppWatch-win-Setup.exe — Velopack installer`n- *.nupkg + releases.win.json — Velopack update feed"
-          $assets = (Get-ChildItem dist -File).FullName
-          gh release create $tag $assets --title "AppWatch $tag" --notes "$notes"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
