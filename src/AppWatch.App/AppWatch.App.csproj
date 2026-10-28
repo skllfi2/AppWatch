@@ -1,52 +1,51 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
-        <XamlCompilerServerDisabled>true</XamlCompilerServerDisabled>
-    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <RootNamespace>AppWatch</RootNamespace>
-    <AssemblyName>AppWatch</AssemblyName>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
-    <Platforms>x86;x64;ARM64</Platforms>
-    <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
-    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
-    <SelfContained>true</SelfContained>
-    <PublishProfile Condition="Exists('Properties\\PublishProfiles\\win-$(Platform).pubxml')">win-$(Platform).pubxml</PublishProfile>
-    <!-- Unpackaged app: plain exe, no MSIX deployment, no Developer Mode needed -->
-        <WindowsPackageType>None</WindowsPackageType>
-        <EnableMsixTooling>false</EnableMsixTooling>
-        <DisableMsixProjectCapabilityAddedByProject>true</DisableMsixProjectCapabilityAddedByProject>
-        <UseWinUI>true</UseWinUI>
-        <WinUISDKReferences>false</WinUISDKReferences>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <Version>0.1.0</Version>
-        <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
-        <!-- Unpackaged bootstrap: find framework package at runtime; reg-free WinRT ON (required without package identity) -->
-        <WindowsAppSdkAutoInitialize>true</WindowsAppSdkAutoInitialize>
-        <WindowsAppSdkUndockedRegFreeWinRTInitialize>true</WindowsAppSdkUndockedRegFreeWinRTInitialize>
-        <WindowsAppSdkDeploymentManagerInitialize>false</WindowsAppSdkDeploymentManagerInitialize>
-        <!-- Suppress mspdbcmf.exe warning (symbol package not needed for debug builds) -->
-            <AppxSymbolPackageEnabled>false</AppxSymbolPackageEnabled>
-            <MsPdbCmfExeFullpath>mspdbcmf.exe</MsPdbCmfExeFullpath>
+      <OutputType>WinExe</OutputType>
+      <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+      <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+      <RootNamespace>AppWatch</RootNamespace>
+      <AssemblyName>AppWatch</AssemblyName>
+      <ApplicationManifest>app.manifest</ApplicationManifest>
+      <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+      <Platforms>x86;x64;ARM64</Platforms>
+      <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+      <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
+      <SelfContained>true</SelfContained>
+      <PublishProfile Condition="Exists('Properties\\PublishProfiles\\win-$(Platform).pubxml')">win-$(Platform).pubxml</PublishProfile>
+      <!-- Unpackaged app: plain exe, no MSIX deployment, no Developer Mode needed -->
+      <WindowsPackageType>None</WindowsPackageType>
+      <EnableMsixTooling>false</EnableMsixTooling>
+      <DisableMsixProjectCapabilityAddedByProject>true</DisableMsixProjectCapabilityAddedByProject>
+      <UseWinUI>true</UseWinUI>
+      <WinUISDKReferences>false</WinUISDKReferences>
+      <ImplicitUsings>enable</ImplicitUsings>
+      <Nullable>enable</Nullable>
+      <Version>0.1.0</Version>
+      <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+      <!-- Unpackaged bootstrap: find framework package at runtime; reg-free WinRT ON (required without package identity) -->
+      <WindowsAppSdkAutoInitialize>true</WindowsAppSdkAutoInitialize>
+      <WindowsAppSdkUndockedRegFreeWinRTInitialize>true</WindowsAppSdkUndockedRegFreeWinRTInitialize>
+      <WindowsAppSdkDeploymentManagerInitialize>false</WindowsAppSdkDeploymentManagerInitialize>
+      <!-- Suppress mspdbcmf.exe warning (symbol package not needed for debug builds) -->
+      <AppxSymbolPackageEnabled>false</AppxSymbolPackageEnabled>
+      <MsPdbCmfExeFullpath>mspdbcmf.exe</MsPdbCmfExeFullpath>
 
-        <!-- Memory: workstation GC + conserve mode. The UI holds a tiny managed heap
-             (~80 MB measured), so letting the GC grow heaps to core count (16 here)
-             just inflates Private bytes. AdaptationMode=1 + Conserve=5 trade a little
-             CPU for a visibly smaller resident footprint. -->
-        <ServerGarbageCollection>false</ServerGarbageCollection>
-        <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
-        <GarbageCollectionAdaptationMode>1</GarbageCollectionAdaptationMode>
-        <!-- Fix XamlCompiler culture resource issue -->
-                        <XamlCompilerUseManagedResources>true</XamlCompilerUseManagedResources>
-                        <XamlCompilerServerDisabled>true</XamlCompilerServerDisabled>
-                        <UseXamlCompilerExecutable>false</UseXamlCompilerExecutable>
-                        <NeutralLanguage>en-US</NeutralLanguage>
-        <!-- Self-contained to allow experimental WinUI components -->
-        <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
-        </PropertyGroup>
+      <!-- Memory: workstation GC + conserve mode. The UI holds a tiny managed heap
+           (~80 MB measured), so letting the GC grow heaps to core count (16 here)
+           just inflates Private bytes. AdaptationMode=1 + Conserve=5 trade a little
+           CPU for a visibly smaller resident footprint. -->
+      <ServerGarbageCollection>false</ServerGarbageCollection>
+      <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+      <GarbageCollectionAdaptationMode>1</GarbageCollectionAdaptationMode>
+      <!-- Fix XamlCompiler culture resource issue: use managed compiler with en-US culture -->
+      <XamlCompilerUseManagedResources>true</XamlCompilerUseManagedResources>
+      <XamlCompilerServerDisabled>true</XamlCompilerServerDisabled>
+      <UseXamlCompilerExecutable>false</UseXamlCompilerExecutable>
+      <NeutralLanguage>en-US</NeutralLanguage>
+      <!-- Self-contained to allow experimental WinUI components -->
+      <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    </PropertyGroup>
 
   <ItemGroup>
     <RuntimeHostConfigurationOption Include="System.GC.Conserve" Value="5" />
