@@ -73,8 +73,11 @@
       <Content Include="Assets\AppIconError.ico">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
-      <Content Include="Assets\Wide310x150Logo.scale-200.png" />
-    </ItemGroup>
+      <Content Include="Assets\\Wide310x150Logo.scale-200.png" />
+            <Compile Remove="PatchXamlCompiler.cs" />
+            <Compile Remove="PatchTool\\**\\*.cs" />
+            <Compile Remove="XamlCompilerWrapper.cs" />
+          </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
@@ -85,8 +88,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.13" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.13" />
     <PackageReference Include="Microsoft.VCRTForwarders.140" Version="1.1.0" />
-        <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.4" />
-                <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="2.6.4" />
+        <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
                 <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools.WinApp" Version="0.7.1" />
     <PackageReference Include="Serilog" Version="4.4.0" />
