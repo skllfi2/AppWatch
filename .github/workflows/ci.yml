@@ -23,12 +23,6 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Add Microsoft public feed (WinUI 2.5.1+)
-        run: dotnet nuget add source "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-public/nuget/v3/index.json" -n "dotnet-public"
-
-      - name: Restore
-        run: dotnet restore src/AppWatch.App/AppWatch.App.csproj
-
       # VCRTForwarders' UseDebugCRT inline task uses CodeTaskFactory which .NET Core
       # MSBuild cannot run (MSB4801) — the task only decides whether to ship DEBUG CRT
       # dlls, which a Release distribution never wants. The property short-circuits it.
