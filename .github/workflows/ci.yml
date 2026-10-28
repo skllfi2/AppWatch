@@ -27,7 +27,17 @@ jobs:
         run: dotnet nuget add source "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-public/nuget/v3/index.json" -n "dotnet-public"
 
       - name: Restore
-        run: dotnet restore src/AppWatch.App/AppWatch.App.csproj
+        run: dotnet restore src/AppWatch.App/AppWatch.App.csproj -v detailed 2>&1 | tee restore.log
+
+      - name: Upload restore log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: restore-log
+          path: restore.log
+
+      - name: List resolved packages
+        run: dotnet list src/AppWatch.App/AppWatch.App.csproj package --include-transitive | grep -i winui || true
 
       # VCRTForwarders' UseDebugCRT inline task uses CodeTaskFactory which .NET Core
       # MSBuild cannot run (MSB4801) — the task only decides whether to ship DEBUG CRT
