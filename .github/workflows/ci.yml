@@ -46,6 +46,9 @@ jobs:
       - name: List resolved packages
         run: dotnet list src/AppWatch.App/AppWatch.App.csproj package --include-transitive | grep -i winui || true
 
+      - name: Show feed sources
+        run: dotnet nuget list source
+
       # VCRTForwarders' UseDebugCRT inline task uses CodeTaskFactory which .NET Core
       # MSBuild cannot run (MSB4801) — the task only decides whether to ship DEBUG CRT
       # dlls, which a Release distribution never wants. The property short-circuits it.
