@@ -26,7 +26,9 @@ jobs:
           dotnet-quality: 'preview'
 
       - name: Restore
-        run: dotnet restore src/AppWatch.App/AppWatch.App.csproj -v detailed 2>&1 | tee restore.log
+        run: |
+          dotnet nuget locals all --clear
+          dotnet restore src/AppWatch.App/AppWatch.App.csproj -v detailed 2>&1 | tee restore.log
 
       - name: Upload restore log
         if: always()
