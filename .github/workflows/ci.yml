@@ -35,6 +35,12 @@ jobs:
           name: restore-log
           path: restore.log
 
+      - name: Set en-US culture for XAML compiler (NET472 exe)
+        run: |
+          [System.Threading.Thread]::CurrentThread.CurrentCulture = [System.Globalization.CultureInfo]::GetCultureInfo('en-US')
+          [System.Threading.Thread]::CurrentThread.CurrentUICulture = [System.Globalization.CultureInfo]::GetCultureInfo('en-US')
+          Write-Host "Culture set to en-US"
+
       - name: List resolved packages
         run: dotnet list src/AppWatch.App/AppWatch.App.csproj package --include-transitive | grep -i winui || true
 
