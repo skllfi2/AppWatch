@@ -30,7 +30,9 @@ jobs:
         run: dotnet restore src/AppWatch.App/AppWatch.App.csproj
 
       - name: Build
-        run: dotnet build src/AppWatch.App/AppWatch.App.csproj -c Release -p:Platform=x64 -v detailed 2>&1 | tee build.log
+        run: |
+          dotnet build src/AppWatch.App/AppWatch.App.csproj -c Release -p:Platform=x64 -v detailed 2>&1 | tee build.log
+          echo "=== BUILD EXIT CODE: ${PIPESTATUS[0]} ==="
 
       - name: Upload build log
         if: always()
