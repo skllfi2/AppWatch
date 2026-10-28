@@ -37,11 +37,27 @@ jobs:
           name: restore-log
           path: restore.log
 
-      - name: Set en-US culture for XAML compiler (NET472 exe)
+      - name: Patch XAML compiler config for en-US locale
         run: |
-          [System.Threading.Thread]::CurrentThread.CurrentCulture = [System.Globalization.CultureInfo]::GetCultureInfo('en-US')
-          [System.Threading.Thread]::CurrentThread.CurrentUICulture = [System.Globalization.CultureInfo]::GetCultureInfo('en-US')
-          Write-Host "Culture set to en-US"
+          $xamlCompiler = Get-ChildItem ~/.nuget/packages/microsoft.windowsappsdk.winui/*/tools/net472/Microsoft.UI.Xaml.Markup.Compiler.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($xamlCompiler) {
+            $configPath = "$($xamlCompiler.FullName).config"
+            $configContent = @"
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <system.globalization>
+    <globalization culture="en-US" uiCulture="en-US" />
+  </system.globalization>
+  <runtime>
+    <AppDomainResourceAssemblyResolver enabled="true" />
+  </runtime>
+</configuration>
+"@
+            [System.IO.File]::WriteAllText($configPath, $configContent)
+            Write-Host "Patched $configPath"
+          } else {
+            Write-Warning "XAML compiler not found"
+          }
 
       - name: List resolved packages
         run: dotnet list src/AppWatch.App/AppWatch.App.csproj package --include-transitive | grep -i winui || true
