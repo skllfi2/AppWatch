@@ -354,5 +354,22 @@
   "InstalledCount": "Installed: {0}",
   "TabUpdates": "Updates",
   "TabInstalledApps": "Apps",
-  "Browse": "Browse..."
+  "Browse": "Browse...",
+  "OnboardingWelcome": "Automatic updates for your apps",
+  "OnboardingDescription": "AppWatch checks GitHub releases, winget, and installers — and updates everything for you.",
+  "OnboardingFeature1": "GitHub releases, winget, portable apps, MSI/EXE installers",
+  "OnboardingFeature2": "Custom apps — any repo with Windows builds",
+  "OnboardingFeature3": "System updates via winget (WinGet tab)",
+  "OnboardingFeature4": "Changelog, rollback, notifications",
+  "OnboardingBtnStart": "Get Started",
+  "OnboardingVersion": "AppWatch {0}",
+  "SelfUpdateDialogTitle": "AppWatch Update",
+  "SelfUpdateDownloading": "Downloading",
+  "SelfUpdateBtnUpdateNow": "Update Now",
+  "SelfUpdateBtnSkip": "Skip Version",
+  "SelfUpdateBtnRemind": "Remind Later",
+  "SelfUpdateReady": "Ready to Install",
+  "SelfUpdateApplied": "Update Applied — Restart App",
+  "SelfUpdateFailed": "Update Failed",
+  "SelfUpdateNoChangelog": "Changelog Unavailable"
 }

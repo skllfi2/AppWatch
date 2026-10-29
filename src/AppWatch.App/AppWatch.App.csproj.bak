@@ -1,0 +1,117 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+      <OutputType>WinExe</OutputType>
+      <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+      <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+      <RootNamespace>AppWatch</RootNamespace>
+      <AssemblyName>AppWatch</AssemblyName>
+      <ApplicationManifest>app.manifest</ApplicationManifest>
+      <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+      <Platforms>x86;x64;ARM64</Platforms>
+      <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+      <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
+      <SelfContained>true</SelfContained>
+      <PublishProfile Condition="Exists('Properties\\PublishProfiles\\win-$(Platform).pubxml')">win-$(Platform).pubxml</PublishProfile>
+      <!-- Unpackaged app: plain exe, no MSIX deployment, no Developer Mode needed -->
+      <WindowsPackageType>None</WindowsPackageType>
+      <EnableMsixTooling>false</EnableMsixTooling>
+      <DisableMsixProjectCapabilityAddedByProject>true</DisableMsixProjectCapabilityAddedByProject>
+      <UseWinUI>true</UseWinUI>
+      <WinUISDKReferences>false</WinUISDKReferences>
+      <ImplicitUsings>enable</ImplicitUsings>
+      <Nullable>enable</Nullable>
+      <Version>0.1.0</Version>
+      <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+      <!-- Unpackaged bootstrap: find framework package at runtime; reg-free WinRT ON (required without package identity) -->
+      <WindowsAppSdkAutoInitialize>true</WindowsAppSdkAutoInitialize>
+      <WindowsAppSdkUndockedRegFreeWinRTInitialize>true</WindowsAppSdkUndockedRegFreeWinRTInitialize>
+      <WindowsAppSdkDeploymentManagerInitialize>false</WindowsAppSdkDeploymentManagerInitialize>
+      <!-- Suppress mspdbcmf.exe warning (symbol package not needed for debug builds) -->
+      <AppxSymbolPackageEnabled>false</AppxSymbolPackageEnabled>
+      <MsPdbCmfExeFullpath>mspdbcmf.exe</MsPdbCmfExeFullpath>
+
+      <!-- Memory: workstation GC + conserve mode. The UI holds a tiny managed heap
+           (~80 MB measured), so letting the GC grow heaps to core count (16 here)
+           just inflates Private bytes. AdaptationMode=1 + Conserve=5 trade a little
+           CPU for a visibly smaller resident footprint. -->
+      <ServerGarbageCollection>false</ServerGarbageCollection>
+      <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+      <GarbageCollectionAdaptationMode>1</GarbageCollectionAdaptationMode>
+      <!-- Fix XamlCompiler culture resource issue: use managed compiler with en-US culture -->
+      <XamlCompilerUseManagedResources>true</XamlCompilerUseManagedResources>
+      <XamlCompilerServerDisabled>true</XamlCompilerServerDisabled>
+      <UseXamlCompilerExecutable>false</UseXamlCompilerExecutable>
+      <NeutralLanguage>en-US</NeutralLanguage>
+            <!-- Self-contained to allow experimental WinUI components -->
+            <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    </PropertyGroup>
+
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.GC.Conserve" Value="5" />
+  </ItemGroup>
+
+  <ItemGroup>
+      <Compile Remove="XamlCompilerWrapper.cs" />
+      <Content Include="XamlCompilerWrapper.cs">
+        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Assets\SplashScreen.scale-200.png" />
+      <Content Include="Assets\LockScreenLogo.scale-200.png" />
+      <Content Include="Assets\Square150x150Logo.scale-200.png" />
+      <Content Include="Assets\Square44x44Logo.scale-200.png" />
+      <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
+      <Content Include="Assets\Square44x44Logo.targetsize-48_altform-lightunplated.png" />
+      <Content Include="Assets\StoreLogo.png" />
+      <Content Include="Assets\AppIcon.ico">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Assets\AppIconRunning.ico">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Assets\AppIconError.ico">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Assets\\Wide310x150Logo.scale-200.png" />
+      <!-- Unified theme resources: single file, no Dark/Light duplication for PRI -->
+            <Content Include="Themes\\ThemeResources.xaml" CopyToOutputDirectory="PreserveNewest" />
+            <Compile Remove="PatchXamlCompiler.cs" />
+            <Compile Remove="PatchTool\\**\\*.cs" />
+            <Compile Remove="XamlCompilerWrapper.cs" />
+          </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="CommunityToolkit.WinUI.Helpers" Version="8.2.251219" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.13" />
+    <PackageReference Include="Microsoft.VCRTForwarders.140" Version="1.1.0" />
+        <PackageReference Include="Microsoft.WindowsAppSDK" Version="[2.5.1]" />
+                <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools.WinApp" Version="0.7.1" />
+    <PackageReference Include="Serilog" Version="4.4.0" />
+    <PackageReference Include="System.Drawing.Common" Version="9.0.0" />
+    <PackageReference Include="Velopack" Version="1.2.161" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AppWatch.Core\AppWatch.Core.csproj" />
+    <ProjectReference Include="..\AppWatch.Infrastructure\AppWatch.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Localization\*.json" />
+    <EmbeddedResource Include="Catalog\*.json" />
+  </ItemGroup>
+
+  <!-- Unpackaged: MrtCore looks for resources.pri next to the exe, but MakePri emits
+       $(AssemblyName).pri. Copy it after build so resource loading works without
+       package identity. -->
+  <Target Name="EnsureResourcesPriForUnpackaged" AfterTargets="Build" Condition="'$(WindowsPackageType)' == 'None'">
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).pri" DestinationFiles="$(OutputPath)resources.pri" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

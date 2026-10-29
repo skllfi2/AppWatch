@@ -1,0 +1,52 @@
+<Project>
+  <!--
+    Common build targets for AppWatch.
+    Handles SBOM generation, signing, artifact collection, etc.
+  -->
+
+  <!-- Import NuGet packages needed for targets -->
+  <PropertyGroup>
+    <SbomToolVersion>2.2.7</SbomToolVersion>
+  </PropertyGroup>
+
+  <!-- SBOM Generation (after build) -->
+  <Target Name="GenerateSbom" AfterTargets="Build" Condition="'$(GenerateSbom)' == 'true'">
+    <PropertyGroup>
+      <SbomOutputPath>$(BaseOutputPath)sbom\$(AssemblyName)-$(Version).spdx.json</SbomOutputPath>
+      <SbomCommand>dotnet sbom -d "$(OutputPath)" -o "$(SbomOutputPath)" -f spdx-json --include-package-details</SbomCommand>
+    </PropertyGroup>
+    <Exec Command="dotnet tool restore" WorkingDirectory="$(MSBuildThisFileDirectory)" Condition="!Exists('$(MSBuildThisFileDirectory).config/dotnet-tools.json')" />
+    <Exec Command="$(SbomCommand)" WorkingDirectory="$(MSBuildThisFileDirectory)" Condition="Exists('$(MSBuildThisFileDirectory).config/dotnet-tools.json')" />
+    <Message Text="SBOM generated: $(SbomOutputPath)" Importance="high" />
+  </Target>
+
+  <!-- Signing (Authenticode) for executables -->
+  <Target Name="SignArtifacts" AfterTargets="Build" Condition="'$(SignArtifacts)' == 'true' And '$(SignToolPath)' != ''">
+    <ItemGroup>
+      <SignableFiles Include="$(OutputPath)*.exe;$(OutputPath)*.dll" Exclude="$(OutputPath)*test*.dll;$(OutputPath)*Test*.dll" />
+    </ItemGroup>
+    <SignFile
+      CertificateThumbprint="$(CertificateThumbprint)"
+      SigningTarget="@(SignableFiles)"
+      TimestampUrl="http://timestamp.digicert.com"
+      ToolPath="$(SignToolPath)" />
+  </Target>
+
+  <!-- Collect artifacts for publish -->
+  <Target Name="CollectArtifacts" AfterTargets="Build" Condition="'$(CollectArtifacts)' == 'true'">
+    <PropertyGroup>
+      <ArtifactsDir>$(BaseOutputPath)artifacts\$(AssemblyName)-$(Version)\</ArtifactsDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(ArtifactsDir)" />
+    <Copy SourceFiles="@(SignableFiles)" DestinationFolder="$(ArtifactsDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(OutputPath)*.pdb" DestinationFolder="$(ArtifactsDir)" SkipUnchangedFiles="true" Condition="Exists('$(OutputPath)*.pdb')" />
+    <Message Text="Artifacts collected to $(ArtifactsDir)" Importance="high" />
+  </Target>
+
+  <!-- Velopack packaging (for AppWatch.App only) -->
+  <Target Name="VelopackPack" AfterTargets="Publish" Condition="'$(VelopackEnabled)' == 'true' And '$(MSBuildProjectName)' == 'AppWatch.App'">
+    <Exec Command="velopack pack -p $(PublishDir) -u https://github.com/skllfi2/AppWatch/releases -o $(BaseOutputPath)velopack\"
+          WorkingDirectory="$(MSBuildThisFileDirectory)" />
+  </Target>
+
+</Project>

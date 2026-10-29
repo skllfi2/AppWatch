@@ -155,9 +155,13 @@ public partial class App : Application
                     () => _autostart?.IsEnabled == true);
 
                 if (!StartHidden)
-                    _window.Activate();
+                                    _window.Activate();
 
-                SingleInstance.StartListening(_ => ActivateWindow());
+                                // Apply persisted theme (ThemeService reads from config and swaps resource dictionaries)
+                                var themeService = Services.GetRequiredService<ThemeService>();
+                                themeService.ApplyToRoot();
+
+                                SingleInstance.StartListening(_ => ActivateWindow());
 
                 // Heavy initialization on background thread — window is already visible
                 _ = Task.Run(async () =>
@@ -184,18 +188,19 @@ public partial class App : Application
                         // startup check (auto-updates appeared broken). Network stays async;
                         // only the VM/UI mutations are marshaled here.
                         _window.DispatcherQueue.TryEnqueue(async () =>
-                        {
-                            try
-                            {
-                                var vm = Services.GetRequiredService<MainViewModel>();
-                                await vm.RunStartupTasksAsync();
-                                await vm.ShowOnboardingIfNeededAsync();
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error(ex, "Startup tasks failed");
-                            }
-                        });
+                                                {
+                                                    try
+                                                    {
+                                                        var vm = Services.GetRequiredService<MainViewModel>();
+                                                        await vm.RunStartupTasksAsync();
+                                                        // Show new onboarding dialog if first launch
+                                                        await Views.OnboardingDialog.ShowIfNeededAsync();
+                                                    }
+                                                    catch (Exception ex)
+                                                    {
+                                                        Log.Error(ex, "Startup tasks failed");
+                                                    }
+                                                });
                     }
                     catch (Exception ex)
                     {

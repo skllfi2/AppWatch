@@ -26,7 +26,7 @@ public sealed class SelfUpdateService
     public sealed record PreparedUpdate(string TempRoot, string ExtractRoot, string LaunchExe, string Version);
 
     public async Task<PreparedUpdate?> PrepareAsync(
-        string currentVersion, CancellationToken cancellationToken = default)
+        string currentVersion, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -47,7 +47,7 @@ public sealed class SelfUpdateService
             Directory.CreateDirectory(tempRoot);
 
             var zipPath = Path.Combine(tempRoot, asset.Name);
-            await _github.DownloadFileAsync(asset.DownloadUrl, zipPath, cancellationToken: cancellationToken);
+            await _github.DownloadFileAsync(asset.DownloadUrl, zipPath, progress, cancellationToken);
 
             // verify integrity before anything is applied
             if (asset.DigestSha256 is { } digest)

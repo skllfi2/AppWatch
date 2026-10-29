@@ -27,10 +27,9 @@
                         Background="Transparent"
                         SelectionChanged="Nav_SelectionChanged">
             <NavigationView.Resources>
-                <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="Transparent"/>
-                <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="Transparent"/>
-                <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="Transparent"/>
-            </NavigationView.Resources>
+                            <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="Transparent"/>
+                            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="Transparent"/>
+                        </NavigationView.Resources>
             <NavigationView.MenuItems>
                             <NavigationViewItem x:Name="NavItemTrackedApps" Tag="trackedapps" Content="Мои приложения">
                                 <NavigationViewItem.Icon>

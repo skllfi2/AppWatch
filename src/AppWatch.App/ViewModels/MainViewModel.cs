@@ -55,11 +55,12 @@ public partial class MainViewModel : ObservableObject
         WingetAvailable = winget.IsAvailable;
 
         foreach (var app in _config.TrackedApps)
-        {
-            var item = new TrackedAppItem(app);
-            item.PropertyChanged += OnHomeItemChanged;
-            Apps.Add(item);
-        }
+                {
+                    var item = new TrackedAppItem(app);
+                    item.PropertyChanged += OnHomeItemChanged;
+                    item.LoadIconAsync();
+                    Apps.Add(item);
+                }
 
         foreach (var entry in _catalog.Entries)
         {
@@ -79,10 +80,10 @@ public partial class MainViewModel : ObservableObject
         RefreshSources();
         ApplyCatalogFilter();
         RecomputeHomeGroups(); // initial population of the four home sections
-        RefreshNextCheckText();
-        RefreshLastCheckText();
+                        RefreshNextCheckText();
+                        RefreshLastCheckText();
 
-        _footerTimer.Tick += (_, _) => RefreshFooter();
+                        _footerTimer.Tick += (_, _) => RefreshFooter();
         _statusResetTimer.Tick += (_, _) => StatusText = "";
         _footerTimer.Start();
 
@@ -266,12 +267,12 @@ public partial class MainViewModel : ObservableObject
                     public partial string NewSourceUrl { get; set; } = "";
 
                     [ObservableProperty]
-                    public partial bool IsAddingSource { get; set; }
+                            public partial bool IsAddingSource { get; set; }
 
-                    /// <summary>All catalog sources for UI display.</summary>
-                    public ObservableCollection<CatalogSourceItem> CatalogSources { get; } = [];
+                            /// <summary>All catalog sources for UI display.</summary>
+                                                        public ObservableCollection<CatalogSourceItem> CatalogSources { get; } = [];
 
-                    private void RefreshSources()
+                                                private void RefreshSources()
                     {
                         CatalogSources.Clear();
                         foreach (var s in _catalog.Sources)
@@ -301,16 +302,16 @@ public partial class MainViewModel : ObservableObject
             partial void OnCatalogTrackedCountChanged(int value) => OnPropertyChanged(nameof(CatalogMetricTracked));
             partial void OnCatalogUpdatesAvailableChanged(int value) => OnPropertyChanged(nameof(CatalogMetricUpdates));
             partial void OnWingetTotalCountChanged(int value) => OnPropertyChanged(nameof(WingetMetricTotal));
-            partial void OnWingetUpdatesAvailableChanged(int value) => OnPropertyChanged(nameof(WingetMetricUpdates));
-            partial void OnWingetPendingUpdatesChanged(int value) => OnPropertyChanged(nameof(WingetMetricPending));
+                                    partial void OnWingetUpdatesAvailableChanged(int value) => OnPropertyChanged(nameof(WingetMetricUpdates));
+                                    partial void OnWingetPendingUpdatesChanged(int value) => OnPropertyChanged(nameof(WingetMetricPending));
 
-            public Brush StatusDotBrush => UpdatesAvailableCount > 0
-                ? new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 0x2E, 0xA0, 0x43))
-                : new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 0x61, 0x61, 0x61));
+                                    public Brush StatusDotBrush => UpdatesAvailableCount > 0
+                                                                ? new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 0x2E, 0xA0, 0x43))
+                                                                : new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 0x61, 0x61, 0x61));
 
-            public string InstallButtonText => _loc["install"];
+                                                        public string InstallButtonText => _loc["install"];
 
-        [RelayCommand]
+                                                        [RelayCommand]
                 private async Task AddCustomAppAsync()
                 {
                     var dialog = new AddEditAppDialog();
@@ -326,10 +327,12 @@ public partial class MainViewModel : ObservableObject
                         if (string.IsNullOrWhiteSpace(app.InstallDirectory))
                             app.InstallDirectory = installRoot;
                         _config.TrackedApps.Add(app);
-                        _configStore.Save(_config);
-                        Apps.Add(new TrackedAppItem(app));
-                        AppsTrackedCount = Apps.Count;
-                        StatusText = _loc["installed"];
+                                                _configStore.Save(_config);
+                                                var newItem = new TrackedAppItem(app);
+                                                newItem.LoadIconAsync();
+                                                Apps.Add(newItem);
+                                                AppsTrackedCount = Apps.Count;
+                                                StatusText = _loc["installed"];
                     }
                 }
 
@@ -448,9 +451,11 @@ public partial class MainViewModel : ObservableObject
         {
             item.IsTracked = true;
             _config.TrackedApps.Add(app);
-            _configStore.Save(_config);
-            Apps.Add(new TrackedAppItem(app));
-            AppsTrackedCount = Apps.Count;
+                                _configStore.Save(_config);
+                                var newItem = new TrackedAppItem(app);
+                                newItem.LoadIconAsync();
+                                Apps.Add(newItem);
+                                AppsTrackedCount = Apps.Count;
         }
         StatusText = _loc["checkDone"];
     }
@@ -685,15 +690,15 @@ public partial class MainViewModel : ObservableObject
     public partial string LastCheckText { get; set; } = "";
 
     public void RefreshLastCheckText()
-    {
-        var last = _configStore.Load().LastCheckUtc;
-        LastCheckText = last is { } l
-            ? _loc.Format("LastCheckAt", l.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))
-            : "";
-    }
+        {
+            var last = _configStore.Load().LastCheckUtc;
+            LastCheckText = last is { } l
+                            ? _loc.Format("LastCheckAt", l.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))
+                            : "";
+                    }
 
-    [RelayCommand]
-        private void GoToCatalog() => App.MainWindow!.NavigateTo(typeof(Views.CatalogPage));
+                    [RelayCommand]
+                    private void GoToCatalog() => App.MainWindow!.NavigateTo(typeof(Views.CatalogPage));
 
         [RelayCommand]
         private void GoToWinget() => App.MainWindow!.NavigateTo(typeof(Views.WingetPage));
@@ -1002,9 +1007,11 @@ private void ApplyCatalogFilter()
                         IgnorePreReleases = true,
                     };
                     _config.TrackedApps.Add(app);
-                    _configStore.Save(_config);
-                    Apps.Add(new TrackedAppItem(app));
-                    AppsTrackedCount = Apps.Count;
+                                        _configStore.Save(_config);
+                                        var newItem = new TrackedAppItem(app);
+                                        newItem.LoadIconAsync();
+                                        Apps.Add(newItem);
+                                        AppsTrackedCount = Apps.Count;
                 }
                 item.Installed = true;
                 item.StatusText = exitCode == 0
@@ -1571,13 +1578,13 @@ private void ApplyCatalogFilter()
     }
 
     private string Describe(UpdateStatus status) => status switch
-        {
-            UpdateStatus.UpToDate => _loc["UpToDate"],
-            UpdateStatus.UpdateAvailable => _loc["UpdateAvailable"],
-            UpdateStatus.Pinned => _loc["Pinned"],
-            UpdateStatus.NoMatchingAsset => _loc["NoMatchingAsset"],
-            UpdateStatus.Disabled => _loc["Disabled"],
-            UpdateStatus.Error => _loc["Error"],
-                _ => status.ToString(),
-            };
-    }
+                {
+                    UpdateStatus.UpToDate => _loc["UpToDate"],
+                    UpdateStatus.UpdateAvailable => _loc["UpdateAvailable"],
+                    UpdateStatus.Pinned => _loc["Pinned"],
+                    UpdateStatus.NoMatchingAsset => _loc["NoMatchingAsset"],
+                    UpdateStatus.Disabled => _loc["Disabled"],
+                    UpdateStatus.Error => _loc["Error"],
+                    _ => status.ToString(),
+                };
+        }

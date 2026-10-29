@@ -94,7 +94,7 @@ public sealed class WingetService
                     if (snapshot is { } s)
                         progress?.Report(new WingetProgress(WingetPhase.Downloading, s.Bytes, s.BytesPerSec));
                 },
-                heartbeatInterval: TimeSpan.FromMilliseconds(500));
+                heartbeatInterval: TimeSpan.FromMilliseconds(250));
         }
     }
 
@@ -128,9 +128,9 @@ public sealed class WingetService
                 {
                     try
                     {
-                        _dir ??= Directory.EnumerateDirectories(temp, $"{_packageId}_*")
-                            .OrderByDescending(Directory.GetLastWriteTimeUtc)
-                            .FirstOrDefault();
+                        _dir ??= Directory.EnumerateDirectories(temp, $"*{_packageId}*")
+                                                    .OrderByDescending(Directory.GetLastWriteTimeUtc)
+                                                    .FirstOrDefault();
                         if (_dir is not null && Directory.Exists(_dir))
                         {
                             long bytes = 0;
@@ -142,7 +142,7 @@ public sealed class WingetService
                         }
                     }
                     catch { /* best effort */ }
-                    await Task.Delay(400, token);
+                    await Task.Delay(200, token);
                 }
             }, token);
         }

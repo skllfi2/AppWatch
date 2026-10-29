@@ -170,7 +170,11 @@ public partial class SettingsViewModel : ObservableObject
             }
 
             var version = typeof(SettingsViewModel).Assembly.GetName().Version?.ToString(3) ?? "0.1.0";
-            var prepared = await _selfUpdate.PrepareAsync(version, cancellationToken);
+            var progress = new Progress<double>(p =>
+            {
+                StatusText = string.Format(LocalizationService.Instance["SettingsSelfUpdateDownloading"], (int)(p * 100));
+            });
+            var prepared = await _selfUpdate.PrepareAsync(version, progress, cancellationToken);
             StatusText = prepared is null
                 ? LocalizationService.Instance["SettingsNoUpdates"]
                 : string.Format(LocalizationService.Instance["SettingsUpdatesFound"], prepared.Version);
@@ -327,6 +331,23 @@ public partial class SettingsViewModel : ObservableObject
         }
 
         if (_preparedUpdate is null) return;
+
+        // Show self-update dialog with changelog
+        var changelog = _preparedUpdate.Version; // TODO: fetch actual changelog from release notes
+        var result = await Views.SelfUpdateDialog.ShowAsync(
+            _preparedUpdate.Version,
+            changelog,
+            isZipFlow: true,
+            downloadProgress: null); // progress handled internally
+
+        if (result != Views.SelfUpdateResult.UpdateNow)
+        {
+            if (result == Views.SelfUpdateResult.SkipVersion)
+            {
+                // TODO: persist skip version
+            }
+            return;
+        }
 
         SelfUpdateBusy = true;
         StatusText = LocalizationService.Instance["SettingsSelfUpdateApplying"];

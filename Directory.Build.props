@@ -1,0 +1,115 @@
+<Project>
+  <!--
+    Centralized version management and common build properties for AppWatch.
+    Imported by all projects via Directory.Build.props discovery.
+  -->
+
+  <PropertyGroup>
+    <!-- Project metadata -->
+    <Product>AppWatch</Product>
+    <Company>AppWatch Contributors</Company>
+    <Copyright>Copyright © 2024 AppWatch Contributors</Copyright>
+    <Authors>AppWatch Contributors</Authors>
+    <Description>Automatic updates for your Windows apps — GitHub releases, winget, portable apps, installers.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/skllfi2/AppWatch</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/skllfi2/AppWatch.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>updater;winget;github-releases;velopack;windows;winui3</PackageTags>
+
+    <!-- Versioning: Major.Minor.Patch[-prerelease] -->
+    <VersionPrefix>0.2.0</VersionPrefix>
+    <VersionSuffix></VersionSuffix>
+    <Version>$(VersionPrefix)$(VersionSuffix)</Version>
+    <!-- Assembly attributes managed by each project -->
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
+    <!-- Build configuration -->
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>NU1900;NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+    <NoWarn>$(NoWarn);CS1591;CS8618;CS8602;CS8604;CS8600;CS8603;CS8714;CS8765</NoWarn>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+
+    <!-- .NET / Windows App SDK -->
+    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <SelfContained>false</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <PublishTrimmed>false</PublishTrimmed>
+
+    <!-- WinUI 3 -->
+    <WindowsPackageType>None</WindowsPackageType>
+    <UseWinUI>true</UseWinUI>
+    <EnableMsixTooling>false</EnableMsixTooling>
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+
+    <!-- Velopack -->
+    <VelopackEnabled>false</VelopackEnabled>
+
+    <!-- Deterministic builds -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <!-- Package versions (single source of truth) -->
+  <PropertyGroup>
+    <MicrosoftWindowsAppSDKVersion>1.6.241112000</MicrosoftWindowsAppSDKVersion>
+    <MicrosoftWindowsAppSDKVersionForBuild>1.6.241112000</MicrosoftWindowsAppSDKVersionForBuild>
+    <CommunityToolkitMvvmVersion>8.4.0</CommunityToolkitMvvmVersion>
+    <SerilogVersion>4.2.0</SerilogVersion>
+    <SerilogSinkFileVersion>6.0.0</SerilogSinkFileVersion>
+    <SystemDrawingCommonVersion>9.0.0</SystemDrawingCommonVersion>
+    <VelopackVersion>1.2.161</VelopackVersion>
+    <xunitVersion>2.9.2</xunitVersion>
+    <xunitRunnerVersion>2.8.2</xunitRunnerVersion>
+    <FluentAssertionsVersion>7.0.0</FluentAssertionsVersion>
+    <MoqVersion>4.20.72</MoqVersion>
+    <MicrosoftNETTestSdkVersion>17.11.1</MicrosoftNETTestSdkVersion>
+    <coverletVersion>6.0.2</coverletVersion>
+  </PropertyGroup>
+
+  <!-- Common package references (opt-in via PackageReference in projects) -->
+  <ItemGroup>
+    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <!-- SourceLink for debugging -->
+  <PropertyGroup>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <!-- Signing (opt-in via environment variables or local props) -->
+  <PropertyGroup Condition="'$(SignAssembly)' == 'true'">
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)keys\AppWatch.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+  </PropertyGroup>
+
+  <!-- Code Analysis -->
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+</Project>

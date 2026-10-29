@@ -16,5 +16,6 @@ public sealed partial class UpdatesPage : Page
     {
         ViewModel = App.Resolve<MainViewModel>();
         InitializeComponent();
+        DataContext = ViewModel;
     }
 }

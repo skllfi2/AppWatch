@@ -1,8 +1,10 @@
 using AppWatch.Core.Domain.Models;
 using AppWatch.Localization;
+using AppWatch.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace AppWatch.ViewModels;
 
@@ -68,9 +70,37 @@ public partial class TrackedAppItem : ObservableObject
     }
 
     /// <summary>GitHub repo avatar URL for card icon (from TrackedApp.AvatarUrl).</summary>
-        public string? AvatarUrl => App.AvatarUrl;
+            public string? AvatarUrl => App.AvatarUrl;
 
-        [ObservableProperty]
+            /// <summary>
+            /// Loaded icon (GitHub avatar or local Win32/UWP icon). Null = use MonogramBrush.
+            /// Loaded async on first access or when explicitly requested.
+            /// </summary>
+            [ObservableProperty]
+            public partial BitmapImage? Icon { get; set; }
+
+            /// <summary>
+            /// Triggers async icon load. Call when item becomes visible or on creation.
+            /// </summary>
+            public async void LoadIconAsync()
+            {
+                // Already have GitHub avatar?
+                if (!string.IsNullOrWhiteSpace(AvatarUrl))
+                {
+                    try
+                    {
+                        Icon = new BitmapImage(new Uri(AvatarUrl));
+                        return;
+                    }
+                    catch { /* fall through */ }
+                }
+
+                // TODO: Match with InstalledApp list for local icon fallback
+                // For now, null → MonogramBrush will be used
+                Icon = null;
+            }
+
+            [ObservableProperty]
         public partial UpdateStage Stage { get; set; } = UpdateStage.Idle;
 
     [ObservableProperty]
@@ -195,32 +225,13 @@ public partial class TrackedAppItem : ObservableObject
     public string MenuEdit => LocalizationService.Instance["MenuEdit"];
 
     /// <summary>Human-readable source display: GitHub / winget / Installer / External.</summary>
-    [ObservableProperty]
-    private string _sourceDisplay = string.Empty;
-
-    public string SourceDisplay
+    public string SourceDisplay => App.UpdateKind switch
     {
-        get
-        {
-            if (!string.IsNullOrEmpty(_sourceDisplay))
-                return _sourceDisplay;
-
-            return App.UpdateKind switch
-            {
-                UpdateKind.WingetPackage => LocalizationService.Instance["SourceWinget"],
-                UpdateKind.Installer => LocalizationService.Instance["SourceInstaller"],
-                UpdateKind.External => LocalizationService.Instance["SourceExternal"],
-                _ => LocalizationService.Instance["SourceGitHub"],
-            };
-        }
-        private set => SetProperty(ref _sourceDisplay, value);
-    }
-
-    partial void OnAppChanged(Core.Domain.Models.TrackedApp? oldValue, Core.Domain.Models.TrackedApp? newValue)
-    {
-        // Refresh SourceDisplay when UpdateKind changes
-        OnPropertyChanged(nameof(SourceDisplay));
-    }
+        UpdateKind.WingetPackage => LocalizationService.Instance["SourceWinget"],
+        UpdateKind.Installer => LocalizationService.Instance["SourceInstaller"],
+        UpdateKind.External => LocalizationService.Instance["SourceExternal"],
+        _ => LocalizationService.Instance["SourceGitHub"],
+    };
 
     /// <summary>B10: true when the version cache holds at least one older snapshot for this app.</summary>
     public bool RollbackAvailable =>

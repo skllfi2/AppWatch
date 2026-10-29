@@ -172,7 +172,7 @@ public static class WingetOutputParser
         var s = line.AsSpan().Trim();
         if (s.Length == 0) return null;
 
-        if (Contains(s, "Скачивание") || Contains(s, "Downloading")) return WingetPhase.Downloading;
+        if (Contains(s, "Скачивание") || Contains(s, "Downloading") || Contains(s, "Загрузка")) return WingetPhase.Downloading;
         if (Contains(s, "Хэш установщика") || Contains(s, "hash")) return WingetPhase.Verifying;
         if (Contains(s, "Установщик скачан") || Contains(s, "installer downloaded")) return WingetPhase.Downloaded;
         if (Contains(s, "Установка") || Contains(s, "Installing") || Contains(s, "Установлено") || Contains(s, "installed"))

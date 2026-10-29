@@ -23,13 +23,17 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- App icon/avatar -->
-                    <Border Grid.Column="0" Width="40" Height="40" CornerRadius="6"
-                            Background="{x:Bind MonogramBrush, Mode=OneTime}"
-                            VerticalAlignment="Center">
-                        <TextBlock Text="{x:Bind Monogram, Mode=OneTime}"
-                                   FontSize="16" FontWeight="SemiBold" Foreground="White"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
+                    <Grid Grid.Column="0" Width="40" Height="40" CornerRadius="6" VerticalAlignment="Center">
+                        <Image Source="{x:Bind Icon, Mode=OneWay}"
+                               Stretch="UniformToFill"
+                               Visibility="{x:Bind Icon, Converter={StaticResource ObjectToVisibility}, Mode=OneWay}" />
+                        <Border Background="{x:Bind MonogramBrush, Mode=OneTime}"
+                                Visibility="{x:Bind Icon, Converter={StaticResource NullToVisibility}, Mode=OneWay}">
+                            <TextBlock Text="{x:Bind Monogram, Mode=OneTime}"
+                                       FontSize="16" FontWeight="SemiBold" Foreground="White"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </Grid>
 
                     <!-- App info -->
                     <StackPanel Grid.Column="1" Orientation="Vertical" Spacing="2" VerticalAlignment="Center">
@@ -81,7 +85,7 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="1" Command="{x:Bind ViewModel.AddCustomAppAsyncCommand}"
+            <Button Grid.Column="1" Command="{Binding AddCustomAppAsyncCommand}"
                     AutomationProperties.Name="{x:Bind Loc.AddApp, Mode=OneWay}"
                     ToolTipService.ToolTip="{x:Bind Loc.AddApp, Mode=OneWay}"
                     Padding="12,6" CornerRadius="6" FontSize="12"
@@ -91,7 +95,7 @@
                     <TextBlock Text="{x:Bind Loc.AddApp, Mode=OneWay}" FontSize="12"/>
                 </StackPanel>
             </Button>
-            <Button Grid.Column="2" Command="{x:Bind ViewModel.CheckUpdatesAsyncCommand}"
+            <Button Grid.Column="2" Command="{Binding CheckUpdatesAsyncCommand}"
                     AutomationProperties.Name="{x:Bind Loc.QuickCheck, Mode=OneWay}"
                     ToolTipService.ToolTip="{x:Bind Loc.QuickCheck, Mode=OneWay}"
                     Padding="12,6" CornerRadius="6" FontSize="12"
@@ -113,7 +117,7 @@
                 <TextBlock Text="{x:Bind Loc.NoTrackedApps, Mode=OneWay}" FontSize="12"
                            Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"
                            HorizontalAlignment="Center" TextAlignment="Center"/>
-                <Button Command="{x:Bind ViewModel.AddCustomAppAsyncCommand}"
+                <Button Command="{Binding AddCustomAppAsyncCommand}"
                         Margin="0,8,0,0" Padding="16,8" CornerRadius="6"
                         Background="{StaticResource AccentBrush}" BorderThickness="0">
                     <StackPanel Orientation="Horizontal" Spacing="8">

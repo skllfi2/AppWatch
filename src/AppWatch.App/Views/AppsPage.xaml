@@ -12,7 +12,7 @@
 
         <!-- Layer-1: slim card. Info area is clickable -> details dialog;
              one primary action + the rules menu on the right. -->
-        <DataTemplate x:Key="AppCardTemplate" x:DataType="vm:TrackedAppItem">
+        <DataTemplate x:Key="AppsPageAppCardTemplate" x:DataType="vm:TrackedAppItem">
             <Grid Padding="12" ColumnSpacing="12" Margin="0,0,0,8"
                   Background="{StaticResource CardBackgroundBrush}" CornerRadius="8">
                 <Grid.ColumnDefinitions>
@@ -29,12 +29,18 @@
                         Background="Transparent" BorderThickness="0" Padding="4,4,8,4"
                         CornerRadius="6">
                     <StackPanel Orientation="Horizontal" Spacing="10">
-                        <Border Width="36" Height="36" CornerRadius="6"
-                                Background="{x:Bind MonogramBrush}" VerticalAlignment="Center">
-                            <TextBlock Text="{x:Bind Monogram}" FontSize="15" FontWeight="SemiBold"
-                                       Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <StackPanel Spacing="2" VerticalAlignment="Center">
+                                            <!-- Icon: Image (if loaded) or Monogram fallback -->
+                                            <Grid Width="36" Height="36" CornerRadius="6" VerticalAlignment="Center">
+                                                <Image Source="{x:Bind Icon, Mode=OneWay}"
+                                                       Stretch="UniformToFill"
+                                                       Visibility="{x:Bind Icon, Converter={StaticResource ObjectToVisibility}, Mode=OneWay}" />
+                                                <Border Background="{x:Bind MonogramBrush}"
+                                                        Visibility="{x:Bind Icon, Converter={StaticResource NullToVisibility}, Mode=OneWay}">
+                                                    <TextBlock Text="{x:Bind Monogram}" FontSize="15" FontWeight="SemiBold"
+                                                               Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </Grid>
+                                            <StackPanel Spacing="2" VerticalAlignment="Center">
                             <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" FontSize="13"
                                        Foreground="{StaticResource TextPrimaryBrush}"/>
                             <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
@@ -295,7 +301,7 @@
                         </Button>
                     </Grid>
                     <ListView ItemsSource="{x:Bind ViewModel.UpdatesGroup, Mode=OneWay}" SelectionMode="None"
-                              ItemTemplate="{StaticResource AppCardTemplate}"/>
+                              ItemTemplate="{StaticResource AppsPageAppCardTemplate}"/>
                 </StackPanel>
 
                 <!-- Group 2: errors -->
@@ -307,7 +313,7 @@
                                    Foreground="{StaticResource TextSecondaryBrush}" CharacterSpacing="40"/>
                     </StackPanel>
                     <ListView ItemsSource="{x:Bind ViewModel.ErrorsGroup, Mode=OneWay}" SelectionMode="None"
-                              ItemTemplate="{StaticResource AppCardTemplate}"/>
+                              ItemTemplate="{StaticResource AppsPageAppCardTemplate}"/>
                 </StackPanel>
 
                 <!-- Group 3: up to date -->
@@ -319,7 +325,7 @@
                                    Foreground="{StaticResource TextSecondaryBrush}" CharacterSpacing="40"/>
                     </StackPanel>
                     <ListView ItemsSource="{x:Bind ViewModel.UpToDateGroup, Mode=OneWay}" SelectionMode="None"
-                              ItemTemplate="{StaticResource AppCardTemplate}"/>
+                              ItemTemplate="{StaticResource AppsPageAppCardTemplate}"/>
                 </StackPanel>
 
                 <!-- Group 4: disabled -->
@@ -331,7 +337,7 @@
                                    Foreground="{StaticResource TextSecondaryBrush}" CharacterSpacing="40"/>
                     </StackPanel>
                     <ListView ItemsSource="{x:Bind ViewModel.DisabledGroup, Mode=OneWay}" SelectionMode="None"
-                              ItemTemplate="{StaticResource AppCardTemplate}"/>
+                              ItemTemplate="{StaticResource AppsPageAppCardTemplate}"/>
                 </StackPanel>
 
             </StackPanel>

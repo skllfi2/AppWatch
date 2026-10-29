@@ -1,0 +1,59 @@
+<ContentDialog
+    x:Class="AppWatch.Views.SelfUpdateDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="{x:Bind ViewModel.Title, Mode=OneWay}"
+    PrimaryButtonText="{x:Bind Loc.SelfUpdateBtnUpdateNow, Mode=OneWay}"
+    SecondaryButtonText="{x:Bind Loc.SelfUpdateBtnSkip, Mode=OneWay}"
+    CloseButtonText="{x:Bind Loc.SelfUpdateBtnRemind, Mode=OneWay}"
+    DefaultButton="Primary"
+    Background="{StaticResource CardBackgroundBrush}"
+    CornerRadius="12"
+    MaxWidth="560">
+
+    <ContentDialog.Resources>
+        <Style TargetType="ProgressBar">
+            <Setter Property="Height" Value="8" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+            <Setter Property="Background" Value="{StaticResource CardSecondaryBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+    </ContentDialog.Resources>
+
+    <StackPanel Spacing="16" MaxWidth="520">
+
+        <!-- Changelog -->
+        <Border Background="{StaticResource CardSecondaryBrush}" CornerRadius="8" Padding="12">
+            <ScrollViewer MaxHeight="240" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <TextBlock Text="{x:Bind ViewModel.Changelog, Mode=OneWay}"
+                           FontSize="12"
+                           FontFamily="Cascadia Code, Consolas, Monospace"
+                           TextWrapping="Wrap"
+                           Foreground="{StaticResource TextPrimaryBrush}" />
+            </ScrollViewer>
+        </Border>
+
+        <!-- Download progress (visible when downloading) -->
+        <StackPanel Spacing="6"
+                    Visibility="{x:Bind ViewModel.IsDownloading, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+            <ProgressBar Value="{x:Bind ViewModel.DownloadProgress, Mode=OneWay}" Maximum="1"
+                         IsIndeterminate="{x:Bind ViewModel.IsProgressIndeterminate, Mode=OneWay}"
+                         Visibility="{x:Bind ViewModel.IsDownloading, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+            <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}"
+                       FontSize="11"
+                       Foreground="{StaticResource TextSecondaryBrush}" />
+        </StackPanel>
+
+        <!-- Ready state -->
+        <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}"
+                   FontSize="12"
+                   Foreground="{StaticResource AccentBrush}"
+                   Visibility="{x:Bind ViewModel.IsDownloading, Mode=OneWay, Converter={StaticResource InverseBoolToVisibility}}"
+                   TextWrapping="Wrap" />
+
+    </StackPanel>
+</ContentDialog>

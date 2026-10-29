@@ -1,0 +1,65 @@
+# Dependabot configuration for AppWatch
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # NuGet packages
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    labels:
+      - "dependencies"
+      - "nuget"
+    commit-message:
+      prefix: "deps(nuget):"
+    groups:
+      winui:
+        patterns:
+          - "Microsoft.WindowsAppSDK*"
+          - "Microsoft.WindowsAppSDK.WinUI*"
+      communitytoolkit:
+        patterns:
+          - "CommunityToolkit*"
+      serilog:
+        patterns:
+          - "Serilog*"
+      testing:
+        patterns:
+          - "xunit*"
+          - "Moq*"
+          - "FluentAssertions*"
+          - "coverlet*"
+      dotnet:
+        patterns:
+          - "System*"
+          - "Microsoft*"
+    ignore:
+      - dependency-name: "Microsoft.WindowsAppSDK"
+        versions: ["2.6.*"]  # WinUI 2.6.4 has locale bug, wait for 2.5.1+ on NuGet.org
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "deps(actions):"
+
+  # Docker (if any)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    labels:
+      - "dependencies"
+      - "docker"

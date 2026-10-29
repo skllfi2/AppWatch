@@ -228,4 +228,19 @@ public sealed class StringToImageSourceConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, string language)
         => throw new NotSupportedException();
+
+public sealed class IsZeroConverter : IValueConverter
+{
+	public object Convert(object value, Type targetType, object parameter, string language)
+	{
+		if (value is double d) return Math.Abs(d) < 0.001;
+		if (value is float f) return Math.Abs(f) < 0.001f;
+		if (value is decimal dec) return dec == 0;
+		return false;
+	}
+
+	public object ConvertBack(object value, Type targetType, object parameter, string language)
+		=> throw new NotSupportedException();
+}
+
 }

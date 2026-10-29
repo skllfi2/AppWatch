@@ -1,10 +1,18 @@
 ﻿namespace AppWatch.Core.Domain.Models;
 
+public enum AppTheme
+{
+    System,
+    Dark,
+    Light,
+}
+
 public sealed class AppConfig
 {
     public int SchemaVersion { get; set; } = 2;
     public string? GitHubToken { get; set; }
     public string Language { get; set; } = "ru";
+    public AppTheme Theme { get; set; } = AppTheme.System;
     public bool AutoCheckEnabled { get; set; } = true;
     public bool AutoApplyUpdates { get; set; } = false;
     public int CheckIntervalHours { get; set; } = 6;

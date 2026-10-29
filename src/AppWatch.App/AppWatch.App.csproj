@@ -43,8 +43,8 @@
       <XamlCompilerServerDisabled>true</XamlCompilerServerDisabled>
       <UseXamlCompilerExecutable>false</UseXamlCompilerExecutable>
       <NeutralLanguage>en-US</NeutralLanguage>
-      <!-- Self-contained to allow experimental WinUI components -->
-      <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+            <!-- Self-contained to allow experimental WinUI components -->
+            <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     </PropertyGroup>
 
   <ItemGroup>
@@ -72,7 +72,9 @@
       <Content Include="Assets\AppIconError.ico">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
-      <Content Include="Assets\\Wide310x150Logo.scale-200.png" />
+      <Content Include="Assets\Wide310x150Logo.scale-200.png" />
+            <!-- Unified theme resources: single file, no Dark/Light duplication for PRI -->
+            <Content Include="Themes\ThemeResources.xaml" CopyToOutputDirectory="PreserveNewest" />
             <Compile Remove="PatchXamlCompiler.cs" />
             <Compile Remove="PatchTool\\**\\*.cs" />
             <Compile Remove="XamlCompilerWrapper.cs" />
@@ -87,11 +89,12 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.13" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.13" />
     <PackageReference Include="Microsoft.VCRTForwarders.140" Version="1.1.0" />
-        <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.4" />
-                <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="2.6.4" />
-                <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
+        <PackageReference Include="Microsoft.WindowsAppSDK" Version="[2.5.1]" />
+                <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="[2.5.1]" />
+                        <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools.WinApp" Version="0.7.1" />
     <PackageReference Include="Serilog" Version="4.4.0" />
+    <PackageReference Include="System.Drawing.Common" Version="9.0.0" />
     <PackageReference Include="Velopack" Version="1.2.161" />
   </ItemGroup>
 

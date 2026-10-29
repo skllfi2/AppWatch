@@ -354,5 +354,22 @@
   "InstalledCount": "Установлено: {0}",
   "TabUpdates": "Обновления",
   "TabInstalledApps": "Приложения",
-  "Browse": "Обзор..."
+  "Browse": "Обзор...",
+  "OnboardingWelcome": "Автоматические обновления для ваших приложений",
+  "OnboardingDescription": "AppWatch проверяет GitHub-релизы, winget и установщики — и обновляет всё за вас.",
+  "OnboardingFeature1": "GitHub-релизы, winget, портативные и MSI/EXE установщики",
+  "OnboardingFeature2": "Кастомные приложения — любой репозиторий с Windows-билдами",
+  "OnboardingFeature3": "Системные обновления через winget (WinGet раздел)",
+  "OnboardingFeature4": "История изменений, откат версий, уведомления",
+  "OnboardingBtnStart": "Начать",
+  "OnboardingVersion": "AppWatch {0}",
+  "SelfUpdateDialogTitle": "Обновление AppWatch",
+  "SelfUpdateDownloading": "Скачивание",
+  "SelfUpdateBtnUpdateNow": "Обновить сейчас",
+  "SelfUpdateBtnSkip": "Пропустить версию",
+  "SelfUpdateBtnRemind": "Напомнить позже",
+  "SelfUpdateReady": "Готово к установке",
+  "SelfUpdateApplied": "Обновление установлено — перезапустите приложение",
+  "SelfUpdateFailed": "Ошибка обновления",
+  "SelfUpdateNoChangelog": "Список изменений недоступен"
 }

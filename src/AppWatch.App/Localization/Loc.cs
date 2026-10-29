@@ -112,6 +112,28 @@ public sealed class Loc : INotifyPropertyChanged
                                 public string SettingsSelfUpdateApplying => LocalizationService.Instance["SettingsSelfUpdateApplying"];
                                 public string SettingsSelfUpdateApplied => LocalizationService.Instance["SettingsSelfUpdateApplied"];
                                 public string SettingsSelfUpdateFailed => LocalizationService.Instance["SettingsSelfUpdateFailed"];
+
+                                                                // SelfUpdate dialog
+                                                                public string SelfUpdateDialogTitle => LocalizationService.Instance["SelfUpdateDialogTitle"];
+                                                                public string SelfUpdateDownloading => LocalizationService.Instance["SelfUpdateDownloading"];
+                                                                public string SelfUpdateBtnUpdateNow => LocalizationService.Instance["SelfUpdateBtnUpdateNow"];
+                                                                public string SelfUpdateBtnSkip => LocalizationService.Instance["SelfUpdateBtnSkip"];
+                                                                public string SelfUpdateBtnRemind => LocalizationService.Instance["SelfUpdateBtnRemind"];
+                                                                public string SelfUpdateReady => LocalizationService.Instance["SelfUpdateReady"];
+                                                                public string SelfUpdateApplied => LocalizationService.Instance["SelfUpdateApplied"];
+                                                                public string SelfUpdateNoChangelog => LocalizationService.Instance["SelfUpdateNoChangelog"];
+
+                                                                // Onboarding
+                                public string OnboardingTitle => LocalizationService.Instance["OnboardingTitle"];
+                                public string OnboardingWelcome => LocalizationService.Instance["OnboardingWelcome"];
+                                public string OnboardingDescription => LocalizationService.Instance["OnboardingDescription"];
+                                public string OnboardingFeature1 => LocalizationService.Instance["OnboardingFeature1"];
+                                public string OnboardingFeature2 => LocalizationService.Instance["OnboardingFeature2"];
+                                public string OnboardingFeature3 => LocalizationService.Instance["OnboardingFeature3"];
+                                public string OnboardingFeature4 => LocalizationService.Instance["OnboardingFeature4"];
+                                public string OnboardingBtnStart => LocalizationService.Instance["OnboardingBtnStart"];
+                                public string OnboardingVersion => string.Format(LocalizationService.Instance["OnboardingVersion"],
+                                    typeof(AppWatch.Views.OnboardingDialog).Assembly.GetName().Version?.ToString(3) ?? "0.1.0");
                                 public string SettingsUpdateStrategy => LocalizationService.Instance["SettingsUpdateStrategy"];
                                 public string SettingsUpdateStrategyHint => LocalizationService.Instance["SettingsUpdateStrategyHint"];
                                 public string SettingsUpdateStrategyAuto => LocalizationService.Instance["SettingsUpdateStrategyAuto"];
@@ -244,14 +266,11 @@ public sealed class Loc : INotifyPropertyChanged
                 public string CategoryUtility => LocalizationService.Instance["CategoryUtility"];
                 public string CategoryMedia => LocalizationService.Instance["CategoryMedia"];
                 public string CategoryNetwork => LocalizationService.Instance["CategoryNetwork"];
-                public string CategorySecurity => LocalizationService.Instance["CategorySecurity"];
-                public string CategoryProductivity => LocalizationService.Instance["CategoryProductivity"];
-                public string CategoryDevelopment => LocalizationService.Instance["CategoryDevelopment"];
-                public string BtnOpenCatalog => LocalizationService.Instance["BtnOpenCatalog"];
-                public string OnboardingTitle => LocalizationService.Instance["OnboardingTitle"];
-                public string OnboardingText => LocalizationService.Instance["OnboardingText"];
-                public string OnboardingOk => LocalizationService.Instance["OnboardingOk"];
-                public string MenuEdit => LocalizationService.Instance["MenuEdit"];
+                                public string CategorySecurity => LocalizationService.Instance["CategorySecurity"];
+                                public string CategoryProductivity => LocalizationService.Instance["CategoryProductivity"];
+                                public string CategoryDevelopment => LocalizationService.Instance["CategoryDevelopment"];
+                                public string BtnOpenCatalog => LocalizationService.Instance["BtnOpenCatalog"];
+                                public string MenuEdit => LocalizationService.Instance["MenuEdit"];
                 public string SettingsToastToggle => LocalizationService.Instance["SettingsToastToggle"];
                 public string SettingsToastHint => LocalizationService.Instance["SettingsToastHint"];
             }
