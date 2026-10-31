@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Source Filtering & Sorting**: Added source filter chips (`GitHub`, `WinGet`, `External`) and "By Source" sort option to manage large collections of tracked software effortlessly.
 - **Development Standards Files**: Root `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (Contributor Covenant v2.1), GitHub issue forms (`bug_report.yml`, `feature_request.yml`), and `PULL_REQUEST_TEMPLATE.md`.
 - **Refined .gitignore**: Comprehensive exclusions for .NET 10, Windows App SDK, Visual Studio 2022/2026, JetBrains Rider, and diagnostic log artifacts.
+- **Fluent Icon Refresh**: Multi-scale app icons (AppIcon.ico, PNG assets for Windows shell and tiles) with safe GDI handle cleanup.
+- **WinUI 3 Sound System**: Native audio cues for user actions and notifications with settings toggle.
+- **Architectural Hardening**: Thread-safe UI collection dispatching, unmanaged process handle cleanup, corrupted config backup protection, and enhanced Winget resilience.
+- **Unit Testing Suite**: 436 tests across domain, parsing, and infrastructure layers with 100% pass rate.
 
 ### Fixed
 - **Win32 Executable Icon Extraction**: Removed `SHGFI_USEFILEATTRIBUTES` flag in `IconExtractor.cs` which previously caused Windows Shell to return generic blank `.exe` placeholders instead of actual binary icons. Added fallback to `System.Drawing.Icon.ExtractAssociatedIcon`.

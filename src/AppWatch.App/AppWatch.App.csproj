@@ -21,7 +21,7 @@
       <WinUISDKReferences>false</WinUISDKReferences>
       <ImplicitUsings>enable</ImplicitUsings>
       <Nullable>enable</Nullable>
-      <Version>0.1.0</Version>
+      <Version>0.2.1</Version>
       <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
       <!-- Unpackaged bootstrap: find framework package at runtime; reg-free WinRT ON (required without package identity) -->
       <WindowsAppSdkAutoInitialize>true</WindowsAppSdkAutoInitialize>

@@ -169,7 +169,7 @@ chore(deps): update CommunityToolkit.Mvvm to 8.4.0
 2. Update `CHANGELOG.md`
 3. Commit: `chore(release): v0.2.0`
 4. Tag: `git tag v0.2.0 && git push origin v0.2.0`
-5. GitHub Actions `release.yml` builds, tests, publishes, creates GitHub Release
+5. GitHub Actions `ci.yml` builds, tests, publishes, creates GitHub Release
 6. Automated winget-pkgs PR created (if configured)
 
 ---
@@ -179,7 +179,7 @@ chore(deps): update CommunityToolkit.Mvvm to 8.4.0
 ```
 AppWatch/
 ├── .github/
-│   ├── workflows/        # CI/CD (build.yml, release.yml)
+│   ├── workflows/        # CI/CD (build.yml, ci.yml)
 │   └── dependabot.yml
 ├── docs/
 │   ├── architecture.md   # C4 diagrams, ADRs
