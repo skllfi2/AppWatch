@@ -168,6 +168,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
                                     <TextBlock Text="{x:Bind Loc.SettingsToastToggle, Mode=OneWay}" FontSize="14"
@@ -175,8 +176,35 @@
                                     <TextBlock Text="{x:Bind Loc.SettingsToastHint, Mode=OneWay}" FontSize="11"
                                                Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
                                 </StackPanel>
-                                <ToggleSwitch Grid.Column="1" VerticalAlignment="Center"
+                                <Button Grid.Column="1" VerticalAlignment="Center" Padding="12,6" CornerRadius="6"
+                                        Background="{StaticResource HeroOverlayBrush}" BorderThickness="0" FontSize="12"
+                                        Command="{x:Bind ViewModel.TestNotificationCommand}"
+                                        Content="{x:Bind Loc.TestNotification, Mode=OneWay}"/>
+                                <ToggleSwitch Grid.Column="2" VerticalAlignment="Center"
                                               IsOn="{x:Bind ViewModel.ToastNotificationsEnabled, Mode=TwoWay}"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- WinUI 3 Sound effects -->
+                        <Border Background="{StaticResource CardBackgroundBrush}" BorderBrush="{StaticResource BorderDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="16">
+                            <Grid ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Loc.SettingsSoundEffects, Mode=OneWay}" FontSize="14"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="{x:Bind Loc.SettingsSoundEffectsDesc, Mode=OneWay}" FontSize="11"
+                                               Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" VerticalAlignment="Center" Padding="12,6" CornerRadius="6"
+                                        Background="{StaticResource HeroOverlayBrush}" BorderThickness="0" FontSize="12"
+                                        Command="{x:Bind ViewModel.TestSoundCommand}"
+                                        Content="{x:Bind Loc.SettingsTestSound, Mode=OneWay}"/>
+                                <ToggleSwitch Grid.Column="2" VerticalAlignment="Center"
+                                              IsOn="{x:Bind ViewModel.SoundEffectsEnabled, Mode=TwoWay}"/>
                             </Grid>
                         </Border>
 

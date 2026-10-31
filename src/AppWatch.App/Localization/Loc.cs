@@ -287,7 +287,11 @@ public sealed class Loc : INotifyPropertyChanged
                                 public string BtnOpenCatalog => LocalizationService.Instance["BtnOpenCatalog"];
                                 public string MenuEdit => LocalizationService.Instance["MenuEdit"];
                 public string SettingsToastToggle => LocalizationService.Instance["SettingsToastToggle"];
+                public string TestNotification => LocalizationService.Instance["TestNotification"];
                 public string SettingsToastHint => LocalizationService.Instance["SettingsToastHint"];
+                public string SettingsSoundEffects => LocalizationService.Instance["SettingsSoundEffects"];
+                public string SettingsSoundEffectsDesc => LocalizationService.Instance["SettingsSoundEffectsDesc"];
+                public string SettingsTestSound => LocalizationService.Instance["SettingsTestSound"];
                 public string SettingsPortableRoot => this["SettingsPortableRoot"];
                 public string SettingsPortableRootHint => this["SettingsPortableRootHint"];
                 public string InstallDirectoryInstallerHint => this["InstallDirectoryInstallerHint"];

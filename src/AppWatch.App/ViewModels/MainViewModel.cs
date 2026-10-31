@@ -152,7 +152,7 @@ public partial class MainViewModel : ObservableObject
 
                     item.PropertyChanged += OnHomeItemChanged;
 
-                    item.LoadIconAsync();
+                    _ = item.LoadIconAsync();
 
                     Apps.Add(item);
 
@@ -460,6 +460,8 @@ public partial class MainViewModel : ObservableObject
     public void ApplyAppsFilter()
 
     {
+        RunOnUI(() =>
+        {
 
         IEnumerable<TrackedAppItem> query = Apps;
 
@@ -592,6 +594,7 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(FilterExternalBackground));
         OnPropertyChanged(nameof(FilterExternalForeground));
 
+        });
     }
 
 
@@ -636,52 +639,46 @@ public partial class MainViewModel : ObservableObject
 
     /// <summary>Recomputes the four home groups from the live item state.</summary>
 
-    private void RecomputeHomeGroups()
-
+    public void RunOnUI(Action action)
     {
+        var queue = App.MainWindow?.DispatcherQueue
+                    ?? Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+        if (queue is null || queue.HasThreadAccess)
+        {
+            action();
+        }
+        else
+        {            queue.TryEnqueue(() => action());
+        }
+    }
 
-        FillGroup(UpdatesGroup, Apps
+    /// <summary>Recomputes the four home groups from the live item state.</summary>
+    private void RecomputeHomeGroups()
+    {
+        RunOnUI(() =>
+        {
+            FillGroup(UpdatesGroup, Apps
+                .Where(a => a.App.Enabled && a.UpdateAvailable)
+                .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase));
+            FillGroup(ErrorsGroup, Apps
+                .Where(a => a.App.Enabled && !a.UpdateAvailable && a.Stage == UpdateStage.Error)
+                .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase));
+            FillGroup(UpToDateGroup, Apps
+                .Where(a => a.App.Enabled && !a.UpdateAvailable && a.Stage != UpdateStage.Error)
+                .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase));
+            FillGroup(DisabledGroup, Apps
+                .Where(a => !a.App.Enabled)
+                .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase));
 
-            .Where(a => a.App.Enabled && a.UpdateAvailable)
-
-            .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase));
-
-        FillGroup(ErrorsGroup, Apps
-
-            .Where(a => a.App.Enabled && !a.UpdateAvailable && a.Stage == UpdateStage.Error)
-
-            .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase));
-
-        FillGroup(UpToDateGroup, Apps
-
-            .Where(a => a.App.Enabled && !a.UpdateAvailable && a.Stage != UpdateStage.Error)
-
-            .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase));
-
-        FillGroup(DisabledGroup, Apps
-
-            .Where(a => !a.App.Enabled)
-
-            .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase));
-
-
-
-        foreach (var p in new[]
-
-                 {
-
-                     nameof(HasUpdates), nameof(HasErrors), nameof(HasUpToDate), nameof(HasDisabled),
-
-                     nameof(UpdatesHeaderText), nameof(ErrorsHeaderText),
-
-                     nameof(UpToDateHeaderText), nameof(DisabledHeaderText),
-
-                 })
-
-            OnPropertyChanged(p);
-
-        RefreshFooter();
-
+            foreach (var p in new[]
+                     {
+                         nameof(HasUpdates), nameof(HasErrors), nameof(HasUpToDate), nameof(HasDisabled),
+                         nameof(UpdatesHeaderText), nameof(ErrorsHeaderText),
+                         nameof(UpToDateHeaderText), nameof(DisabledHeaderText),
+                     })
+                OnPropertyChanged(p);
+            RefreshFooter();
+        });
     }
 
 
@@ -1140,7 +1137,7 @@ public partial class MainViewModel : ObservableObject
 
         var newItem = new TrackedAppItem(app);
 
-        newItem.LoadIconAsync();
+        _ = newItem.LoadIconAsync();
 
         Apps.Add(newItem);
 
@@ -1394,7 +1391,7 @@ public partial class MainViewModel : ObservableObject
 
                                 var newItem = new TrackedAppItem(app);
 
-                                newItem.LoadIconAsync();
+                                _ = newItem.LoadIconAsync();
 
                                 Apps.Add(newItem);
 
@@ -1777,6 +1774,8 @@ public partial class MainViewModel : ObservableObject
         private void RefreshCatalogItems()
 
     {
+        RunOnUI(() =>
+        {
 
         CatalogApps.Clear();
 
@@ -1808,6 +1807,7 @@ public partial class MainViewModel : ObservableObject
 
         ApplyCatalogFilter();
 
+        });
     }
 
 
@@ -2118,43 +2118,28 @@ public partial class MainViewModel : ObservableObject
 
                                                                                                                             /// </summary>
 
-                                                                                                                            private async Task CheckAppAsync(TrackedAppItem item, CancellationToken cancellationToken)
-
-                                                                                                                            {
-
-                                                                                                                                item.Stage = UpdateStage.Checking;
-
-                                                                                                                                var result = await _engine.CheckAsync(item.App, cancellationToken);
-
-                                                                                                                                BackgroundCheckOrder.RecordOutcome(item.App, result.Status);
-
-                                                                                                                                item.StatusText = Describe(result.Status);
-
-                                                                                                                                item.StatusDetail = result.Detail;
-
-                                                                                                                                item.UpdateAvailable = result.Status == UpdateStatus.UpdateAvailable;
-
-                                                                                                                                item.LatestTag = result.NewRelease?.TagName;
-
-                                                                                                                                item.PendingNotes = result.NewRelease?.Body;
-
-                                                                                                                                item.ReportVersionChanged();
-
-                                                                                                                                item.Stage = result.Status switch
-
-                                                                                                                                {
-
-                                                                                                                                    UpdateStatus.Error => UpdateStage.Error,
-
-                                                                                                                                    UpdateStatus.UpdateAvailable => UpdateStage.Idle,
-
-                                                                                                                                    _ => UpdateStage.Done,
-
-                                                                                                                                };
-
-                                                                                                                                UpdatesAvailableCount = Apps.Count(a => a.UpdateAvailable);
-
-                                                                                                                            }
+    private async Task CheckAppAsync(TrackedAppItem item, CancellationToken cancellationToken)
+    {
+        RunOnUI(() => item.Stage = UpdateStage.Checking);
+        var result = await _engine.CheckAsync(item.App, cancellationToken);
+        BackgroundCheckOrder.RecordOutcome(item.App, result.Status);
+        RunOnUI(() =>
+        {
+            item.StatusText = Describe(result.Status);
+            item.StatusDetail = result.Detail;
+            item.UpdateAvailable = result.Status == UpdateStatus.UpdateAvailable;
+            item.LatestTag = result.NewRelease?.TagName;
+            item.PendingNotes = result.NewRelease?.Body;
+            item.ReportVersionChanged();
+            item.Stage = result.Status switch
+            {
+                UpdateStatus.Error => UpdateStage.Error,
+                UpdateStatus.UpdateAvailable => UpdateStage.Idle,
+                _ => UpdateStage.Done,
+            };
+            UpdatesAvailableCount = Apps.Count(a => a.UpdateAvailable);
+        });
+    }
 
 
 
@@ -2315,6 +2300,8 @@ public partial class MainViewModel : ObservableObject
 private void ApplyCatalogFilter()
 
     {
+        RunOnUI(() =>
+        {
 
         FilteredCatalogApps.Clear();
 
@@ -2368,6 +2355,7 @@ private void ApplyCatalogFilter()
 
         }
 
+        });
     }
 
 
@@ -2514,7 +2502,7 @@ private void ApplyCatalogFilter()
 
                                         var newItem = new TrackedAppItem(app);
 
-                                        newItem.LoadIconAsync();
+                                        _ = newItem.LoadIconAsync();
 
                                         Apps.Add(newItem);
 
@@ -3143,33 +3131,24 @@ private void ApplyCatalogFilter()
 
 
     public void ReloadAppsFromConfig(AppConfig config)
-
     {
-
-        _config = config;
-
-        Apps.Clear();
-
-        foreach (var app in _config.TrackedApps)
-
+        RunOnUI(() =>
         {
-
-            var item = new TrackedAppItem(app);
-
-            item.PropertyChanged += OnHomeItemChanged;
-
-            item.LoadIconAsync();
-
-            Apps.Add(item);
-
-        }
-
-        AppsTrackedCount = Apps.Count;
-
-        RecomputeHomeGroups();
-
-        ApplyAppsFilter();
-
+            _config = config;
+            foreach (var existing in Apps)
+                existing.PropertyChanged -= OnHomeItemChanged;
+            Apps.Clear();
+            foreach (var app in _config.TrackedApps)
+            {
+                var item = new TrackedAppItem(app);
+                item.PropertyChanged += OnHomeItemChanged;
+                _ = item.LoadIconAsync();
+                Apps.Add(item);
+            }
+            AppsTrackedCount = Apps.Count;
+            RecomputeHomeGroups();
+            ApplyAppsFilter();
+        });
     }
 
 
@@ -3177,105 +3156,66 @@ private void ApplyCatalogFilter()
     [RelayCommand]
 
         private async Task ScanWingetAsync(CancellationToken cancellationToken)
-
         {
-
-            StatusText = _loc["WingetScanning"];
-
+            RunOnUI(() => StatusText = _loc["WingetScanning"]);
             try
-
             {
-
                 var updates = await _winget.GetUpgradesAsync(cancellationToken);
-
                 var filtered = WingetUpgradeFilter.Filter(
-
                     updates, name => _systemVersion.ResolveInstalledVersion(name));
 
-                WingetUpdates.Clear();
+                RunOnUI(() =>
+                {
+                    WingetUpdates.Clear();
+                    foreach (var row in filtered.Visible)
+                        WingetUpdates.Add(new WingetItem(row));
 
-                foreach (var row in filtered.Visible)
+                    // Update winget metrics
+                    WingetTotalCount = updates.Count;
+                    WingetUpdatesAvailable = filtered.Visible.Count;
+                    WingetPendingUpdates = filtered.Hidden.Count;
 
-                    WingetUpdates.Add(new WingetItem(row));
-
-
-
-                // Update winget metrics
-
-                WingetTotalCount = updates.Count;
-
-                WingetUpdatesAvailable = filtered.Visible.Count;
-
-                WingetPendingUpdates = filtered.Hidden.Count;
-
-
-
-                StatusText = filtered.Hidden.Count > 0
-
-                    ? _loc.Format("WingetFoundHidden", filtered.Visible.Count, filtered.Hidden.Count)
-
-                    : _loc.Format("WingetFound", filtered.Visible.Count);
-
+                    StatusText = filtered.Hidden.Count > 0
+                        ? _loc.Format("WingetFoundHidden", filtered.Visible.Count, filtered.Hidden.Count)
+                        : _loc.Format("WingetFound", filtered.Visible.Count);
+                });
             }
-
             catch (WingetCatalogBrokenException)
-
             {
-
-                // Known Microsoft-side catalog bug (winget-cli#6613): winget dies for everyone.
-
-                // Scoped ops (search / install --id) still work — say it plainly, not "error".
-
                 Log.Warning("winget catalog is broken (E_INVALIDARG, winget-cli#6613)");
-
-                StatusText = _loc["WingetCatalogBroken"];
-
-                WingetTotalCount = 0;
-
-                WingetUpdatesAvailable = 0;
-
-                WingetPendingUpdates = 0;
-
+                RunOnUI(() =>
+                {
+                    StatusText = _loc["WingetCatalogBroken"];
+                    WingetTotalCount = 0;
+                    WingetUpdatesAvailable = 0;
+                    WingetPendingUpdates = 0;
+                });
             }
-
             catch (InvalidOperationException)
-
             {
-
-                StatusText = _loc["WingetUnavailable"];
-
-                WingetTotalCount = 0;
-
-                WingetUpdatesAvailable = 0;
-
-                WingetPendingUpdates = 0;
-
+                RunOnUI(() =>
+                {
+                    StatusText = _loc["WingetUnavailable"];
+                    WingetTotalCount = 0;
+                    WingetUpdatesAvailable = 0;
+                    WingetPendingUpdates = 0;
+                });
             }
-
             catch (Exception ex)
-
             {
-
                 Log.Error(ex, "winget scan failed");
-
-                StatusText = _loc["error"];
-
-                WingetTotalCount = 0;
-
-                WingetUpdatesAvailable = 0;
-
-                WingetPendingUpdates = 0;
-
+                RunOnUI(() =>
+                {
+                    StatusText = _loc["error"];
+                    WingetTotalCount = 0;
+                    WingetUpdatesAvailable = 0;
+                    WingetPendingUpdates = 0;
+                });
             }
-
             finally
-
             {
-
                 TrimWorkingSet();
-
             }
-
         }
 
 
@@ -3685,75 +3625,58 @@ private void ApplyCatalogFilter()
     /// </summary>
 
         public async Task RunStartupTasksAsync()
-
         {
-
             try
-
             {
-
                 // UPD-02: crash recovery first — a leftover journal means the last
-
                 // update died mid-apply; restore before anything else touches files.
-
                 await RecoverInterruptedUpdateAsync();
 
-
-
                 // Check tracked apps first so user immediately sees fresh statuses on cards
-
                 if (_config.AutoCheckEnabled && Apps.Count > 0)
-
                 {
-
                     StatusText = _loc["checking"];
-
                     await RunBackgroundCheckAsync();
-
                     StatusText = _loc["checkDone"];
-
                 }
 
-
-
-                // WinGet updates scan in background
-
+                // WinGet updates scan in background: defer by 1.5s so window renders instantly
                 if (WingetAvailable)
-
-                    await ScanWingetAsync(default);
-
-
-
-                TrimWorkingSet();
-
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        await Task.Delay(1500);
+                        await ScanWingetAsync(default);
+                        TrimWorkingSet();
+                    });
+                }
+                else
+                {
+                    TrimWorkingSet();
+                }
             }
-
             catch (Exception ex)
-
             {
-
                 Log.Error(ex, "startup check failed");
-
             }
-
         }
 
 
 
+        [System.Runtime.InteropServices.DllImport("psapi.dll")]
+        private static extern int EmptyWorkingSet(IntPtr hwProc);
+
         private static void TrimWorkingSet()
-
         {
-
             try
-
             {
-
-                GC.Collect(2, GCCollectionMode.Optimized, false);
-
+                GC.Collect(2, GCCollectionMode.Aggressive, true, true);
+                GC.WaitForPendingFinalizers();
+                GC.Collect(2, GCCollectionMode.Aggressive, true, true);
+                using var p = System.Diagnostics.Process.GetCurrentProcess();
+                EmptyWorkingSet(p.Handle);
             }
-
             catch { /* best effort */ }
-
         }
 
 
@@ -3847,123 +3770,110 @@ private void ApplyCatalogFilter()
     /// </summary>
 
     public async Task RunBackgroundCheckAsync()
-
     {
-
-        // reviewer: sync the consent flag from disk — the ctor-loaded snapshot would both
-
-        // miss a hand-edited config.json and then clobber it on the trailing Save below.
-
-        // Sync the FIELD only: replacing _config wholesale would break the reference
-
-        // identity between Apps items and _config.TrackedApps.
-
         _config.AutoApplyUpdates = _configStore.Load().AutoApplyUpdates;
 
-
-
         foreach (var item in Apps.Where(a => a.App.UpdateKind != UpdateKind.WingetPackage && a.App.Enabled))
-
         {
-
-            item.Stage = UpdateStage.Checking;
-
+            RunOnUI(() => item.Stage = UpdateStage.Checking);
             var check = await _engine.CheckAsync(item.App);
 
-            item.StatusText = Describe(check.Status);
-
-            item.UpdateAvailable = check.Status == UpdateStatus.UpdateAvailable;
-
-            item.LatestTag = check.NewRelease?.TagName; // A1: for "skip this version"
-
-            item.PendingNotes = check.NewRelease?.Body; // Layer-1: release notes
-
-            item.StatusDetail = check.Detail; // reviewer: stale-detail cleanup on every plain check
+            RunOnUI(() =>
+            {
+                item.StatusText = Describe(check.Status);
+                item.UpdateAvailable = check.Status == UpdateStatus.UpdateAvailable;
+                item.LatestTag = check.NewRelease?.TagName;
+                item.PendingNotes = check.NewRelease?.Body;
+                item.StatusDetail = check.Detail;
+                if (check.Status != UpdateStatus.UpdateAvailable)
+                {
+                    item.Stage = check.Status == UpdateStatus.Error ? UpdateStage.Error : UpdateStage.Done;
+                }
+            });
 
             if (check.Status != UpdateStatus.UpdateAvailable)
-
-            {
-
-                item.Stage = check.Status == UpdateStatus.Error ? UpdateStage.Error : UpdateStage.Done;
-
                 continue;
-
-            }
-
-
-
-            // P1: consent gate — never auto-apply without explicit user consent.
-
-            // The card already shows "Доступно обновление" + UpdateAvailable=true,
-
-            // so the update is surfaced, not silently applied.
 
             if (!UpdatePolicy.ShouldAutoApply(_config, item.App))
-
             {
-
-                // reviewer: same convention as CheckUpdatesAsync — update found, awaiting user action
-
-                item.Stage = UpdateStage.Idle;
-
+                RunOnUI(() => item.Stage = UpdateStage.Idle);
                 continue;
-
             }
 
+            RunOnUI(() =>
+            {
+                item.StatusText = _loc.Format("updating", item.Name);
+                item.Stage = UpdateStage.Downloading;
+                item.ProgressValue = 0;
+            });
 
-
-            item.StatusText = _loc.Format("updating", item.Name);
-
-            item.Stage = UpdateStage.Downloading;
-
-            item.ProgressValue = 0;
-
-            var download = new Progress<double>(p => item.ProgressValue = p);
-
+            var download = new Progress<double>(p => RunOnUI(() => item.ProgressValue = p));
             var history = await _engine.ApplyAsync(item.App, check, download);
-
             _history.Append(history);
 
-            if (history.Success)
-
+            RunOnUI(() =>
             {
-
-                item.Stage = UpdateStage.Done;
-
-                item.UpdateAvailable = false;
-
-                item.Refresh(); // raises Version AND RollbackAvailable (B10 button appears after first update)
-
-                UpdatedTodayCount++;
-
-                if (_config.AutoRefreshIcons)
-
+                if (history.Success)
                 {
-
-                    _ = RefreshAppIconAsync(item);
-
+                    item.Stage = UpdateStage.Done;
+                    item.UpdateAvailable = false;
+                    item.Refresh();
+                    UpdatedTodayCount++;
+                    if (_config.AutoRefreshIcons)
+                    {
+                        _ = RefreshAppIconAsync(item);
+                    }
                 }
-
-            }
-
-            else
-
-            {
-
-                item.Stage = UpdateStage.Error;
-
-            }
-
-            item.StatusDetail = history.Success ? null : history.Detail; // D5
-
-            item.StatusText = history.Success ? _loc["Updated"] : _loc["UpdateFailed"];
-
+                else
+                {
+                    item.Stage = UpdateStage.Error;
+                }
+                item.StatusDetail = history.Success ? null : history.Detail;
+                item.StatusText = history.Success ? _loc["Updated"] : _loc["UpdateFailed"];
+            });
         }
 
-        UpdatesAvailableCount = Apps.Count(a => a.UpdateAvailable);
-
+        RunOnUI(() =>
+        {
+            UpdatesAvailableCount = Apps.Count(a => a.UpdateAvailable);
+        });
         _configStore.Save(_config);
+    }
 
+    public void SyncFromConfig()
+    {
+        RunOnUI(() =>
+        {
+            _config = _configStore.Load();
+            foreach (var app in _config.TrackedApps)
+            {
+                var item = Apps.FirstOrDefault(a =>
+                    string.Equals(a.App.RepoOwner, app.RepoOwner, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(a.App.RepoName, app.RepoName, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(a.Name, app.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (item != null)
+                {
+                    item.UpdateAvailable = app.LastCheckStatus == UpdateStatus.UpdateAvailable;
+                    if (item.UpdateAvailable)
+                    {
+                        item.StatusText = _loc["UpdateAvailable"];
+                        item.Stage = UpdateStage.Idle;
+                    }
+                    else if (app.LastCheckStatus == UpdateStatus.Error)
+                    {
+                        item.Stage = UpdateStage.Error;
+                    }
+                    else if (app.LastCheckStatus == UpdateStatus.UpToDate)
+                    {
+                        item.Stage = UpdateStage.Done;
+                    }
+                }
+            }
+            RecomputeHomeGroups();
+            ApplyAppsFilter();
+            UpdatesAvailableCount = Apps.Count(a => a.UpdateAvailable);
+        });
     }
 
 

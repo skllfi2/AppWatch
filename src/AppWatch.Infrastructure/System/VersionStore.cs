@@ -7,6 +7,7 @@ namespace AppWatch.Infrastructure.System;
 /// On a successful update the engine archives the old install dir here instead of
 /// deleting it; the UI offers instant rollback to any archived snapshot.
 /// Prune policy is the pure VersionArchive (Core) — this class is IO only.
+/// Supports cross-volume rollback and backups cleanly.
 /// </summary>
 public sealed class VersionStore
 {
@@ -35,7 +36,7 @@ public sealed class VersionStore
         var target = Path.Combine(appDir, label);
         if (Directory.Exists(target)) Directory.Delete(target, true);
 
-        Directory.Move(backup, target);
+        FileStore.MoveDirectory(backup, target);
 
         // D5: keep the RAW version next to the sanitized label — "0560" → "v0.5.6.0"
         if (!string.IsNullOrWhiteSpace(versionLabel))
@@ -82,6 +83,7 @@ public sealed class VersionStore
     /// Instant rollback: archive the CURRENT version (so it can be rolled back to),
     /// then move the chosen snapshot into the install directory. Caller must stop the
     /// app process first. The chosen snapshot is consumed (removed from the archive).
+    /// Works across different filesystem volumes.
     /// </summary>
     public void RollbackTo(string installDirectory, string appName, VersionArchiveEntry target)
     {
@@ -96,10 +98,10 @@ public sealed class VersionStore
         {
             var currentLabel = $"current-{DateTime.Now:yyyyMMdd-HHmmss}";
             var currentTarget = Path.Combine(appDir, Sanitize(currentLabel));
-            Directory.Move(installDirectory, currentTarget);
+            FileStore.MoveDirectory(installDirectory, currentTarget);
         }
 
-        Directory.Move(target.DirectoryPath, installDirectory);
+        FileStore.MoveDirectory(target.DirectoryPath, installDirectory);
 
         // D5: don't leave the archive metadata dotfile in the live install dir
         try { File.Delete(Path.Combine(installDirectory, MetadataFileName)); }
@@ -157,6 +159,17 @@ public sealed class VersionStore
         catch { }
     }
 
-    private static string Sanitize(string value) =>
-        string.Concat(value.Where(char.IsLetterOrDigit).Take(48));
+    /// <summary>
+    /// Sanitizes values for directory names while preserving valid filename characters
+    /// (including dots, dashes, underscores, and spaces) so version numbers like "1.2.3"
+    /// and app names like "Node.js" remain recognizable and unique.
+    /// </summary>
+    public static string Sanitize(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "unknown";
+        var invalid = Path.GetInvalidFileNameChars();
+        var chars = value.Select(c => invalid.Contains(c) ? '_' : c).ToArray();
+        var sanitized = new string(chars).Trim().Trim('.');
+        return string.IsNullOrWhiteSpace(sanitized) ? "unknown" : sanitized[..Math.Min(sanitized.Length, 64)];
+    }
 }

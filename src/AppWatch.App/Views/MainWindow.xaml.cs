@@ -24,6 +24,22 @@ public sealed partial class MainWindow : Window
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AppTitleBar);
 
+            var iconPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "Assets", "AppIcon.ico");
+            if (System.IO.File.Exists(iconPath))
+            {
+                AppWindow.SetIcon(iconPath);
+            }
+
+            var logoPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "Assets", "Square44x44Logo.scale-200.png");
+            if (System.IO.File.Exists(logoPath))
+            {
+                AppTitleBar.IconSource = new Microsoft.UI.Xaml.Controls.BitmapIconSource
+                {
+                    UriSource = new Uri(logoPath),
+                    ShowAsMonochrome = false
+                };
+            }
+
             CenterWindowOnScreen();
 
             // Initial selection drives the first navigation via SelectionChanged.
@@ -130,7 +146,10 @@ public sealed partial class MainWindow : Window
         if (!PageByTag.TryGetValue(tag, out var page))
             return;
         if (ContentFrame.CurrentSourcePageType != page)
+        {
             ContentFrame.Navigate(page, null, new Microsoft.UI.Xaml.Media.Animation.EntranceNavigationTransitionInfo());
+            App.Resolve<Platform.SoundService>().PlayNavigation();
+        }
     }
 
     /// <summary>

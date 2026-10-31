@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using AppWatch.Core.Domain;
 
 namespace AppWatch.Infrastructure.System;
@@ -45,14 +48,17 @@ public sealed class InstallerTrustService
             if (process is null)
                 return InstallerTrustLevel.InvalidSignature;
 
+            var stderrTask = Task.Run(() => process.StandardError.ReadToEnd());
             var output = process.StandardOutput.ReadToEnd();
+            try { stderrTask.Wait(3000); } catch { }
             if (!process.WaitForExit(20_000))
             {
-                process.Kill();
+                try { process.Kill(entireProcessTree: true); } catch { }
                 return InstallerTrustLevel.InvalidSignature;
             }
 
-            var code = output.Trim();
+            var lines = output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var code = lines.LastOrDefault() ?? "";
             return code switch
             {
                 "0" => InstallerTrustLevel.TrustedSignature,   // Valid

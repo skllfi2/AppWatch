@@ -198,74 +198,58 @@
 
                         <ListView.ItemTemplate>
 
-                            <DataTemplate x:DataType="vm:WingetItem">
-
-                                <Grid Padding="12" ColumnSpacing="12" Margin="0,0,0,8"
-
-                                      Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-
-                                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-
-                                      BorderThickness="1" CornerRadius="10">
-
-                                    <Grid.ColumnDefinitions>
-
-                                        <ColumnDefinition Width="Auto" />
-
-                                        <ColumnDefinition Width="2*" />
-
-                                        <ColumnDefinition Width="1.5*" />
-
-                                        <ColumnDefinition Width="Auto" />
-
-                                        <ColumnDefinition Width="2*" />
-
-                                    </Grid.ColumnDefinitions>
-
-                                    <CheckBox Grid.Column="0" IsChecked="{x:Bind IsSelected, Mode=TwoWay}" VerticalAlignment="Center" />
-
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-
-                                        <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" />
-
-                                        <TextBlock Text="{x:Bind Status, Mode=OneWay}" Opacity="0.7" FontSize="12" />
-
-                                    </StackPanel>
-
-                                    <TextBlock Grid.Column="2" Text="{x:Bind Versions}" VerticalAlignment="Center" Opacity="0.8" />
-
-                                    <!-- live clock while winget works -->
-
-                                    <TextBlock Grid.Column="3" Text="{x:Bind ElapsedText, Mode=OneWay}" VerticalAlignment="Center"
-
-                                               FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"
-
-                                               Visibility="{x:Bind ElapsedText, Converter={StaticResource StringNotEmptyToVisibility}, Mode=OneWay}"/>
-
-                                    <StackPanel Grid.Column="4" VerticalAlignment="Center" Spacing="4"
-
-                                                Visibility="{x:Bind IsUpdating, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
-
-                                        <TextBlock Text="{x:Bind ProgressText, Mode=OneWay}"
-
-                                                   FontSize="11" HorizontalAlignment="Right"
-
-                                                   Foreground="{StaticResource TextSecondaryBrush}"
-
-                                                   Visibility="{x:Bind ProgressText, Converter={StaticResource StringNotEmptyToVisibility}, Mode=OneWay}"/>
-
-                                        <ProgressBar MinWidth="140" Height="8"
-
-                                                     IsIndeterminate="{x:Bind IsIndeterminate, Mode=OneWay}"
-
-                                                     Maximum="100"
-
-                                                     Value="{x:Bind ProgressValue, Mode=OneWay}"/>
-
-                                    </StackPanel>
-
-                                </Grid>
-
+                            <DataTemplate x:DataType="vm:WingetItem">
+                                <Grid Padding="12" ColumnSpacing="12" Margin="0,0,0,8"
+                                      Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                      BorderThickness="1" CornerRadius="10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <CheckBox Grid.Column="0" IsChecked="{x:Bind IsSelected, Mode=TwoWay}" VerticalAlignment="Center" />
+
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="4,0,12,0">
+                                        <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{x:Bind Status, Mode=OneWay}" Opacity="0.7" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,12,0">
+                                        <Border Background="{StaticResource NeutralSubtleBrush}"
+                                                BorderBrush="{StaticResource NeutralPillBorderBrush}"
+                                                BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                            <TextBlock Text="{x:Bind CurrentVersion}" FontSize="11" Opacity="0.8" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="→" FontSize="11" Opacity="0.5" VerticalAlignment="Center" />
+                                        <Border Background="{StaticResource AccentSubtleBrush}"
+                                                BorderBrush="{StaticResource AccentPillBorderBrush}"
+                                                BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                            <TextBlock Text="{x:Bind AvailableVersion}" FontSize="11" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- live clock while winget works -->
+                                    <TextBlock Grid.Column="3" Text="{x:Bind ElapsedText, Mode=OneWay}" VerticalAlignment="Center" Margin="0,0,12,0"
+                                               FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"
+                                               Visibility="{x:Bind ElapsedText, Converter={StaticResource StringNotEmptyToVisibility}, Mode=OneWay}"/>
+
+                                    <StackPanel Grid.Column="4" VerticalAlignment="Center" Spacing="4" MinWidth="150"
+                                                Visibility="{x:Bind IsUpdating, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                                        <TextBlock Text="{x:Bind ProgressText, Mode=OneWay}"
+                                                   FontSize="11" HorizontalAlignment="Right"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   Visibility="{x:Bind ProgressText, Converter={StaticResource StringNotEmptyToVisibility}, Mode=OneWay}"/>
+                                        <ProgressBar MinWidth="140" Height="8"
+                                                     IsIndeterminate="{x:Bind IsIndeterminate, Mode=OneWay}"
+                                                     Maximum="100"
+                                                     Value="{x:Bind ProgressValue, Mode=OneWay}"/>
+                                    </StackPanel>
+                                </Grid>
                             </DataTemplate>
 
                         </ListView.ItemTemplate>

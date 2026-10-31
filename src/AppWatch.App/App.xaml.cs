@@ -94,6 +94,7 @@ public partial class App : Application
                                                                 .AddSingleton<AutostartService>()
                                                 .AddSingleton<TrayService>()
                                                 .AddSingleton<ThemeService>()
+                                                .AddSingleton<SoundService>()
                                                 .AddSingleton<SettingsViewModel>()
                                                 .AddSingleton<SelfUpdateService>()
                                                 .AddSingleton<IToastService, ToastService>()
@@ -114,6 +115,7 @@ public partial class App : Application
                                                 .BuildServiceProvider();
 
                 LocalizationService.Instance.SetLanguage(config.Language);
+                Services.GetRequiredService<SoundService>().Initialize();
 
                 // CRITICAL: AddHostedService only auto-starts inside a real IHost.
                 // We build a bare ServiceProvider, so the background monitors
@@ -178,7 +180,7 @@ public partial class App : Application
                 _tray.ExitRequested += ExitApplication;
                 _tray.CheckUpdatesRequested += () => _ = RunTrayCheckAsync();
                 _tray.AutostartToggleRequested += ToggleAutostart;
-                _tray.Create(_hwnd, IconGenerator.CreateDefaultIcon(), "AppWatch",
+                _tray.Create(_hwnd, IconGenerator.GetAppIcon(16), "AppWatch",
                     () => _autostart?.IsEnabled == true);
 
                 if (!StartHidden)

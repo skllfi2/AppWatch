@@ -17,7 +17,24 @@ public partial class TrackedAppItem : ObservableObject
         0xFFFFB900, 0xFF616161, 0xFF0078D4, 0xFF9E9E9E,
     ];
 
-    public TrackedAppItem(TrackedApp app) => App = app;
+    public TrackedAppItem(TrackedApp app)
+    {
+        App = app;
+        UpdateAvailable = app.LastCheckStatus == UpdateStatus.UpdateAvailable;
+        if (UpdateAvailable)
+        {
+            StatusText = LocalizationService.Instance["UpdateAvailable"];
+            Stage = UpdateStage.Idle;
+        }
+        else if (app.LastCheckStatus == UpdateStatus.Error)
+        {
+            Stage = UpdateStage.Error;
+        }
+        else if (app.LastCheckStatus == UpdateStatus.UpToDate)
+        {
+            Stage = UpdateStage.Done;
+        }
+    }
 
     public TrackedApp App { get; }
 
@@ -85,54 +102,79 @@ public partial class TrackedAppItem : ObservableObject
             [ObservableProperty]
             public partial BitmapImage? Icon { get; set; }
 
+            private static readonly System.Threading.SemaphoreSlim IconLoadThrottle = new(4, 4);
+
             /// <summary>
-            /// Triggers async icon load. Call when item becomes visible or on creation.
+            /// Triggers async icon load with concurrency throttle to prevent startup disk spikes.
             /// </summary>
-            public async void LoadIconAsync()
+            public async Task LoadIconAsync()
             {
-                // 1. Prioritize real local executable icon
+                await IconLoadThrottle.WaitAsync().ConfigureAwait(false);
                 try
                 {
-                    string? fullExe = null;
-                    if (!string.IsNullOrWhiteSpace(App.InstallDirectory) && !string.IsNullOrWhiteSpace(App.ExecutableName))
-                    {
-                        var candidate = System.IO.Path.Combine(App.InstallDirectory, App.ExecutableName);
-                        if (System.IO.File.Exists(candidate)) fullExe = candidate;
-                    }
-                    else if (!string.IsNullOrWhiteSpace(App.ExecutableName) && System.IO.File.Exists(App.ExecutableName))
-                    {
-                        fullExe = App.ExecutableName;
-                    }
-                    else if (!string.IsNullOrWhiteSpace(App.InstallDirectory) && System.IO.Directory.Exists(App.InstallDirectory))
-                    {
-                        var exes = System.IO.Directory.GetFiles(App.InstallDirectory, "*.exe");
-                        if (exes.Length > 0) fullExe = exes[0];
-                    }
-
-                    if (!string.IsNullOrEmpty(fullExe))
-                    {
-                        var bmp = await Platform.IconExtractor.GetIconFromExecutableAsync(fullExe, 40);
-                        if (bmp is not null)
-                        {
-                            Icon = bmp;
-                            return;
-                        }
-                    }
-                }
-                catch { /* fall through */ }
-
-                // 2. Fall back to GitHub avatar URL
-                if (!string.IsNullOrWhiteSpace(AvatarUrl))
-                {
+                    // 1. Prioritize real local executable icon
                     try
                     {
-                        Icon = new BitmapImage(new Uri(AvatarUrl));
-                        return;
+                        string? fullExe = null;
+                        if (!string.IsNullOrWhiteSpace(App.InstallDirectory) && !string.IsNullOrWhiteSpace(App.ExecutableName))
+                        {
+                            var candidate = System.IO.Path.Combine(App.InstallDirectory, App.ExecutableName);
+                            if (System.IO.File.Exists(candidate)) fullExe = candidate;
+                        }
+                        else if (!string.IsNullOrWhiteSpace(App.ExecutableName) && System.IO.File.Exists(App.ExecutableName))
+                        {
+                            fullExe = App.ExecutableName;
+                        }
+                        else if (!string.IsNullOrWhiteSpace(App.InstallDirectory) && System.IO.Directory.Exists(App.InstallDirectory))
+                        {
+                            var exes = System.IO.Directory.GetFiles(App.InstallDirectory, "*.exe");
+                            if (exes.Length > 0) fullExe = exes[0];
+                        }
+
+                        if (!string.IsNullOrEmpty(fullExe))
+                        {
+                            var bmp = await Platform.IconExtractor.GetIconFromExecutableAsync(fullExe, 40).ConfigureAwait(false);
+                            if (bmp is not null)
+                            {
+                                Icon = bmp;
+                                return;
+                            }
+                        }
                     }
                     catch { /* fall through */ }
-                }
 
-                Icon = null;
+                    // 2. Fall back to GitHub avatar URL
+                    if (!string.IsNullOrWhiteSpace(AvatarUrl))
+                    {
+                        try
+                        {
+                            var queue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread()
+                                        ?? global::AppWatch.App.MainWindow?.DispatcherQueue;
+                            if (queue is not null)
+                            {
+                                var tcs = new TaskCompletionSource<BitmapImage?>();
+                                queue.TryEnqueue(() =>
+                                {
+                                    try { tcs.SetResult(new BitmapImage(new Uri(AvatarUrl))); }
+                                    catch { tcs.SetResult(null); }
+                                });
+                                var avatarBmp = await tcs.Task.ConfigureAwait(false);
+                                if (avatarBmp is not null)
+                                {
+                                    Icon = avatarBmp;
+                                    return;
+                                }
+                            }
+                        }
+                        catch { /* fall through */ }
+                    }
+
+                    Icon = null;
+                }
+                finally
+                {
+                    IconLoadThrottle.Release();
+                }
             }
 
             /// <summary>

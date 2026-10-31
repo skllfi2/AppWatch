@@ -16,10 +16,11 @@ public partial class WingetItem : ObservableObject
     /// <summary>Installed version resolved from the system (registry / exe), null when unknown.</summary>
     public string? SystemVersion => Row.SystemVersion;
 
-    public string Versions =>
-        SystemVersion is null
-            ? $"{Row.Update.CurrentVersion} → {Row.Update.AvailableVersion}"
-            : $"{SystemVersion} → {Row.Update.AvailableVersion}";
+    public string CurrentVersion => SystemVersion ?? Row.Update.CurrentVersion;
+
+    public string AvailableVersion => Row.Update.AvailableVersion;
+
+    public string Versions => $"{CurrentVersion} → {AvailableVersion}";
 
     [ObservableProperty]
     public partial bool IsSelected { get; set; } = true;

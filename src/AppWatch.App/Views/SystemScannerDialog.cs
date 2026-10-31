@@ -184,93 +184,40 @@ public sealed class SystemScannerDialog : ContentDialog
         return root;
     }
 
-    private void ConfigureListView()
+    private sealed class ScanItemHolder
     {
-        // Custom UI generator for list items
-        _listView.ItemTemplate = null; // using direct DataTemplate or container styling
-        // In WinUI 3, we can create a clean DataTemplate or use ContainerContentChanging
-        _listView.ContainerContentChanging += (lv, args) =>
+        public CheckBox CheckBox { get; }
+        public TextBlock Monogram { get; }
+        public TextBlock Name { get; }
+        public TextBlock Subtitle { get; }
+        public StackPanel BadgePanel { get; }
+        private SystemScanCandidate? _current;
+
+        public ScanItemHolder(CheckBox chk, TextBlock mono, TextBlock name, TextBlock sub, StackPanel badges)
         {
-            if (args.Handled) return;
-            if (args.Item is not SystemScanCandidate candidate) return;
+            CheckBox = chk;
+            Monogram = mono;
+            Name = name;
+            Subtitle = sub;
+            BadgePanel = badges;
 
-            var container = args.ItemContainer;
-            var itemGrid = new Grid
-            {
-                ColumnSpacing = 10,
-                Padding = new Thickness(6, 6, 6, 6),
-                Width = 590
-            };
-            itemGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Checkbox
-            itemGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Monogram
-            itemGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // Info
-            itemGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Badge
+            chk.Checked += (_, _) => { if (_current is not null) _current.IsSelected = true; };
+            chk.Unchecked += (_, _) => { if (_current is not null) _current.IsSelected = false; };
+        }
 
-            // Checkbox
-            var chk = new CheckBox
-            {
-                IsChecked = candidate.IsSelected,
-                IsEnabled = !candidate.IsAlreadyTracked,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            chk.Checked += (_, _) => candidate.IsSelected = true;
-            chk.Unchecked += (_, _) => candidate.IsSelected = false;
-            Grid.SetColumn(chk, 0);
-            itemGrid.Children.Add(chk);
+        public void Bind(SystemScanCandidate candidate)
+        {
+            _current = null;
+            CheckBox.IsChecked = candidate.IsSelected;
+            CheckBox.IsEnabled = !candidate.IsAlreadyTracked;
+            Monogram.Text = candidate.Monogram;
+            Name.Text = candidate.DisplayName;
+            Subtitle.Text = candidate.Subtitle;
 
-            // Monogram
-            var monoBorder = new Border
-            {
-                Width = 32,
-                Height = 32,
-                CornerRadius = new CornerRadius(6),
-                Background = (Brush)Application.Current.Resources["HeroOverlayBrush"],
-                VerticalAlignment = VerticalAlignment.Center,
-                Child = new TextBlock
-                {
-                    Text = candidate.Monogram,
-                    FontSize = 13,
-                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                }
-            };
-            Grid.SetColumn(monoBorder, 1);
-            itemGrid.Children.Add(monoBorder);
-
-            // Info Stack
-            var infoStack = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
-            var nameBlock = new TextBlock
-            {
-                Text = candidate.DisplayName,
-                FontSize = 13,
-                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                TextTrimming = TextTrimming.CharacterEllipsis
-            };
-            var subBlock = new TextBlock
-            {
-                Text = candidate.Subtitle,
-                FontSize = 11,
-                Opacity = 0.65,
-                TextTrimming = TextTrimming.CharacterEllipsis
-            };
-            infoStack.Children.Add(nameBlock);
-            infoStack.Children.Add(subBlock);
-            Grid.SetColumn(infoStack, 2);
-            itemGrid.Children.Add(infoStack);
-
-            // Status / Source badge
-            var badgePanel = new StackPanel
-            {
-                Orientation = Orientation.Vertical,
-                Spacing = 2,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Right
-            };
-
+            BadgePanel.Children.Clear();
             if (candidate.IsAlreadyTracked)
             {
-                var trackedBadge = new Border
+                BadgePanel.Children.Add(new Border
                 {
                     Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(35, 255, 185, 0)),
                     CornerRadius = new CornerRadius(4),
@@ -281,12 +228,11 @@ public sealed class SystemScannerDialog : ContentDialog
                         FontSize = 10,
                         Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 255, 185, 0))
                     }
-                };
-                badgePanel.Children.Add(trackedBadge);
+                });
             }
             else if (candidate.IsCatalogMatch)
             {
-                var catBadge = new Border
+                BadgePanel.Children.Add(new Border
                 {
                     Background = (Brush)Application.Current.Resources["HeroOverlayBrush"],
                     CornerRadius = new CornerRadius(4),
@@ -297,14 +243,97 @@ public sealed class SystemScannerDialog : ContentDialog
                         FontSize = 10,
                         Foreground = (Brush)Application.Current.Resources["AccentBrush"]
                     }
-                };
-                badgePanel.Children.Add(catBadge);
+                });
             }
 
-            Grid.SetColumn(badgePanel, 3);
-            itemGrid.Children.Add(badgePanel);
+            _current = candidate;
+        }
+    }
 
-            container.Content = itemGrid;
+    private void ConfigureListView()
+    {
+        _listView.ItemTemplate = null;
+        _listView.ContainerContentChanging += (lv, args) =>
+        {
+            if (args.Handled) return;
+            if (args.Item is not SystemScanCandidate candidate) return;
+
+            var container = args.ItemContainer;
+            if (container.Content is Grid itemGrid && itemGrid.Tag is ScanItemHolder existingHolder)
+            {
+                existingHolder.Bind(candidate);
+                args.Handled = true;
+                return;
+            }
+
+            var chk = new CheckBox { VerticalAlignment = VerticalAlignment.Center };
+            var monoBlock = new TextBlock
+            {
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            var monoBorder = new Border
+            {
+                Width = 32,
+                Height = 32,
+                CornerRadius = new CornerRadius(6),
+                Background = (Brush)Application.Current.Resources["HeroOverlayBrush"],
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = monoBlock
+            };
+
+            var nameBlock = new TextBlock
+            {
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            var subBlock = new TextBlock
+            {
+                FontSize = 11,
+                Opacity = 0.65,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            var infoStack = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+            infoStack.Children.Add(nameBlock);
+            infoStack.Children.Add(subBlock);
+
+            var badgePanel = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Spacing = 2,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+
+            var grid = new Grid
+            {
+                ColumnSpacing = 10,
+                Padding = new Thickness(6),
+                Width = 590
+            };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            Grid.SetColumn(chk, 0);
+            Grid.SetColumn(monoBorder, 1);
+            Grid.SetColumn(infoStack, 2);
+            Grid.SetColumn(badgePanel, 3);
+
+            grid.Children.Add(chk);
+            grid.Children.Add(monoBorder);
+            grid.Children.Add(infoStack);
+            grid.Children.Add(badgePanel);
+
+            var holder = new ScanItemHolder(chk, monoBlock, nameBlock, subBlock, badgePanel);
+            grid.Tag = holder;
+            container.Content = grid;
+
+            holder.Bind(candidate);
             args.Handled = true;
         };
     }

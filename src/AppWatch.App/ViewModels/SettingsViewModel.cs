@@ -26,6 +26,7 @@ public partial class SettingsViewModel : ObservableObject
     private readonly ThemeService _theme;
     private readonly SelfUpdateService _selfUpdate;
     private readonly VersionStore _versionStore;
+    private readonly SoundService _soundService;
     private bool _initialized;
 
     public IReadOnlyList<int> IntervalChoices { get; } = [1, 3, 6, 12, 24];
@@ -35,13 +36,14 @@ public partial class SettingsViewModel : ObservableObject
         [UpdateStrategy.Auto, UpdateStrategy.BuiltInUpdater, UpdateStrategy.SilentInstaller,
          UpdateStrategy.PortableReplace, UpdateStrategy.ExternalLauncher];
 
-    public SettingsViewModel(IConfigStore configStore, ThemeService theme, SelfUpdateService selfUpdate, VersionStore versionStore)
+    public SettingsViewModel(IConfigStore configStore, ThemeService theme, SelfUpdateService selfUpdate, VersionStore versionStore, SoundService soundService)
     {
         _configStore = configStore;
         _config = configStore.Load();
         _theme = theme;
         _selfUpdate = selfUpdate;
         _versionStore = versionStore;
+        _soundService = soundService;
 
         // Assignments below must NOT trigger side effects (theme swap /
         // language switch) — the page is not loaded yet and a mid-navigation
@@ -56,6 +58,7 @@ public partial class SettingsViewModel : ObservableObject
         if (SelectedUpdateStrategyIndex < 0) SelectedUpdateStrategyIndex = 0;
 
         ToastNotificationsEnabled = _config.ToastNotificationsEnabled;
+        SoundEffectsEnabled = _config.SoundEffectsEnabled;
         AutoRefreshIconsEnabled = _config.AutoRefreshIcons;
 
         PortableAppsDirectory = _config.InstallRoot
@@ -81,6 +84,10 @@ public partial class SettingsViewModel : ObservableObject
     /// <summary>Windows app notifications for background-check findings.</summary>
     [ObservableProperty]
     public partial bool ToastNotificationsEnabled { get; set; }
+
+    /// <summary>WinUI 3 spatial audio and UI sound effects.</summary>
+    [ObservableProperty]
+    public partial bool SoundEffectsEnabled { get; set; }
 
     [ObservableProperty]
     public partial bool AutoRefreshIconsEnabled { get; set; }
@@ -228,12 +235,36 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void TestNotification()
+    {
+        var toast = App.Resolve<IToastService>();
+        toast.ShowSummary(1);
+    }
+
+    partial void OnSoundEffectsEnabledChanged(bool value)
+    {
+        if (!_initialized) return;
+        _config.SoundEffectsEnabled = value;
+        _configStore.Save(_config);
+        _soundService.SetEnabled(value);
+        if (value)
+            _soundService.PlaySuccess();
+    }
+
+    [RelayCommand]
+    private void TestSound()
+    {
+        _soundService.PlaySuccess();
+    }
+
+    [RelayCommand]
     private void Save()
     {
         _config.Language = SelectedLanguageIndex == 0 ? "ru" : "en";
         _config.AutoRefreshIcons = AutoRefreshIconsEnabled;
         _config.AutoCheckEnabled = AutoCheckEnabled;
         _config.ToastNotificationsEnabled = ToastNotificationsEnabled;
+        _config.SoundEffectsEnabled = SoundEffectsEnabled;
         _config.CheckIntervalHours = IntervalChoices[Math.Max(0, SelectedIntervalIndex)];
         _config.VersionCacheCount = VersionKeepChoices[Math.Clamp(SelectedVersionKeepIndex, 0, VersionKeepChoices.Count - 1)];
         if (!string.IsNullOrWhiteSpace(PatToken))
@@ -531,12 +562,14 @@ public partial class SettingsViewModel : ObservableObject
             _config.DownloadMirrors = restored.DownloadMirrors;
             _config.VersionCacheCount = restored.VersionCacheCount;
             _config.ToastNotificationsEnabled = restored.ToastNotificationsEnabled;
+            _config.SoundEffectsEnabled = restored.SoundEffectsEnabled;
 
             _initialized = false;
             SelectedLanguageIndex = _config.Language == "ru" ? 0 : 1;
             SelectedThemeIndex = (int)_config.Theme;
             AutoCheckEnabled = _config.AutoCheckEnabled;
             ToastNotificationsEnabled = _config.ToastNotificationsEnabled;
+            SoundEffectsEnabled = _config.SoundEffectsEnabled;
             SelectedIntervalIndex = IntervalChoices.ToList().IndexOf(_config.CheckIntervalHours);
             if (SelectedIntervalIndex < 0) SelectedIntervalIndex = 2;
             SelectedUpdateStrategyIndex = StrategyChoices.ToList().IndexOf(_config.DefaultUpdateStrategy);

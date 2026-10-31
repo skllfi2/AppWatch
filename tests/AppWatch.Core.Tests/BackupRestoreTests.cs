@@ -31,6 +31,7 @@ public class BackupRestoreTests
             InstallRoot = @"D:\Tools\Apps",
             VersionCacheCount = 5,
             ToastNotificationsEnabled = false,
+            SoundEffectsEnabled = false,
             ShowOnboarding = false,
             DownloadMirrors = ["https://mirror1.org/", "https://mirror2.org/"],
             TrackedApps =
@@ -68,6 +69,7 @@ public class BackupRestoreTests
         Assert.Equal(original.InstallRoot, restored.InstallRoot);
         Assert.Equal(original.VersionCacheCount, restored.VersionCacheCount);
         Assert.Equal(original.ToastNotificationsEnabled, restored.ToastNotificationsEnabled);
+        Assert.Equal(original.SoundEffectsEnabled, restored.SoundEffectsEnabled);
         Assert.Equal(original.ShowOnboarding, restored.ShowOnboarding);
         Assert.Equal(original.DownloadMirrors, restored.DownloadMirrors);
         Assert.Single(restored.TrackedApps);

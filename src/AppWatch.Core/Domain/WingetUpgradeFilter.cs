@@ -1,9 +1,49 @@
+using System.Text.RegularExpressions;
+
 namespace AppWatch.Core.Domain;
 
 public sealed record WingetUpgradeRow(WingetPackageUpdate Update, string? SystemVersion)
 {
-    public string Name => Update.Name;
+    public string Name => CleanName(Update.Name, Update.CurrentVersion, SystemVersion);
     public string Id => Update.Id;
+
+    private static readonly Regex TrailingVersionRegex = new(
+        @"\s+(?:v\.?|ver\.?|\()?\d+(\.\d+)+[a-z0-9._-]*\)?$",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    public static string CleanName(string rawName, string? currentVersion, string? systemVersion)
+    {
+        if (string.IsNullOrWhiteSpace(rawName)) return rawName;
+
+        var candidates = new[] { currentVersion, systemVersion };
+        foreach (var candidate in candidates)
+        {
+            if (string.IsNullOrWhiteSpace(candidate)) continue;
+            var ver = candidate.Trim();
+            if (ver.Length < 2) continue;
+
+            if (rawName.EndsWith(" " + ver, StringComparison.OrdinalIgnoreCase))
+                return rawName[..^(ver.Length + 1)].TrimEnd();
+            if (rawName.EndsWith(" v" + ver, StringComparison.OrdinalIgnoreCase))
+                return rawName[..^(ver.Length + 2)].TrimEnd();
+            if (rawName.EndsWith(" v." + ver, StringComparison.OrdinalIgnoreCase))
+                return rawName[..^(ver.Length + 3)].TrimEnd();
+            if (rawName.EndsWith(" (" + ver + ")", StringComparison.OrdinalIgnoreCase))
+                return rawName[..^(ver.Length + 3)].TrimEnd();
+        }
+
+        // Pattern-based fallback: strip dotted version numbers (e.g. "App 1.2.3", "Tool v2.0")
+        // but preserve edition/year identifiers without dots (e.g. "Visual Studio 2022")
+        var match = TrailingVersionRegex.Match(rawName);
+        if (match.Success && match.Index > 0)
+        {
+            var cleaned = rawName[..match.Index].TrimEnd();
+            if (!string.IsNullOrWhiteSpace(cleaned))
+                return cleaned;
+        }
+
+        return rawName;
+    }
 }
 
 public sealed record WingetUpgradeFilterResult(

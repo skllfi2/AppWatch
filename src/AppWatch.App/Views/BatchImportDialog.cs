@@ -201,6 +201,56 @@ public sealed class BatchImportDialog : ContentDialog
         }
     }
 
+    private sealed class BatchItemHolder
+    {
+        public CheckBox CheckBox { get; }
+        public TextBlock Name { get; }
+        public TextBlock Raw { get; }
+        public Border BadgeBorder { get; }
+        public TextBlock StatusText { get; }
+        private BatchImportCandidate? _current;
+
+        public BatchItemHolder(CheckBox chk, TextBlock name, TextBlock raw, Border badge, TextBlock status)
+        {
+            CheckBox = chk;
+            Name = name;
+            Raw = raw;
+            BadgeBorder = badge;
+            StatusText = status;
+
+            chk.Checked += (_, _) => { if (_current is not null) _current.IsSelected = true; };
+            chk.Unchecked += (_, _) => { if (_current is not null) _current.IsSelected = false; };
+        }
+
+        public void Bind(BatchImportCandidate candidate)
+        {
+            _current = null;
+            CheckBox.IsChecked = candidate.IsSelected;
+            CheckBox.IsEnabled = candidate.IsValid && !candidate.IsDuplicate;
+            Name.Text = candidate.Name;
+            Raw.Text = candidate.SourceBadge;
+            StatusText.Text = candidate.StatusText;
+
+            if (!candidate.IsValid)
+            {
+                BadgeBorder.Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(35, 232, 17, 35));
+                StatusText.Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 232, 17, 35));
+            }
+            else if (candidate.IsDuplicate)
+            {
+                BadgeBorder.Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(35, 255, 185, 0));
+                StatusText.Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 255, 185, 0));
+            }
+            else
+            {
+                BadgeBorder.Background = (Brush)Application.Current.Resources["HeroOverlayBrush"];
+                StatusText.Foreground = (Brush)Application.Current.Resources["AccentBrush"];
+            }
+
+            _current = candidate;
+        }
+    }
+
     private void ConfigureListView()
     {
         _listView.ContainerContentChanging += (lv, args) =>
@@ -209,79 +259,62 @@ public sealed class BatchImportDialog : ContentDialog
             if (args.Item is not BatchImportCandidate candidate) return;
 
             var container = args.ItemContainer;
-            var itemGrid = new Grid
+            if (container.Content is Grid itemGrid && itemGrid.Tag is BatchItemHolder existingHolder)
             {
-                ColumnSpacing = 10,
-                Padding = new Thickness(6, 6, 6, 6),
-                Width = 570
-            };
-            itemGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            itemGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            itemGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                existingHolder.Bind(candidate);
+                args.Handled = true;
+                return;
+            }
 
-            // Checkbox
-            var chk = new CheckBox
-            {
-                IsChecked = candidate.IsSelected,
-                IsEnabled = candidate.IsValid && !candidate.IsDuplicate,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            chk.Checked += (_, _) => candidate.IsSelected = true;
-            chk.Unchecked += (_, _) => candidate.IsSelected = false;
-            Grid.SetColumn(chk, 0);
-            itemGrid.Children.Add(chk);
-
-            // Name and Raw input
-            var infoStack = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+            var chk = new CheckBox { VerticalAlignment = VerticalAlignment.Center };
             var nameBlock = new TextBlock
             {
-                Text = candidate.Name,
                 FontSize = 13,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                 TextTrimming = TextTrimming.CharacterEllipsis
             };
             var rawBlock = new TextBlock
             {
-                Text = candidate.SourceBadge,
                 FontSize = 11,
                 Opacity = 0.65,
                 TextTrimming = TextTrimming.CharacterEllipsis
             };
+            var infoStack = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
             infoStack.Children.Add(nameBlock);
             infoStack.Children.Add(rawBlock);
-            Grid.SetColumn(infoStack, 1);
-            itemGrid.Children.Add(infoStack);
 
-            // Status badge
             var badgeBorder = new Border
             {
                 CornerRadius = new CornerRadius(4),
                 Padding = new Thickness(6, 2, 6, 2),
                 VerticalAlignment = VerticalAlignment.Center
             };
-            var statusText = new TextBlock { Text = candidate.StatusText, FontSize = 11 };
-
-            if (!candidate.IsValid)
-            {
-                badgeBorder.Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(35, 232, 17, 35));
-                statusText.Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 232, 17, 35));
-            }
-            else if (candidate.IsDuplicate)
-            {
-                badgeBorder.Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(35, 255, 185, 0));
-                statusText.Foreground = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 255, 185, 0));
-            }
-            else
-            {
-                badgeBorder.Background = (Brush)Application.Current.Resources["HeroOverlayBrush"];
-                statusText.Foreground = (Brush)Application.Current.Resources["AccentBrush"];
-            }
-
+            var statusText = new TextBlock { FontSize = 11 };
             badgeBorder.Child = statusText;
-            Grid.SetColumn(badgeBorder, 2);
-            itemGrid.Children.Add(badgeBorder);
 
-            container.Content = itemGrid;
+            var grid = new Grid
+            {
+                ColumnSpacing = 10,
+                Padding = new Thickness(6),
+                Width = 570
+            };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            Grid.SetColumn(chk, 0);
+            Grid.SetColumn(infoStack, 1);
+            Grid.SetColumn(badgeBorder, 2);
+
+            grid.Children.Add(chk);
+            grid.Children.Add(infoStack);
+            grid.Children.Add(badgeBorder);
+
+            var holder = new BatchItemHolder(chk, nameBlock, rawBlock, badgeBorder, statusText);
+            grid.Tag = holder;
+            container.Content = grid;
+
+            holder.Bind(candidate);
             args.Handled = true;
         };
     }

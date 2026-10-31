@@ -87,4 +87,25 @@ public class WingetUpgradeFilterTests
         Assert.Contains(result.Hidden, r => r.Update.Id == "Pub.A");
         Assert.Contains(result.Hidden, r => r.Update.Id == "Pub.C");
     }
+
+    [Theory]
+    [InlineData("Xiaomi MiMo AI 26.1023.231655", "26.1023.231655", null, "Xiaomi MiMo AI")]
+    [InlineData("Xiaomi MiMo AI 26.1023.231655", "Unknown", null, "Xiaomi MiMo AI")]
+    [InlineData("Xiaomi MiMo AI 26.1023.231655", null, null, "Xiaomi MiMo AI")]
+    [InlineData("Node.js v20.10.0", "20.10.0", null, "Node.js")]
+    [InlineData("Node.js v20.10.0", "Unknown", null, "Node.js")]
+    [InlineData("App (1.2.3)", "1.2.3", null, "App")]
+    [InlineData("App v.1.2.3", "1.2.3", null, "App")]
+    [InlineData("Visual Studio Build Tools 2022", "17.14.42", null, "Visual Studio Build Tools 2022")]
+    [InlineData("Visual Studio Community 2026", "18.10.3", null, "Visual Studio Community 2026")]
+    [InlineData("7-Zip 23.01", "23.01", null, "7-Zip")]
+    [InlineData("7-Zip 23.01", null, null, "7-Zip")]
+    [InlineData("Python 3.12.3", "Unknown", null, "Python")]
+    [InlineData("Git", "2.45.1", null, "Git")]
+    public void CleanName_StripsTrailingVersionAppropriately(
+        string rawName, string? currentVer, string? systemVer, string expected)
+    {
+        var cleaned = WingetUpgradeRow.CleanName(rawName, currentVer, systemVer);
+        Assert.Equal(expected, cleaned);
+    }
 }

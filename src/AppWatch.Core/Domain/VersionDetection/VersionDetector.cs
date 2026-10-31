@@ -166,12 +166,25 @@ public static class VersionDetector
             };
             using var proc = Process.Start(psi);
             if (proc is null) return null;
-            var output = await proc.StandardOutput.ReadToEndAsync(ct).ConfigureAwait(false);
-            await proc.WaitForExitAsync(ct).ConfigureAwait(false);
 
-            // Parse winget output for version
-            var match = VersionRegex.Match(output);
-            return match.Success ? match.Value : null;
+            var stderrTask = proc.StandardError.ReadToEndAsync(ct);
+            var stdoutTask = proc.StandardOutput.ReadToEndAsync(ct);
+
+            try
+            {
+                var output = await stdoutTask.ConfigureAwait(false);
+                await stderrTask.ConfigureAwait(false);
+                await proc.WaitForExitAsync(ct).ConfigureAwait(false);
+
+                // Parse winget output for version
+                var match = VersionRegex.Match(output);
+                return match.Success ? match.Value : null;
+            }
+            catch (OperationCanceledException)
+            {
+                try { proc.Kill(entireProcessTree: true); } catch { }
+                return null;
+            }
         }
         catch { }
         return null;

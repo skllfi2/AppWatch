@@ -46,4 +46,7 @@ public sealed class AppConfig
 
     /// <summary>Automatically refresh application icons on update checks and after installs.</summary>
     public bool AutoRefreshIcons { get; set; } = true;
+
+    /// <summary>Enable native WinUI 3 spatial audio and UI sound effects.</summary>
+    public bool SoundEffectsEnabled { get; set; } = true;
 }

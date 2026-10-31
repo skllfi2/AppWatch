@@ -7,6 +7,7 @@ namespace AppWatch.Infrastructure;
 /// UPD-02: file-backed journal for in-flight updates (one operation at a time —
 /// the gate serializes mutations, so a single record is enough). Lives in
 /// %APPDATA%\AppWatch next to the config; corrupt/missing file = no pending op.
+/// Writes atomically via temporary files to avoid corruption during crashes.
 /// </summary>
 public sealed class UpdateJournalStore
 {
@@ -18,9 +19,9 @@ public sealed class UpdateJournalStore
 
     private readonly string _path;
 
-    public UpdateJournalStore()
+    public UpdateJournalStore(string? path = null)
     {
-        _path = Path.Combine(
+        _path = path ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "AppWatch", PendingUpdate.FileName);
     }
@@ -43,8 +44,19 @@ public sealed class UpdateJournalStore
 
     public void Write(PendingUpdate pending)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-        File.WriteAllText(_path, JsonSerializer.Serialize(pending, Options));
+        var dir = Path.GetDirectoryName(_path);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+
+        var tmp = _path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            File.WriteAllText(tmp, JsonSerializer.Serialize(pending, Options));
+            File.Move(tmp, _path, overwrite: true);
+        }
+        finally
+        {
+            try { if (File.Exists(tmp)) File.Delete(tmp); } catch { }
+        }
     }
 
     public void Clear()

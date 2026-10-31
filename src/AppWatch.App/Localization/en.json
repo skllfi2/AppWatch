@@ -292,6 +292,7 @@
   "CheckedHoursAgo": "checked {0}h ago",
   "CheckedDaysAgo": "checked {0}d ago",
   "SettingsToastToggle": "Update notifications",
+  "TestNotification": "Test",
   "SettingsToastHint": "Show Windows notifications when a background check finds updates",
   "SettingsSelfUpdateDownloading": "Downloading: {0}%",
   "InterruptedUpdateRecovered": "interrupted update detected{0}",
@@ -318,6 +319,7 @@
   "WingetPhDownloaded": "Downloaded — starting installer…",
   "WingetPhInstall": "Installing…",
   "HintWingetInstallFailed": "The installer was interrupted. Usually the app is currently running, or administrator rights are required. Close the app and retry.",
+  "HintNetworkTimeout": "Package download server timed out or connection was blocked/interrupted (network timeout or SSL handshake failure). Try again later or use a VPN.",
   "HintWingetNotApplicable": "winget considers the new version not applicable to your system (a known source quirk). Update manually from the vendor's site.",
   "HintRateLimited": "GitHub API rate limit exhausted — the limit is shared across your IP (VPN). Add a Personal Access Token in Settings or retry later.",
   "HintKillFailed": "The process runs elevated. Stop it manually or run AppWatch as administrator.",
@@ -464,5 +466,11 @@
   "SettingsRefreshIconsNow": "Refresh icons now",
   "IconsRefreshed": "Application icons refreshed successfully",
   "IconsRefreshFailed": "Failed to refresh icons",
-  "BtnRefreshIcons": "Refresh icons"
+  "BtnRefreshIcons": "Refresh icons",
+  "SettingsSoundEffects": "WinUI 3 Sound Effects",
+  "SettingsSoundEffectsDesc": "Play native WinUI 3 audio cues for buttons, toggles, navigation, and events",
+  "SettingsTestSound": "Test Sound",
+  "HintElevationRequired": "Installation requires administrator privileges. Run AppWatch as administrator or approve the UAC elevation prompt.",
+  "HintFileLocked": "Application files are locked by another running process. Close all related programs and retry.",
+  "HintDiskFull": "Insufficient disk space on the target volume to complete the installation."
 }
