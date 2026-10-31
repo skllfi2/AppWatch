@@ -30,7 +30,7 @@ public sealed class SelfUpdateService
     {
         try
         {
-            var releases = await _github.GetReleasesAsync(RepoOwner, RepoName, cancellationToken);
+            var releases = await _github.GetReleasesAsync(RepoOwner, RepoName, cancellationToken).ConfigureAwait(false);
             var latest = releases.FirstOrDefault(r => !r.IsPreRelease);
             if (latest is null || !VersionParser.IsNewer(currentVersion, latest.TagName))
                 return null;
@@ -47,11 +47,11 @@ public sealed class SelfUpdateService
             Directory.CreateDirectory(tempRoot);
 
             var zipPath = Path.Combine(tempRoot, asset.Name);
-            await _github.DownloadFileAsync(asset.DownloadUrl, zipPath, progress, cancellationToken);
+            await _github.DownloadFileAsync(asset.DownloadUrl, zipPath, progress, cancellationToken).ConfigureAwait(false);
 
             // verify integrity before anything is applied
             if (asset.DigestSha256 is { } digest)
-                await _files.VerifyDigestAsync(zipPath, digest);
+                await _files.VerifyDigestAsync(zipPath, digest).ConfigureAwait(false);
             else
                 Log.Warning("self-update: no digest for {Asset}; skipping verification", asset.Name);
 

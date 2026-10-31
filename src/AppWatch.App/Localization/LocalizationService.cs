@@ -69,7 +69,7 @@ public sealed class LocalizationService : INotifyPropertyChanged
             }
         }
         // Ensure fallback exists
-        if (!packs.ContainsKey(FallbackLanguage))
+        if (!packs.TryGetValue(FallbackLanguage, out _))
         {
             packs[FallbackLanguage] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }

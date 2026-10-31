@@ -25,6 +25,12 @@ public partial class TrackedAppItem : ObservableObject
 
     public string Version => App.CurrentVersion ?? "?";
 
+    public string? Description => App.Description;
+    public bool HasDescription => !string.IsNullOrWhiteSpace(App.Description);
+    public string? PendingNotesText => Platform.MarkdownCleaner.ToReadableText(PendingNotes);
+    public bool HasPendingNotes => !string.IsNullOrWhiteSpace(PendingNotes);
+    public string DetailsNotesText => LocalizationService.Instance["DetailsNotes"];
+
     public string Monogram => string.IsNullOrEmpty(App.Name) ? "?" : App.Name[..1].ToUpperInvariant();
 
     /// <summary>True when the launch button makes sense (install dir + exe known).</summary>
@@ -84,7 +90,38 @@ public partial class TrackedAppItem : ObservableObject
             /// </summary>
             public async void LoadIconAsync()
             {
-                // Already have GitHub avatar?
+                // 1. Prioritize real local executable icon
+                try
+                {
+                    string? fullExe = null;
+                    if (!string.IsNullOrWhiteSpace(App.InstallDirectory) && !string.IsNullOrWhiteSpace(App.ExecutableName))
+                    {
+                        var candidate = System.IO.Path.Combine(App.InstallDirectory, App.ExecutableName);
+                        if (System.IO.File.Exists(candidate)) fullExe = candidate;
+                    }
+                    else if (!string.IsNullOrWhiteSpace(App.ExecutableName) && System.IO.File.Exists(App.ExecutableName))
+                    {
+                        fullExe = App.ExecutableName;
+                    }
+                    else if (!string.IsNullOrWhiteSpace(App.InstallDirectory) && System.IO.Directory.Exists(App.InstallDirectory))
+                    {
+                        var exes = System.IO.Directory.GetFiles(App.InstallDirectory, "*.exe");
+                        if (exes.Length > 0) fullExe = exes[0];
+                    }
+
+                    if (!string.IsNullOrEmpty(fullExe))
+                    {
+                        var bmp = await Platform.IconExtractor.GetIconFromExecutableAsync(fullExe, 40);
+                        if (bmp is not null)
+                        {
+                            Icon = bmp;
+                            return;
+                        }
+                    }
+                }
+                catch { /* fall through */ }
+
+                // 2. Fall back to GitHub avatar URL
                 if (!string.IsNullOrWhiteSpace(AvatarUrl))
                 {
                     try
@@ -95,9 +132,82 @@ public partial class TrackedAppItem : ObservableObject
                     catch { /* fall through */ }
                 }
 
-                // TODO: Match with InstalledApp list for local icon fallback
-                // For now, null → MonogramBrush will be used
                 Icon = null;
+            }
+
+            /// <summary>
+            /// Refreshes the app's icon by checking the local binary first, then GitHub repo if applicable.
+            /// Returns true if the App.AvatarUrl was updated.
+            /// </summary>
+            public async Task<bool> RefreshIconAsync(AppWatch.Core.Abstractions.IGitHubClient? github = null)
+            {
+                bool avatarChanged = false;
+
+                // 1. Prioritize real local executable icon
+                try
+                {
+                    string? fullExe = null;
+                    if (!string.IsNullOrWhiteSpace(App.InstallDirectory) && !string.IsNullOrWhiteSpace(App.ExecutableName))
+                    {
+                        var candidate = System.IO.Path.Combine(App.InstallDirectory, App.ExecutableName);
+                        if (System.IO.File.Exists(candidate)) fullExe = candidate;
+                    }
+                    else if (!string.IsNullOrWhiteSpace(App.ExecutableName) && System.IO.File.Exists(App.ExecutableName))
+                    {
+                        fullExe = App.ExecutableName;
+                    }
+                    else if (!string.IsNullOrWhiteSpace(App.InstallDirectory) && System.IO.Directory.Exists(App.InstallDirectory))
+                    {
+                        var exes = System.IO.Directory.GetFiles(App.InstallDirectory, "*.exe");
+                        if (exes.Length > 0) fullExe = exes[0];
+                    }
+
+                    if (!string.IsNullOrEmpty(fullExe))
+                    {
+                        var bmp = await Platform.IconExtractor.GetIconFromExecutableAsync(fullExe, 40);
+                        if (bmp is not null)
+                        {
+                            Icon = bmp;
+                            return false;
+                        }
+                    }
+                }
+                catch { /* fall through */ }
+
+                // 2. Fetch fresh repo info from GitHub if applicable
+                if (!string.IsNullOrWhiteSpace(App.RepoOwner) && !string.IsNullOrWhiteSpace(App.RepoName))
+                {
+                    try
+                    {
+                        var client = github ?? global::AppWatch.App.Resolve<AppWatch.Core.Abstractions.IGitHubClient>();
+                        var info = await client.GetRepoInfoAsync(App.RepoOwner, App.RepoName);
+                        if (info is not null)
+                        {
+                            var newUrl = info.IconUrl ?? info.AvatarUrl ?? info.OwnerAvatarUrl;
+                            if (!string.IsNullOrEmpty(newUrl) && newUrl != App.AvatarUrl)
+                            {
+                                App.AvatarUrl = newUrl;
+                                avatarChanged = true;
+                                OnPropertyChanged(nameof(AvatarUrl));
+                            }
+                        }
+                    }
+                    catch { /* fall through */ }
+                }
+
+                // 3. Fall back to GitHub avatar URL
+                if (!string.IsNullOrWhiteSpace(AvatarUrl))
+                {
+                    try
+                    {
+                        Icon = new BitmapImage(new Uri(AvatarUrl));
+                        return avatarChanged;
+                    }
+                    catch { /* fall through */ }
+                }
+
+                Icon = null;
+                return avatarChanged;
             }
 
             [ObservableProperty]
@@ -183,6 +293,7 @@ public partial class TrackedAppItem : ObservableObject
 
     public void Refresh()
     {
+        OnPropertyChanged(nameof(MenuRefreshIcon));
         OnPropertyChanged(nameof(Name));
         OnPropertyChanged(nameof(Version));
         OnPropertyChanged(nameof(Monogram));
@@ -224,6 +335,12 @@ public partial class TrackedAppItem : ObservableObject
     /// <summary>Localized "Edit" menu item label (P-UI).</summary>
     public string MenuEdit => LocalizationService.Instance["MenuEdit"];
 
+    /// <summary>Localized "Refresh icon" menu item label.</summary>
+    public string MenuRefreshIcon => LocalizationService.Instance["MenuRefreshIcon"];
+
+    /// <summary>Command to refresh this individual app icon.</summary>
+    public IRelayCommand RefreshAppIconCommand => global::AppWatch.App.Resolve<MainViewModel>().RefreshAppIconCommand;
+
     /// <summary>Human-readable source display: GitHub / winget / Installer / External.</summary>
     public string SourceDisplay => App.UpdateKind switch
     {
@@ -251,9 +368,15 @@ public partial class TrackedAppItem : ObservableObject
     /// <summary>Uninstall/untrack this app (with confirm) — proxied from MainViewModel.</summary>
     public IRelayCommand UninstallAppCommand => global::AppWatch.App.Resolve<MainViewModel>().UninstallAppCommand;
 
+    /// <summary>Shortcut creation commands (proxied from MainViewModel for DataTemplate x:Bind).</summary>
+    public IRelayCommand CreateStartMenuShortcutCommand => global::AppWatch.App.Resolve<MainViewModel>().CreateStartMenuShortcutCommand;
+    public IRelayCommand CreateDesktopShortcutCommand => global::AppWatch.App.Resolve<MainViewModel>().CreateDesktopShortcutCommand;
+    public string MenuStartMenuShortcut => LocalizationService.Instance["MenuStartMenuShortcut"];
+    public string MenuDesktopShortcut => LocalizationService.Instance["MenuDesktopShortcut"];
+
     /// <summary>Menu caption for uninstall.</summary>
     public string MenuUninstall => LocalizationService.Instance["MenuUninstall"];
 
-    private static Brush MakeBrush(byte r, byte g, byte b) =>
+    private static SolidColorBrush MakeBrush(byte r, byte g, byte b) =>
         new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, r, g, b));
 }

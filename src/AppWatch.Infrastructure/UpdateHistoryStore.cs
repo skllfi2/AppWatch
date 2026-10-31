@@ -34,4 +34,16 @@ public sealed class UpdateHistoryStore
         history.Add(entry);
         File.WriteAllText(_path, JsonSerializer.Serialize(history, Options));
     }
+
+    /// <summary>Clears the entire update history log.</summary>
+    public void Clear()
+    {
+        try
+        {
+            if (File.Exists(_path))
+                File.Delete(_path);
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+    }
 }

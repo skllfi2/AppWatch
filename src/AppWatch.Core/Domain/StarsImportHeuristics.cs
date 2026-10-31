@@ -12,7 +12,6 @@ public static class StarsImportHeuristics
     private static readonly string[] NonWindowsMarkers = ["mac", "darwin", "osx", "linux", "ubuntu", "debian", "appimage", "dmg", "deb", "rpm", "snap", "flatpak", "android", "apk", "jar", "ios"];
     private static readonly string[] InstallerMarkers = ["setup", "install", "installer", "msi"];
     private static readonly string[] ArchiveExtensions = [".zip", ".7z", ".tar.gz", ".tgz", ".tar"];
-    private static readonly string[] ExeExtensions = [".exe", ".msi"];
 
     /// <summary>
     /// Given release asset file names, suggest the best UpdateKind for a Windows user.

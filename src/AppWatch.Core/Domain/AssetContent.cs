@@ -13,13 +13,13 @@ public static class AssetContent
 
     public static bool IsArchive(string assetName)
     {
-        var name = assetName.ToLowerInvariant();
-        return ArchiveExtensions.Any(name.EndsWith);
+        ArgumentNullException.ThrowIfNull(assetName);
+        return ArchiveExtensions.Any(ext => assetName.EndsWith(ext, StringComparison.OrdinalIgnoreCase));
     }
 
     public static bool IsSingleExecutable(string assetName)
     {
-        var name = assetName.ToLowerInvariant();
-        return SingleFileExtensions.Any(name.EndsWith);
+        ArgumentNullException.ThrowIfNull(assetName);
+        return SingleFileExtensions.Any(ext => assetName.EndsWith(ext, StringComparison.OrdinalIgnoreCase));
     }
 }

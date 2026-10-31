@@ -38,11 +38,11 @@ public sealed class GitHubStarsService
         while (!string.IsNullOrEmpty(url))
         {
             ct.ThrowIfCancellationRequested();
-            using var response = await SendAsync(url, ct);
+            using var response = await SendAsync(url, ct).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
                 throw new HttpRequestException($"GitHub API {(int)response.StatusCode}: {response.ReasonPhrase}");
 
-            var page = await response.Content.ReadFromJsonAsync<List<GitHubStarredRepo>>(JsonOptions, ct)
+            var page = await response.Content.ReadFromJsonAsync<List<GitHubStarredRepo>>(JsonOptions, ct).ConfigureAwait(false)
                 ?? new List<GitHubStarredRepo>();
 
             if (page.Count == 0) break;
@@ -62,7 +62,7 @@ public sealed class GitHubStarsService
     public async Task<GitHubRelease?> GetLatestReleaseAsync(string owner, string repo, CancellationToken ct = default)
     {
         var url = $"https://api.github.com/repos/{owner}/{repo}/releases/latest";
-        using var response = await SendAsync(url, ct);
+        using var response = await SendAsync(url, ct).ConfigureAwait(false);
 
         if (response.StatusCode == global::System.Net.HttpStatusCode.Forbidden && RateLimitRemaining <= 1)
         {
@@ -76,7 +76,7 @@ public sealed class GitHubStarsService
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"GitHub API {(int)response.StatusCode}: {response.ReasonPhrase}");
 
-        return await response.Content.ReadFromJsonAsync<GitHubRelease>(JsonOptions, ct);
+        return await response.Content.ReadFromJsonAsync<GitHubRelease>(JsonOptions, ct).ConfigureAwait(false);
     }
 
     private async Task<HttpResponseMessage> SendAsync(string url, CancellationToken ct)
@@ -87,7 +87,7 @@ public sealed class GitHubStarsService
         if (_token is not null)
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
 
-        var response = await Http.SendAsync(request, ct);
+        var response = await Http.SendAsync(request, ct).ConfigureAwait(false);
         TrackRateLimit(response);
         return response;
     }

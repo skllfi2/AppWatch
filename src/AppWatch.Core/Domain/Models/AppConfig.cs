@@ -1,4 +1,4 @@
-﻿namespace AppWatch.Core.Domain.Models;
+namespace AppWatch.Core.Domain.Models;
 
 public enum AppTheme
 {
@@ -43,4 +43,7 @@ public sealed class AppConfig
 
     /// <summary>Show a Windows app notification when background checks find updates.</summary>
     public bool ToastNotificationsEnabled { get; set; } = true;
+
+    /// <summary>Automatically refresh application icons on update checks and after installs.</summary>
+    public bool AutoRefreshIcons { get; set; } = true;
 }

@@ -29,17 +29,20 @@
     <SolidColorBrush x:Key="TextOnAccentBrush" Color="#FFFFFFFF" />
 
     <!-- ── Hero Banner Overlays ────────────────────────────────────────────── -->
-    <SolidColorBrush x:Key="HeroOverlayBrush" Color="{ThemeResource TextFillColorPrimary}" Opacity="0.2" />
+    <SolidColorBrush x:Key="HeroOverlayBrush" Color="{ThemeResource TextFillColorPrimary}" Opacity="0.08" />
     <SolidColorBrush x:Key="HeroTertiaryBrush" Color="{ThemeResource TextFillColorPrimary}" Opacity="0.8" />
     <SolidColorBrush x:Key="SuccessSolidBrush" Color="{ThemeResource SystemFillColorSuccess}" />
 
-    <!-- ── Accent Button Style ─────────────────────────────────────────────── -->
-    <Style x:Key="AccentButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="{ThemeResource SystemAccentColor}" />
-        <Setter Property="Foreground" Value="{StaticResource TextOnAccentBrush}" />
-        <Setter Property="CornerRadius" Value="8" />
-        <Setter Property="Padding" Value="16,8" />
-        <Setter Property="MinHeight" Value="36" />
-    </Style>
+    <!-- ── Fluent 2 Subtle Tints & Pill Brushes ───────────────────────────── -->
+    <SolidColorBrush x:Key="AccentSubtleBrush" Color="#1F0078D4" />
+    <SolidColorBrush x:Key="AccentPillBorderBrush" Color="#330078D4" />
+    <SolidColorBrush x:Key="SuccessSubtleBrush" Color="#1F2EA043" />
+    <SolidColorBrush x:Key="SuccessPillBorderBrush" Color="#332EA043" />
+    <SolidColorBrush x:Key="WarningSubtleBrush" Color="#22FFB900" />
+    <SolidColorBrush x:Key="WarningPillBorderBrush" Color="#44FFB900" />
+    <SolidColorBrush x:Key="CriticalSubtleBrush" Color="#1FD83B01" />
+    <SolidColorBrush x:Key="CriticalPillBorderBrush" Color="#33D83B01" />
+    <SolidColorBrush x:Key="NeutralSubtleBrush" Color="#12808080" />
+    <SolidColorBrush x:Key="NeutralPillBorderBrush" Color="#22808080" />
 
 </ResourceDictionary>

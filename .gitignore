@@ -1,10 +1,58 @@
-bin/
-obj/
+## Build Results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## Visual Studio & Tooling
 .vs/
 *.user
+*.userosscache
+*.sln.docstates
 *.suo
+*.userprefs
+*.launchSettings.json
+
+## Visual Studio Code & JetBrains Rider
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.DotSettings.user
+
+## Test & Build Artifacts
 TestResults/
+[Aa]rtifacts/
 dist/
-artifacts/
+publish/
 *.binlog
+*.log
+*.tmp
+*.bak*
+
+## Dotnet Local Tools & Packages
+*.nupkg
+*.snupkg
+local-nuget/
+packages/
+!**/packages/build/
+
+## OS-generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+## AppWatch runtime data
+app-diagnostic.log
 results.tsv
+warnings-report.txt

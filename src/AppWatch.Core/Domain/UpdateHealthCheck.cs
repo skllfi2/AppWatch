@@ -37,7 +37,7 @@ public static class UpdateHealthCheck
         launcher.Launch(executablePath);
 
         // startup grace: the process must appear within the first samples
-        await delay(1500, cancellationToken);
+        await delay(1500, cancellationToken).ConfigureAwait(false);
 
         var windowMs = window * 1000;
         const int stepMs = 500;
@@ -49,7 +49,7 @@ public static class UpdateHealthCheck
                 seenAlive = true;
             else if (seenAlive)
                 return new HealthCheckOutcome(false, $"{processName} exited within {window}s after start");
-            await delay(stepMs, cancellationToken);
+            await delay(stepMs, cancellationToken).ConfigureAwait(false);
         }
 
         if (!process.IsRunning(processName))

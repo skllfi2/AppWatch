@@ -118,6 +118,45 @@ public sealed class VersionStore
         }
     }
 
+    /// <summary>Total size in bytes of all cached version snapshots.</summary>
+    public long GetTotalSizeBytes()
+    {
+        if (!Directory.Exists(_root)) return 0;
+        try
+        {
+            var di = new DirectoryInfo(_root);
+            return di.EnumerateFiles("*", SearchOption.AllDirectories)
+                .Sum(f =>
+                {
+                    try { return f.Length; }
+                    catch { return 0L; }
+                });
+        }
+        catch { return 0; }
+    }
+
+    /// <summary>Deletes all cached version snapshots across all apps.</summary>
+    public void ClearAll()
+    {
+        if (!Directory.Exists(_root)) return;
+        try
+        {
+            foreach (var dir in Directory.GetDirectories(_root))
+            {
+                try { Directory.Delete(dir, true); }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+            }
+            foreach (var file in Directory.GetFiles(_root))
+            {
+                try { File.Delete(file); }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+            }
+        }
+        catch { }
+    }
+
     private static string Sanitize(string value) =>
         string.Concat(value.Where(char.IsLetterOrDigit).Take(48));
 }

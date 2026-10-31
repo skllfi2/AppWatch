@@ -58,14 +58,19 @@ public class PlatformAssetFilterTests
     {
         var app = new TrackedApp
         {
-            Name = "Vesktop", RepoOwner = "Vencord", RepoName = "Vesktop",
-            InstallDirectory = @"C:\apps\vesktop", ExecutableName = "Vesktop.exe",
-            CurrentVersion = "v1.6.6", UpdateKind = UpdateKind.PortableZip,
+            Name = "Vesktop",
+            RepoOwner = "Vencord",
+            RepoName = "Vesktop",
+            InstallDirectory = @"C:\apps\vesktop",
+            ExecutableName = "Vesktop.exe",
+            CurrentVersion = "v1.6.6",
+            UpdateKind = UpdateKind.PortableZip,
             AssetExtensionPriority = [".zip"],
         };
         var rel = new ReleaseInfo
         {
-            TagName = "v1.6.7", PublishedAt = DateTimeOffset.UtcNow,
+            TagName = "v1.6.7",
+            PublishedAt = DateTimeOffset.UtcNow,
             Assets =
             [
                 new ReleaseAsset("Vesktop-1.6.7-win.zip", "https://example.com/w", 144162512, null),
@@ -88,14 +93,19 @@ public class PlatformAssetFilterTests
     {
         var app = new TrackedApp
         {
-            Name = "Vesktop", RepoOwner = "Vencord", RepoName = "Vesktop",
-            InstallDirectory = @"C:\apps\vesktop", ExecutableName = "Vesktop.exe",
-            CurrentVersion = "v1.6.6", UpdateKind = UpdateKind.PortableZip,
+            Name = "Vesktop",
+            RepoOwner = "Vencord",
+            RepoName = "Vesktop",
+            InstallDirectory = @"C:\apps\vesktop",
+            ExecutableName = "Vesktop.exe",
+            CurrentVersion = "v1.6.6",
+            UpdateKind = UpdateKind.PortableZip,
             AssetExtensionPriority = [".zip"],
         };
         var rel = new ReleaseInfo
         {
-            TagName = "v1.6.7", PublishedAt = DateTimeOffset.UtcNow,
+            TagName = "v1.6.7",
+            PublishedAt = DateTimeOffset.UtcNow,
             Assets =
             [
                 new ReleaseAsset("Vesktop-1.6.7-win.zip", "https://example.com/w", 144162512, null),
@@ -116,14 +126,19 @@ public class PlatformAssetFilterTests
     {
         var app = new TrackedApp
         {
-            Name = "RustDesk", RepoOwner = "rustdesk", RepoName = "rustdesk",
-            InstallDirectory = @"C:\apps\rustdesk", ExecutableName = "rustdesk.exe",
-            CurrentVersion = "1.4.9", UpdateKind = UpdateKind.Installer,
+            Name = "RustDesk",
+            RepoOwner = "rustdesk",
+            RepoName = "rustdesk",
+            InstallDirectory = @"C:\apps\rustdesk",
+            ExecutableName = "rustdesk.exe",
+            CurrentVersion = "1.4.9",
+            UpdateKind = UpdateKind.Installer,
             AssetExtensionPriority = [".exe"],
         };
         var rel = new ReleaseInfo
         {
-            TagName = "1.5.0", PublishedAt = DateTimeOffset.UtcNow,
+            TagName = "1.5.0",
+            PublishedAt = DateTimeOffset.UtcNow,
             Assets =
             [
                 new ReleaseAsset("rustdesk-1.5.0-x86_64.deb", "https://example.com/1", 100, null),

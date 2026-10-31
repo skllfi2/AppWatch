@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -14,6 +15,31 @@ namespace AppWatch.Platform;
 /// </summary>
 public static class IconExtractor
 {
+    private static readonly ConcurrentDictionary<string, BitmapImage> Cache = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Clears the in-memory icon cache so updated icons can be reloaded.
+    /// </summary>
+    public static void ClearCache()
+    {
+        Cache.Clear();
+    }
+
+    [SupportedOSPlatform("windows10.0.17763.0")]
+    public static async Task<BitmapImage?> GetIconFromExecutableAsync(string exePath, int size = 48)
+    {
+        if (string.IsNullOrWhiteSpace(exePath) || !File.Exists(exePath)) return null;
+
+        var key = $"{exePath}:{size}";
+        if (Cache.TryGetValue(key, out var cached))
+            return cached;
+
+        var icon = await GetWin32IconAsync(exePath, size);
+        if (icon is not null)
+            Cache[key] = icon;
+        return icon;
+    }
+
     // === Win32 P/Invoke (traditional DllImport) ===
     private const int SHGFI_ICON = 0x100;
     private const int SHGFI_LARGEICON = 0x0;
@@ -72,16 +98,28 @@ public static class IconExtractor
         try
         {
             var shfi = new SHFILEINFO();
-            uint flags = (uint)(SHGFI_ICON | SHGFI_USEFILEATTRIBUTES | (size <= 16 ? SHGFI_SMALLICON : SHGFI_LARGEICON));
+            // Do NOT use SHGFI_USEFILEATTRIBUTES for real files on disk, otherwise Windows returns generic dummy icon!
+            uint flags = (uint)(SHGFI_ICON | (size <= 16 ? SHGFI_SMALLICON : SHGFI_LARGEICON));
             IntPtr result = SHGetFileInfoW(exePath, 0, ref shfi, (uint)Marshal.SizeOf<SHFILEINFO>(), flags);
 
-            if (result == IntPtr.Zero || shfi.hIcon == IntPtr.Zero)
-                return null;
+            if (result != IntPtr.Zero && shfi.hIcon != IntPtr.Zero)
+            {
+                var bitmap = await IconToBitmapImageAsync(shfi.hIcon, size);
+                DestroyIcon(shfi.hIcon); // free unmanaged resource
+                if (bitmap is not null) return bitmap;
+            }
 
-            // Convert HICON to BitmapImage
-            var bitmap = await IconToBitmapImageAsync(shfi.hIcon, size);
-            DestroyIcon(shfi.hIcon); // free unmanaged resource
-            return bitmap;
+            // Fallback to System.Drawing.Icon.ExtractAssociatedIcon
+            if (File.Exists(exePath))
+            {
+                using var associatedIcon = System.Drawing.Icon.ExtractAssociatedIcon(exePath);
+                if (associatedIcon is not null)
+                {
+                    return await IconToBitmapImageAsync(associatedIcon.Handle, size);
+                }
+            }
+
+            return null;
         }
         catch
         {
@@ -96,9 +134,12 @@ public static class IconExtractor
     private static async Task<BitmapImage?> IconToBitmapImageAsync(IntPtr hIcon, int size)
     {
         // Must run on UI thread for BitmapImage creation
+        var queue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread()
+                    ?? App.MainWindow?.DispatcherQueue;
+        if (queue is null) return null;
+
         var tcs = new TaskCompletionSource<BitmapImage?>();
-        var queue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-        if (!queue.TryEnqueue(() =>
+        if (!queue.TryEnqueue(async () =>
         {
             try
             {
@@ -109,12 +150,9 @@ public static class IconExtractor
                 ms.Position = 0;
 
                 var img = new BitmapImage();
-                var stream = ms.AsRandomAccessStream();
-                img.SetSourceAsync(stream).AsTask().ContinueWith(t =>
-                {
-                    if (t.IsFaulted) tcs.SetException(t.Exception!);
-                    else tcs.SetResult(img);
-                });
+                using var stream = ms.AsRandomAccessStream();
+                await img.SetSourceAsync(stream);
+                tcs.SetResult(img);
             }
             catch (Exception ex)
             {
@@ -141,7 +179,7 @@ public static class IconExtractor
 
             // Get the AppListEntry for the main app
             var entries = await package.GetAppListEntriesAsync();
-            var entry = entries.FirstOrDefault();
+            var entry = entries.Count > 0 ? entries[0] : null;
             if (entry == null) return null;
 
             // Try to get thumbnail - API may vary by SDK version

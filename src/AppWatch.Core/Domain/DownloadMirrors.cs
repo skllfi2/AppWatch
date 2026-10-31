@@ -35,4 +35,9 @@ public static class DownloadMirrors
     public static bool IsMirrorable(string url) =>
         url.StartsWith("https://github.com/", StringComparison.OrdinalIgnoreCase)
         && url.Contains("/releases/download/", StringComparison.OrdinalIgnoreCase);
+
+    public static IReadOnlyList<string> Candidates(Uri originalUrl, IEnumerable<string>? mirrorPrefixes)
+    {
+        throw new NotImplementedException();
+    }
 }

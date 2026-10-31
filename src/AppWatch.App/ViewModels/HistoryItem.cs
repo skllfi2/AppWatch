@@ -28,6 +28,11 @@ public sealed class HistoryItem
 
     public string? Detail => Entry.Detail;
 
+    public string? ReleaseNotes => Entry.ReleaseNotes;
+    public bool HasReleaseNotes => !string.IsNullOrWhiteSpace(Entry.ReleaseNotes);
+    public string ReleaseNotesText => Platform.MarkdownCleaner.ToReadableText(Entry.ReleaseNotes);
+    public string DetailsNotesText => LocalizationService.Instance["DetailsNotes"];
+
     public Brush StatusBrush => Entry.Success
         ? MakeBrush(0x2E, 0xA0, 0x43)
         : MakeBrush(0xD8, 0x3B, 0x01);
@@ -46,6 +51,6 @@ public sealed class HistoryItem
 
     public string Monogram => string.IsNullOrEmpty(AppName) ? "?" : AppName[..1].ToUpperInvariant();
 
-    private static Brush MakeBrush(byte r, byte g, byte b) =>
+    private static SolidColorBrush MakeBrush(byte r, byte g, byte b) =>
         new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, r, g, b));
 }

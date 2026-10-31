@@ -9,24 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Self-update dialog with changelog, progress bar, and 3 actions (Update Now / Skip Version / Remind Later)
-- Progress callback for zip self-update downloads (% and speed)
-- `.editorconfig` for consistent code style
-- `Directory.Build.props` / `Directory.Build.targets` for centralized versioning and build props
-- GitHub Actions: `build.yml` (CI with NuGet cache, code analysis, format check), `release.yml` (tag-based release + winget PR)
-- Dependabot configuration for NuGet and GitHub Actions
-- Architecture documentation (C4 diagrams in `docs/architecture.md`)
-- ADR log in `docs/adr/README.md`
-- Contributing guide in `docs/contributing.md`
+---
 
-### Changed
-- SettingsViewModel: integrated SelfUpdateDialog before applying zip updates
-- Localization: added 9 self-update dialog keys (ru/en) + typed Loc.cs properties
-- Converters: added `IsZeroConverter` for indeterminate/determinate progress bar switching
+## [0.2.1] - 2026-10-31
+
+### Added
+- **Smart GitHub Repository Icon Discovery**: Automatic heuristic discovery of app icons directly from GitHub repositories (`assets/icon.png`, `logo.png`, `icon.ico`, etc.) using zero-quota parallel HEAD requests to `raw.githubusercontent.com`.
+- **GitHub Stars Import Access**: Promoted "Import from GitHub Stars" button directly to the `TrackedAppsPage` toolbar.
+- **Source Filtering & Sorting**: Added source filter chips (`GitHub`, `WinGet`, `External`) and "By Source" sort option to manage large collections of tracked software effortlessly.
+- **Development Standards Files**: Root `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (Contributor Covenant v2.1), GitHub issue forms (`bug_report.yml`, `feature_request.yml`), and `PULL_REQUEST_TEMPLATE.md`.
+- **Refined .gitignore**: Comprehensive exclusions for .NET 10, Windows App SDK, Visual Studio 2022/2026, JetBrains Rider, and diagnostic log artifacts.
 
 ### Fixed
-- Converters.cs syntax (missing brace on StringToImageSourceConverter)
+- **Win32 Executable Icon Extraction**: Removed `SHGFI_USEFILEATTRIBUTES` flag in `IconExtractor.cs` which previously caused Windows Shell to return generic blank `.exe` placeholders instead of actual binary icons. Added fallback to `System.Drawing.Icon.ExtractAssociatedIcon`.
+- **System Scanner Empty List Bug**: Changed `OnlyCatalogMatches` default from `true` to `false` in `SystemScannerDialogViewModel.cs`, resolving the bug where hundreds of installed apps were hidden by the empty seed catalog filter.
+- **Icon Display Priority**: Local `.exe` icon is now prioritized over repository author avatars in `TrackedAppItem.cs`.
+- **UI Dispatcher Queue Fallback**: Ensured background thread icon loading safely falls back to `App.MainWindow.DispatcherQueue`.
 
 ---
 
@@ -89,14 +87,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Notes |
 |---------|------|-------|
+| 0.2.1 | 2026-10-31 | Smart repo icons, Win32 icon fix, scanner default fix, source chips, standards files |
 | 0.2.0 | 2024-10-28 | NavigationView, tracked apps, self-update dialog, winget progress |
 | 0.1.0 | 2024-10-18 | Initial release |
-
----
-
-## Release Notes Format
-
-Each release includes:
-- **GitHub Release**: binaries (Setup.exe, Portable.zip), SHA256SUMS.txt, changelog
-- **winget**: Automated PR to microsoft/winget-pkgs (on stable tags)
-- **Changelog**: This file updated with [Keep a Changelog](https://keepachangelog.com/) format

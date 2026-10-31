@@ -5,6 +5,7 @@ public sealed class TrackedApp
     public required string Name { get; set; }
     public required string RepoOwner { get; set; }
     public required string RepoName { get; set; }
+    public string? Description { get; set; }
     public string? InstallDirectory { get; set; }
     public string? ExecutableName { get; set; }
     public UpdateKind UpdateKind { get; set; } = UpdateKind.PortableZip;
@@ -55,10 +56,10 @@ public sealed class TrackedApp
     /// File is read as Latin-1 so ASCII strings inside binary files survive.</summary>
     public string? VersionFileRegex { get; set; }
 
-        // New: GitHub repo avatar URL for card icon
-        public string? AvatarUrl { get; set; }
+    // New: GitHub repo avatar URL for card icon
+    public string? AvatarUrl { get; set; }
 
-        // New: Update strategy
+    // New: Update strategy
     public UpdateStrategy Strategy { get; set; } = UpdateStrategy.Auto;
 }
 
@@ -66,22 +67,22 @@ public enum UpdateStrategy
 {
     /// <summary>Let the engine decide based on asset type and app capabilities</summary>
     Auto = 0,
-    
+
     /// <summary>Use built-in app updater (if app has self-update)</summary>
     BuiltInUpdater,
-    
+
     /// <summary>Silent installer (msi/exe with /quiet)</summary>
     SilentInstaller,
-    
+
     /// <summary>Portable archive replace (zip/7z)</summary>
     PortableReplace,
-    
+
     /// <summary>Use winget if package ID known</summary>
     Winget,
-    
+
     /// <summary>External launcher - just download and run</summary>
     ExternalLauncher,
-    
+
     /// <summary>User decides manually</summary>
     Manual
 }

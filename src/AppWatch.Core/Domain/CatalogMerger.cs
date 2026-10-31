@@ -1,4 +1,5 @@
 using AppWatch.Core.Domain.Models;
+using System.Collections.ObjectModel;
 
 namespace AppWatch.Core.Domain;
 
@@ -13,10 +14,12 @@ public static class CatalogMerger
     /// replace it (user's config wins). User-only entries are appended at the end.
     /// Order: seed order preserved, user-only entries appended alphabetically.
     /// </summary>
-    public static List<CatalogEntry> Merge(
+    public static IReadOnlyList<CatalogEntry> Merge(
         IReadOnlyList<CatalogEntry> seed,
         IReadOnlyList<CatalogEntry> user)
     {
+        ArgumentNullException.ThrowIfNull(seed);
+        ArgumentNullException.ThrowIfNull(user);
         var userByKey = new Dictionary<string, CatalogEntry>(StringComparer.OrdinalIgnoreCase);
         foreach (var e in user)
             userByKey[$"{e.RepoOwner}/{e.RepoName}"] = e;
@@ -46,28 +49,36 @@ public static class CatalogMerger
             .ToList();
         result.AddRange(remaining);
 
-        return result;
+        return new ReadOnlyCollection<CatalogEntry>(result);
     }
 
     /// <summary>True when this owner/repo pair exists in the user file (not the seed).</summary>
     public static bool IsUserEntry(
         IReadOnlyList<CatalogEntry> userEntries,
-        string repoOwner, string repoName) =>
-        userEntries.Any(e =>
+        string repoOwner, string repoName)
+    {
+        ArgumentNullException.ThrowIfNull(userEntries);
+        ArgumentNullException.ThrowIfNull(repoOwner);
+        ArgumentNullException.ThrowIfNull(repoName);
+        return userEntries.Any(e =>
             string.Equals(e.RepoOwner, repoOwner, StringComparison.OrdinalIgnoreCase) &&
             string.Equals(e.RepoName, repoName, StringComparison.OrdinalIgnoreCase));
+    }
 
     /// <summary>
     /// Multi-source merge: an ordered list of (sourceName, entries). Later sources override
     /// earlier ones by owner/repo. Returns merged entries + a repo→source lookup for UI badges.
     /// </summary>
-    public static (List<CatalogEntry> Entries, Dictionary<string, string> SourceByRepo) MergeSources(
+    public static (IReadOnlyList<CatalogEntry> Entries, IReadOnlyDictionary<string, string> SourceByRepo) MergeSources(
         IReadOnlyList<(string SourceName, IReadOnlyList<CatalogEntry> Entries)> sources)
     {
+        ArgumentNullException.ThrowIfNull(sources);
         // build final map: later sources win
         var byRepo = new Dictionary<string, (CatalogEntry Entry, string Source)>(StringComparer.OrdinalIgnoreCase);
         foreach (var (sourceName, entries) in sources)
         {
+            ArgumentNullException.ThrowIfNull(sourceName);
+            ArgumentNullException.ThrowIfNull(entries);
             foreach (var e in entries)
                 byRepo[$"{e.RepoOwner}/{e.RepoName}"] = (e, sourceName);
         }
@@ -90,6 +101,6 @@ public static class CatalogMerger
             }
         }
 
-        return (ordered, sourceByRepo);
+        return (new ReadOnlyCollection<CatalogEntry>(ordered), new ReadOnlyDictionary<string, string>(sourceByRepo));
     }
 }

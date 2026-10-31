@@ -4,7 +4,7 @@ using AppWatch.Core.Domain;
 namespace AppWatch.Core.Tests;
 
 /// <summary>IProcessService fake: returns queued alive-samples, repeating the last one.</summary>
-public sealed class FakeProcessService : IProcessService
+internal sealed class FakeProcessService : IProcessService
 {
     private readonly Queue<bool> _samples = new();
     private bool _last;
@@ -29,7 +29,7 @@ public sealed class FakeProcessService : IProcessService
     }
 }
 
-public sealed class RecordingLauncher : IAppLauncher
+internal sealed class RecordingLauncher : IAppLauncher
 {
     public List<string> Launched { get; } = [];
 

@@ -1,5 +1,5 @@
 // Ported from ZuiV2 Platform/TrayService.cs (our own code).
-// WinUI 3 has no native tray support and AppWindow.Hide()/Show() is unreliable —
+// WinUI 3 has no native tray support and AppWindow.Hide()/Show() is unreliable вЂ”
 // the proven approach: Shell_NotifyIconW for the icon, ShowWindow(hwnd) for hide/show,
 // a hidden message window with a WndProc for tray callbacks.
 using System.Runtime.InteropServices;
@@ -263,7 +263,7 @@ public sealed class TrayService : IDisposable
     private static void EnableDarkModeForMenus()
     {
         // undocumented uxtheme.dll APIs used by Windows 11 Settings (Windows 10 1903+)
-        try { SetPreferredAppMode(1); } catch { }
+        try { _ = SetPreferredAppMode(1); } catch { }
     }
 
     private void ApplyDarkModeToWindow()
@@ -272,7 +272,7 @@ public sealed class TrayService : IDisposable
         try
         {
             var allow = 1;
-            DwmSetWindowAttribute(_messageWindow, DWMWA_USE_IMMERSIVE_DARK_MODE, ref allow, sizeof(int));
+            _ = DwmSetWindowAttribute(_messageWindow, DWMWA_USE_IMMERSIVE_DARK_MODE, ref allow, sizeof(int));
         }
         catch { }
     }
@@ -313,7 +313,7 @@ public sealed class TrayService : IDisposable
     [DllImport("user32.dll")]
     private static extern IntPtr DefWindowProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
 
-    [DllImport("kernel32.dll")]
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "GetModuleHandleW")]
     private static extern IntPtr GetModuleHandle(string? lpModuleName);
 
     [DllImport("uxtheme.dll", EntryPoint = "#135", SetLastError = true)]

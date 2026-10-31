@@ -14,11 +14,12 @@ public sealed class CatalogEntry
     public string? Description { get; set; }
     public string? Category { get; set; }
 
-    public TrackedApp ToTrackedApp(string installDirectory, string? currentVersion = null) => new()
+    public TrackedApp ToTrackedApp(string? installDirectory = null, string? currentVersion = null) => new()
     {
         Name = Name,
         RepoOwner = RepoOwner,
         RepoName = RepoName,
+        Description = Description,
         InstallDirectory = installDirectory,
         ExecutableName = ExecutableName,
         ProcessName = ProcessName,

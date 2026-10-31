@@ -30,7 +30,7 @@ public static class Program
 
             WinRT.ComWrappersSupport.InitializeComWrappers();
 
-            Microsoft.UI.Xaml.Application.Start(_ =>
+            Microsoft.UI.Xaml.Application.Start((_) =>
             {
                 try
                 {
@@ -41,7 +41,7 @@ public static class Program
                 }
                 catch (Exception ex)
                 {
-                    // Stowed exceptions kill the process without unwinding to Main's catch —
+                    // Stowed exceptions kill the process without unwinding to Main's catch вЂ”
                     // write the real cause here, inside the callback.
                     Directory.CreateDirectory(Path.GetDirectoryName(crashLogPath)!);
                     File.WriteAllText(crashLogPath + ".inner",

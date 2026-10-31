@@ -25,23 +25,23 @@ public static class VersionParser
     private static readonly string[] TagPrefixes = ["release-", "version-", "build-", "rel/"];
 
     public static bool TryParse(string? raw, out ParsedVersion? version)
-        {
-            version = null;
-            if (string.IsNullOrWhiteSpace(raw)) return false;
+    {
+        version = null;
+        if (string.IsNullOrWhiteSpace(raw)) return false;
 
-            var s = raw.Trim();
-            // oct18 E3: strip word prefixes BEFORE the 'v' trim — "version-0.5.0" starts
-            // with 'v' and was previously mangled into "ersion-0.5.0" (unparseable).
-            // Formats named in RESEARCH.md D1: "release-", "rel/", "version-", "build-".
-            foreach (var prefix in TagPrefixes)
-            {
-                if (!s.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
-                s = s[prefix.Length..];
-                break;
-            }
-            s = s.TrimStart('v', 'V');
-            var plus = s.IndexOf('+');
-            if (plus >= 0) s = s[..plus];
+        var s = raw.Trim();
+        // oct18 E3: strip word prefixes BEFORE the 'v' trim — "version-0.5.0" starts
+        // with 'v' and was previously mangled into "ersion-0.5.0" (unparseable).
+        // Formats named in RESEARCH.md D1: "release-", "rel/", "version-", "build-".
+        foreach (var prefix in TagPrefixes)
+        {
+            if (!s.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+            s = s[prefix.Length..];
+            break;
+        }
+        s = s.TrimStart('v', 'V');
+        var plus = s.IndexOf('+');
+        if (plus >= 0) s = s[..plus];
 
         string? preRelease = null;
         var dash = s.IndexOf('-');

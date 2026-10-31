@@ -19,13 +19,15 @@ public static class AssetSelector
     private static readonly Regex DebugRegex = Boundary("debug");
     private static readonly Regex UnstableRegex = Boundary("nightly", "canary", "snapshot");
     private static readonly Regex PreReleaseRegex =
-        new("""(^|[^a-z0-9])(alpha|beta|rc|preview|pre)[-_.]?\d*([^a-z0-9]|$)""");
+        new("""(^|[^a-z0-9])(alpha|beta|rc|preview|pre)[-_.]?\d*([^a-z0-9]|$)""", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     public static GithubAssetCandidate? Choose(
         IReadOnlyList<GithubAssetCandidate> assets,
         SystemArchitecture deviceArch,
         IReadOnlyList<string> extensionPriority)
     {
+        ArgumentNullException.ThrowIfNull(assets);
+        ArgumentNullException.ThrowIfNull(extensionPriority);
         if (assets.Count == 0) return null;
         return assets
             .OrderByDescending(a => ExtensionRank(a.Name, extensionPriority))
@@ -50,10 +52,10 @@ public static class AssetSelector
 
     public static int FlavorRank(string assetName)
     {
-        var name = assetName.ToLowerInvariant();
-        return DebugRegex.IsMatch(name) ? FlavorDebug
-            : UnstableRegex.IsMatch(name) ? FlavorUnstable
-            : PreReleaseRegex.IsMatch(name) ? FlavorPrerelease
+        ArgumentNullException.ThrowIfNull(assetName);
+        return DebugRegex.IsMatch(assetName) ? FlavorDebug
+            : UnstableRegex.IsMatch(assetName) ? FlavorUnstable
+            : PreReleaseRegex.IsMatch(assetName) ? FlavorPrerelease
             : FlavorStable;
     }
 
@@ -67,16 +69,17 @@ public static class AssetSelector
 
     private static int ExtensionRank(string assetName, IReadOnlyList<string> extensionPriority)
     {
+        ArgumentNullException.ThrowIfNull(assetName);
+        ArgumentNullException.ThrowIfNull(extensionPriority);
         if (extensionPriority.Count == 0) return 0;
-        var name = assetName.ToLowerInvariant();
         for (var i = 0; i < extensionPriority.Count; i++)
         {
-            if (name.EndsWith(extensionPriority[i], StringComparison.OrdinalIgnoreCase))
+            if (assetName.EndsWith(extensionPriority[i], StringComparison.OrdinalIgnoreCase))
                 return extensionPriority.Count - i;
         }
         return -1;
     }
 
     private static Regex Boundary(params string[] tokens) =>
-        new($"""(^|[^a-z0-9])({string.Join("|", tokens)})([^a-z0-9]|$)""");
+        new($"""(^|[^a-z0-9])({string.Join("|", tokens)})([^a-z0-9]|$)""", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 }

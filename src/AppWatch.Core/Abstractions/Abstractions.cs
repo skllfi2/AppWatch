@@ -32,6 +32,7 @@ public sealed class GitHubRepoInfo
     public required string AvatarUrl { get; init; }
     public required string OwnerLogin { get; init; }
     public required string OwnerAvatarUrl { get; init; }
+    public string? IconUrl { get; init; }
 }
 
 public interface IUpdateEngine
@@ -71,4 +72,26 @@ public interface IElevationService
 {
     bool IsElevated { get; }
     bool RunElevated(string executablePath, string arguments);
+}
+
+public interface IShortcutService
+{
+    bool CreateStartMenuShortcut(string appName, string executablePath, string? description = null);
+    bool CreateDesktopShortcut(string appName, string executablePath, string? description = null);
+    string? ResolveShortcutTarget(string shortcutPath);
+}
+
+public interface IUpdateSourceProvider
+{
+    string SourceId { get; }
+    string DisplayName { get; }
+    bool CanHandle(TrackedApp app);
+    Task<UpdateCheckResult> CheckUpdateAsync(TrackedApp app, CancellationToken cancellationToken = default);
+}
+
+public interface IUpdateSourceRegistry
+{
+    IReadOnlyList<IUpdateSourceProvider> Providers { get; }
+    void Register(IUpdateSourceProvider provider);
+    IUpdateSourceProvider? Resolve(TrackedApp app);
 }

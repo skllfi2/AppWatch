@@ -7,7 +7,8 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
-                <!-- Theme and DesignSystem applied by ThemeService at runtime -->
+                <ResourceDictionary Source="ms-appx:///Themes/ThemeResources.xaml" />
+                <ResourceDictionary Source="ms-appx:///Styles/DesignSystem.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <!-- Converters -->
@@ -20,10 +21,19 @@
             <conv:CountToVisibilityConverter x:Key="CountToVisibility"/>
             <conv:ObjectToVisibilityConverter x:Key="ObjectToVisibility"/>
             <conv:NullToVisibilityConverter x:Key="NullToVisibility"/>
+            <conv:StringToBoolConverter x:Key="StringToBool"/>
+            <conv:NotNullToVisibilityConverter x:Key="NotNullToVisibility"/>
+
+            <!-- Brushes & Stage converters with both short and suffix keys -->
+            <conv:StringToBrushConverter x:Key="StringToBrush"/>
             <conv:StringToBrushConverter x:Key="StringToBrushConverter"/>
+            <conv:FirstCharToBrushConverter x:Key="FirstCharToBrush"/>
             <conv:FirstCharToBrushConverter x:Key="FirstCharToBrushConverter"/>
+            <conv:StringToImageSourceConverter x:Key="StringToImageSource"/>
             <conv:StringToImageSourceConverter x:Key="StringToImageSourceConverter"/>
+            <conv:StageToBrushConverter x:Key="StageToBrush"/>
             <conv:StageToBrushConverter x:Key="StageToBrushConverter"/>
+            <conv:StageToVisConverter x:Key="StageToVis"/>
             <conv:StageToVisConverter x:Key="StageToVisConverter"/>
 
             <!-- Mica: transparent backgrounds -->

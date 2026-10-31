@@ -6,11 +6,11 @@ using Xunit;
 namespace AppWatch.Core.Tests;
 
 /// <summary>
-/// P3: version extracted from a data file via regex — for apps that hide
+/// P3: version extracted from a data file via regex вЂ” for apps that hide
 /// their version from FVI and the registry (Battle.net .product.db case).
 /// </summary>
 [SupportedOSPlatform("windows")]
-public class VersionFileDetectionTests : IDisposable
+public sealed class VersionFileDetectionTests : IDisposable
 {
     private readonly string _dir;
 
@@ -23,6 +23,7 @@ public class VersionFileDetectionTests : IDisposable
     public void Dispose()
     {
         try { Directory.Delete(_dir, recursive: true); } catch { }
+        GC.SuppressFinalize(this);
     }
 
     private TrackedApp App(Action<TrackedApp>? configure = null)
@@ -32,7 +33,7 @@ public class VersionFileDetectionTests : IDisposable
             Name = "P3 Hermetic Test", // never matches real registry entries
             RepoOwner = "external",
             RepoName = "battle-net",
-            // hermetic: empty temp dir — no exe with FVI, no registry entry
+            // hermetic: empty temp dir вЂ” no exe with FVI, no registry entry
             InstallDirectory = _dir,
             ExecutableName = null,
             CurrentVersion = null,
@@ -45,7 +46,7 @@ public class VersionFileDetectionTests : IDisposable
     public async Task DetectAsync_VersionFile_WinsOverFvi()
     {
         // .product.db-like binary content: protobuf bytes around an ASCII version string
-        // (\u escapes are exact — \x0b2 would be parsed as ONE hex escape U+00B2!)
+        // (\u escapes are exact вЂ” \x0b2 would be parsed as ONE hex escape U+00B2!)
         var file = Path.Combine(_dir, ".product.db");
         var payload = "battle.net\n\u0012\u0016C:/Program Files (x86)/Battle.netR\u000B2.53.4.17896R";
         File.WriteAllText(file, payload);
@@ -71,7 +72,7 @@ public class VersionFileDetectionTests : IDisposable
             a.Name = "P3 Hermetic Test"; // never matches real registry entries
             a.VersionFilePath = Path.Combine(_dir, "missing.db");
             a.VersionFileRegex = @"(\d+\.\d+)";
-            // no exe to detect → returns null overall
+            // no exe to detect в†’ returns null overall
             a.InstallDirectory = null;
             a.ExecutableName = null;
         });
@@ -104,7 +105,7 @@ public class VersionFileDetectionTests : IDisposable
     {
         var app = App(a =>
         {
-            // hermetic: empty temp dir — no exe, no FVI, no registry entry
+            // hermetic: empty temp dir вЂ” no exe, no FVI, no registry entry
             a.InstallDirectory = _dir;
             a.ExecutableName = null;
         });
@@ -139,12 +140,12 @@ public class VersionFileDetectionTests : IDisposable
         var app = App(a =>
         {
             a.VersionFilePath = file;
-            a.VersionFileRegex = @"(\d+)"; // matches a bare number — not a version
+            a.VersionFileRegex = @"(\d+)"; // matches a bare number вЂ” not a version
         });
 
         var detected = await VersionDetector.DetectAsync(app, TestContext.Current.CancellationToken);
 
-        // sanity check (VersionRegex = \d+\.\d+...) rejects a bare number → falls through
+        // sanity check (VersionRegex = \d+\.\d+...) rejects a bare number в†’ falls through
         Assert.Null(detected);
     }
 }

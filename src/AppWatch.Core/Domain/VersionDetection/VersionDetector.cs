@@ -58,7 +58,7 @@ public static class VersionDetector
         // 3. Try winget
         if (!string.IsNullOrEmpty(app.WingetPackageId))
         {
-            var wingetVer = await TryGetWingetVersionAsync(app.WingetPackageId, ct);
+            var wingetVer = await TryGetWingetVersionAsync(app.WingetPackageId, ct).ConfigureAwait(false);
             if (wingetVer is not null)
                 return new DetectedVersion(wingetVer, VersionSource.Winget, $"winget:{app.WingetPackageId}");
         }
@@ -166,9 +166,9 @@ public static class VersionDetector
             };
             using var proc = Process.Start(psi);
             if (proc is null) return null;
-            var output = await proc.StandardOutput.ReadToEndAsync();
-            await proc.WaitForExitAsync(ct);
-            
+            var output = await proc.StandardOutput.ReadToEndAsync(ct).ConfigureAwait(false);
+            await proc.WaitForExitAsync(ct).ConfigureAwait(false);
+
             // Parse winget output for version
             var match = VersionRegex.Match(output);
             return match.Success ? match.Value : null;

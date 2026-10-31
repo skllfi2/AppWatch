@@ -52,23 +52,51 @@ public sealed partial class MainWindow : Window
                 wingetItem.InfoBadge = wingetBadge;
             }
 
+            void UpdateVisuals()
+            {
+                HeaderProgressBar.Visibility = vm.IsAnyChecking ? Visibility.Visible : Visibility.Collapsed;
+
+                if (vm.IsCheckingApps)
+                {
+                    updatesBadge.IconSource = new FontIconSource { Glyph = "\uE895" };
+                    updatesBadge.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    updatesBadge.IconSource = null;
+                    SyncBadge(updatesBadge, vm.UpdatesAvailableCount);
+                }
+
+                if (wingetBadge is not null)
+                {
+                    if (vm.IsScanningWinget)
+                    {
+                        wingetBadge.IconSource = new FontIconSource { Glyph = "\uE895" };
+                        wingetBadge.Visibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        wingetBadge.IconSource = null;
+                        SyncBadge(wingetBadge, vm.WingetUpdatesAvailable);
+                    }
+                }
+            }
+
             vm.PropertyChanged += (_, e) =>
             {
                 switch (e.PropertyName)
                 {
                     case nameof(ViewModels.MainViewModel.UpdatesAvailableCount):
-                        DispatcherQueue.TryEnqueue(() => SyncBadge(updatesBadge, vm.UpdatesAvailableCount));
-                        break;
                     case nameof(ViewModels.MainViewModel.WingetUpdatesAvailable):
-                        if (wingetBadge is not null)
-                            DispatcherQueue.TryEnqueue(() => SyncBadge(wingetBadge, vm.WingetUpdatesAvailable));
+                    case nameof(ViewModels.MainViewModel.IsCheckingApps):
+                    case nameof(ViewModels.MainViewModel.IsScanningWinget):
+                    case nameof(ViewModels.MainViewModel.IsAnyChecking):
+                        DispatcherQueue.TryEnqueue(UpdateVisuals);
                         break;
                 }
             };
 
-            SyncBadge(updatesBadge, vm.UpdatesAvailableCount);
-            if (wingetBadge is not null)
-                SyncBadge(wingetBadge, vm.WingetUpdatesAvailable);
+            UpdateVisuals();
         }
 
     private static InfoBadge NewBadge() => new()
@@ -102,7 +130,7 @@ public sealed partial class MainWindow : Window
         if (!PageByTag.TryGetValue(tag, out var page))
             return;
         if (ContentFrame.CurrentSourcePageType != page)
-            ContentFrame.Navigate(page);
+            ContentFrame.Navigate(page, null, new Microsoft.UI.Xaml.Media.Animation.EntranceNavigationTransitionInfo());
     }
 
     /// <summary>
@@ -123,7 +151,7 @@ public sealed partial class MainWindow : Window
                 return;
             }
         }
-        ContentFrame.Navigate(pageType);
+        ContentFrame.Navigate(pageType, null, new Microsoft.UI.Xaml.Media.Animation.EntranceNavigationTransitionInfo());
     }
 
     /// <summary>Centers the window on the primary work area (ZuiV2 pattern).</summary>
@@ -166,4 +194,57 @@ public sealed partial class MainWindow : Window
 
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     private struct RECT { public int Left, Top, Right, Bottom; }
+
+    // === Drag & Drop support (Phase 3) ===
+    private void Grid_DragOver(object sender, DragEventArgs e)
+    {
+        if (e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.StorageItems) ||
+            e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text) ||
+            e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Uri))
+        {
+            e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Copy;
+            e.DragUIOverride.Caption = Loc.DropToAddApp;
+            e.DragUIOverride.IsCaptionVisible = true;
+            e.DragUIOverride.IsGlyphVisible = true;
+        }
+        else
+        {
+            e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.None;
+        }
+    }
+
+    private async void Grid_Drop(object sender, DragEventArgs e)
+    {
+        var vm = global::AppWatch.App.Resolve<ViewModels.MainViewModel>();
+        if (e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.StorageItems))
+        {
+            var items = await e.DataView.GetStorageItemsAsync();
+            if (items.Count == 1 && items[0] is Windows.Storage.IStorageFile file)
+            {
+                await vm.HandleDroppedFileAsync(file.Path);
+            }
+            else if (items.Count > 1)
+            {
+                var paths = items.OfType<Windows.Storage.IStorageFile>().Select(f => f.Path).ToList();
+                var text = string.Join(Environment.NewLine, paths);
+                await vm.HandleDroppedInputAsync(text);
+            }
+        }
+        else if (e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Uri))
+        {
+            var uri = await e.DataView.GetUriAsync();
+            if (uri is not null)
+            {
+                await vm.HandleDroppedInputAsync(uri.ToString());
+            }
+        }
+        else if (e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text))
+        {
+            var text = await e.DataView.GetTextAsync();
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                await vm.HandleDroppedInputAsync(text);
+            }
+        }
+    }
 }

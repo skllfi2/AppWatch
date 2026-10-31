@@ -17,6 +17,7 @@ public static class BackgroundCheckOrder
 
     public static IReadOnlyList<TrackedApp> Prioritize(IEnumerable<TrackedApp> apps)
     {
+        ArgumentNullException.ThrowIfNull(apps);
         var tier1 = new List<TrackedApp>();
         var tier2 = new List<TrackedApp>();
         var tier2Backoff = new List<TrackedApp>();
@@ -53,6 +54,7 @@ public static class BackgroundCheckOrder
     /// Any non-Error outcome resets the counter (one good check clears the backoff).</summary>
     public static void RecordOutcome(TrackedApp app, UpdateStatus status)
     {
+        ArgumentNullException.ThrowIfNull(app);
         app.LastCheckStatus = status;
         app.LastCheckUtc = DateTimeOffset.UtcNow;
         app.ConsecutiveErrorCount = status == UpdateStatus.Error

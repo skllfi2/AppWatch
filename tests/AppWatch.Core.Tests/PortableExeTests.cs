@@ -35,13 +35,19 @@ public class PortableExeStrategyTests
 {
     private static TrackedApp App(UpdateKind kind) => new()
     {
-        Name = "test", RepoOwner = "o", RepoName = "r",
-        InstallDirectory = @"C:\Apps\test", UpdateKind = kind, Strategy = UpdateStrategy.Auto,
+        Name = "test",
+        RepoOwner = "o",
+        RepoName = "r",
+        InstallDirectory = @"C:\Apps\test",
+        UpdateKind = kind,
+        Strategy = UpdateStrategy.Auto,
     };
 
     private static readonly ReleaseInfo Release = new()
     {
-        TagName = "v2.29.0", IsPreRelease = false, PublishedAt = DateTimeOffset.UtcNow,
+        TagName = "v2.29.0",
+        IsPreRelease = false,
+        PublishedAt = DateTimeOffset.UtcNow,
         Assets = [new ReleaseAsset("optimizerDuck-Windows-x64-2.29.0.exe",
             "https://example.com/dl", 87_389_615, "sha256:deadbeef")],
     };

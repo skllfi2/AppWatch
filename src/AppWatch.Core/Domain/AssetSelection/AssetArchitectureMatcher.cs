@@ -18,12 +18,12 @@ public static class AssetArchitectureMatcher
 
     public static Match MatchArchitecture(string assetName)
     {
-        var name = assetName.ToLowerInvariant();
-        if (UniversalRegex.IsMatch(name)) return new UniversalMatch();
-        if (Arm64Regex.IsMatch(name)) return new KnownMatch(SystemArchitecture.Aarch64);
-        if (ArmRegex.IsMatch(name)) return new KnownMatch(SystemArchitecture.Arm);
-        if (X64Regex.IsMatch(name)) return new KnownMatch(SystemArchitecture.X86_64);
-        if (X86Regex.IsMatch(name)) return new KnownMatch(SystemArchitecture.X86);
+        ArgumentNullException.ThrowIfNull(assetName);
+        if (UniversalRegex.IsMatch(assetName)) return new UniversalMatch();
+        if (Arm64Regex.IsMatch(assetName)) return new KnownMatch(SystemArchitecture.Aarch64);
+        if (ArmRegex.IsMatch(assetName)) return new KnownMatch(SystemArchitecture.Arm);
+        if (X64Regex.IsMatch(assetName)) return new KnownMatch(SystemArchitecture.X86_64);
+        if (X86Regex.IsMatch(assetName)) return new KnownMatch(SystemArchitecture.X86);
         // P0 live-fix: GitHub convention — a name with NO arch marker (e.g.
         // "zapret-discord-youtube-1.10.3.zip") is universal, not foreign. Treating it
         // as ForeignMatch dropped every markerless asset in the engine filter.
@@ -31,5 +31,5 @@ public static class AssetArchitectureMatcher
     }
 
     private static Regex Boundary(params string[] tokens) =>
-        new($"""(^|[^a-z0-9])({string.Join("|", tokens)})([^a-z0-9]|$)""");
+        new($"""(^|[^a-z0-9])({string.Join("|", tokens)})([^a-z0-9]|$)""", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 }

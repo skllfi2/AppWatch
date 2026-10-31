@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -33,7 +33,7 @@ public sealed class GitHubApiClient : IGitHubClient
     public GitHubApiClient(string? token = null, IEnumerable<string>? downloadMirrors = null)
     {
         _http = new HttpClient();
-        // P0 live-fix: the API calls use RELATIVE urls (repos/{owner}/{repo}/releases) —
+        // P0 live-fix: the API calls use RELATIVE urls (repos/{owner}/{repo}/releases) вЂ”
         // without BaseAddress every call died with "request URI must be absolute"
         // (the GitHub path of the app never actually worked until this line).
         _http.BaseAddress = new Uri("https://api.github.com/");
@@ -54,9 +54,16 @@ public sealed class GitHubApiClient : IGitHubClient
         if (IsRateLimited)
             throw new HttpRequestException($"GitHub API rate limit exceeded until {RateLimitResetUtc:HH:mm:ss}");
 
-        var json = await GetStringWithRetryAsync(url, cancellationToken);
+        var json = await GetStringWithRetryAsync(url, cancellationToken).ConfigureAwait(false);
         var dto = JsonSerializer.Deserialize<RepoDto>(json, JsonOptions);
         if (dto is null) return null;
+
+        string? iconUrl = null;
+        try
+        {
+            iconUrl = await TryFindRepoIconUrlAsync(owner, repo, dto.DefaultBranch, cancellationToken).ConfigureAwait(false);
+        }
+        catch { }
 
         var info = new GitHubRepoInfo
         {
@@ -64,9 +71,10 @@ public sealed class GitHubApiClient : IGitHubClient
             Description = dto.Description,
             HtmlUrl = dto.HtmlUrl,
             Homepage = dto.Homepage,
-            AvatarUrl = dto.Owner.AvatarUrl,
+            AvatarUrl = iconUrl ?? dto.Owner.AvatarUrl,
             OwnerLogin = dto.Owner.Login,
             OwnerAvatarUrl = dto.Owner.AvatarUrl,
+            IconUrl = iconUrl,
         };
 
         _cache.Set(url, info, new MemoryCacheEntryOptions
@@ -88,7 +96,7 @@ public sealed class GitHubApiClient : IGitHubClient
         if (IsRateLimited)
             throw new HttpRequestException($"GitHub API rate limit exceeded until {RateLimitResetUtc:HH:mm:ss}");
 
-        var json = await GetStringWithRetryAsync(url, cancellationToken);
+        var json = await GetStringWithRetryAsync(url, cancellationToken).ConfigureAwait(false);
         var dtos = JsonSerializer.Deserialize<List<ReleaseDto>>(json, JsonOptions) ?? [];
         var releases = dtos.Select(Map).ToList();
 
@@ -108,7 +116,7 @@ public sealed class GitHubApiClient : IGitHubClient
         var directory = Path.GetDirectoryName(destinationPath);
         if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
 
-        // B8: rotate github.com → mirror 1 → mirror 2; the .part resume file is
+        // B8: rotate github.com в†’ mirror 1 в†’ mirror 2; the .part resume file is
         // shared across candidates (mirrors serve the identical asset bytes).
         var candidates = DownloadMirrors.Candidates(url, _downloadMirrors);
         Exception? lastError = null;
@@ -119,7 +127,7 @@ public sealed class GitHubApiClient : IGitHubClient
             {
                 try
                 {
-                    await DownloadFromAsync(candidate, partPath, progress, cancellationToken);
+                    await DownloadFromAsync(candidate, partPath, progress, cancellationToken).ConfigureAwait(false);
                     File.Move(partPath, destinationPath, overwrite: true);
                     return;
                 }
@@ -129,17 +137,17 @@ public sealed class GitHubApiClient : IGitHubClient
                 }
                 catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable)
                 {
-                    // stale/oversized .part — drop it and retry this source from scratch
+                    // stale/oversized .part вЂ” drop it and retry this source from scratch
                     if (File.Exists(partPath)) File.Delete(partPath);
                     lastError = ex;
                     if (attempt >= MaxAttempts) break;
-                    await Task.Delay(TimeSpan.FromSeconds(attempt * 2), cancellationToken);
+                    await Task.Delay(TimeSpan.FromSeconds(attempt * 2), cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex) when (ex is HttpRequestException or IOException or OperationCanceledException)
                 {
                     lastError = ex;
                     if (attempt >= MaxAttempts) break;
-                    await Task.Delay(TimeSpan.FromSeconds(attempt * 2), cancellationToken);
+                    await Task.Delay(TimeSpan.FromSeconds(attempt * 2), cancellationToken).ConfigureAwait(false);
                 }
             }
 
@@ -160,25 +168,25 @@ public sealed class GitHubApiClient : IGitHubClient
             request.Headers.Range = new RangeHeaderValue(existing, null);
 
         using var response = await _http.SendAsync(
-            request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
-        // a server that ignores Range answers 200 with the full body — restart from scratch
+        // a server that ignores Range answers 200 with the full body вЂ” restart from scratch
         var append = existing > 0 && response.StatusCode == HttpStatusCode.PartialContent;
         long baseOffset = append ? existing : 0;
         if (existing > 0 && !append) File.Delete(partPath);
 
         var total = (response.Content.Headers.ContentLength ?? 0) + baseOffset;
-        await using var source = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using var source = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         await using var target = new FileStream(
             partPath, append ? FileMode.Append : FileMode.Create, FileAccess.Write);
 
         var buffer = new byte[81920];
         long written = baseOffset;
         int read;
-        while ((read = await source.ReadAsync(buffer, cancellationToken)) > 0)
+        while ((read = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
         {
-            await target.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+            await target.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
             written += read;
             if (total > 0) progress?.Report(written * 100.0 / total);
         }
@@ -193,11 +201,11 @@ public sealed class GitHubApiClient : IGitHubClient
         {
             try
             {
-                using var response = await _http.GetAsync(url, cancellationToken);
+                using var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
                 TrackRateLimit(response);
-                await EnsureNotRateLimited(response);
+                await EnsureNotRateLimited(response).ConfigureAwait(false);
                 response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsStringAsync(cancellationToken);
+                return await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -207,7 +215,7 @@ public sealed class GitHubApiClient : IGitHubClient
                 attempt < MaxAttempts && ex is HttpRequestException or IOException or OperationCanceledException)
             {
                 Log.Warning("GitHub request retry (attempt {Attempt}): {Message}", attempt, ex.Message);
-                await Task.Delay(TimeSpan.FromSeconds(attempt * 2), cancellationToken);
+                await Task.Delay(TimeSpan.FromSeconds(attempt * 2), cancellationToken).ConfigureAwait(false);
             }
         }
     }
@@ -268,6 +276,66 @@ public sealed class GitHubApiClient : IGitHubClient
             : null;
     }
 
+    private static readonly string[] CommonIconPaths =
+    [
+        "assets/icon.png",
+        "assets/logo.png",
+        "assets/appicon.png",
+        "icon.png",
+        "logo.png",
+        "resources/icon.png",
+        "resources/logo.png",
+        "res/icon.png",
+        "src/assets/icon.png",
+        "src/assets/logo.png",
+        ".github/icon.png",
+        ".github/logo.png",
+        "docs/icon.png",
+        "docs/logo.png",
+        "assets/icon.ico",
+        "icon.ico"
+    ];
+
+    private async Task<string?> TryFindRepoIconUrlAsync(string owner, string repo, string? branch, CancellationToken ct)
+    {
+        var targetBranch = !string.IsNullOrWhiteSpace(branch) ? branch : "HEAD";
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(TimeSpan.FromSeconds(3));
+
+        var tasks = CommonIconPaths.Select(async p =>
+        {
+            var rawUrl = $"https://raw.githubusercontent.com/{owner}/{repo}/{targetBranch}/{p}";
+            try
+            {
+                using var req = new HttpRequestMessage(HttpMethod.Head, rawUrl);
+                using var res = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
+                if (res.IsSuccessStatusCode)
+                {
+                    var ctType = res.Content.Headers.ContentType?.MediaType;
+                    if (ctType is null ||
+                        ctType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) ||
+                        ctType == "application/octet-stream" ||
+                        rawUrl.EndsWith(".ico", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return rawUrl;
+                    }
+                }
+            }
+            catch { }
+            return null;
+        }).ToList();
+
+        try
+        {
+            var results = await Task.WhenAll(tasks).ConfigureAwait(false);
+            return results.FirstOrDefault(r => r is not null);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private sealed class ReleaseDto
     {
         [JsonPropertyName("tag_name")] public string TagName { get; set; } = "";
@@ -291,6 +359,7 @@ public sealed class GitHubApiClient : IGitHubClient
         [JsonPropertyName("description")] public string? Description { get; set; }
         [JsonPropertyName("html_url")] public string HtmlUrl { get; set; } = "";
         [JsonPropertyName("homepage")] public string? Homepage { get; set; }
+        [JsonPropertyName("default_branch")] public string? DefaultBranch { get; set; }
         [JsonPropertyName("owner")] public OwnerDto Owner { get; set; } = new();
     }
 

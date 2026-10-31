@@ -19,3 +19,7 @@ public static class CheckSchedule
         return TimeSpan.FromMilliseconds(interval.TotalMilliseconds * factor);
     }
 }
+
+// CA5394: This uses Random for scheduling jitter, not cryptographic purposes.
+// Random.Shared is appropriate here for deterministic pseudo-random jitter.
+#pragma warning restore CA5394

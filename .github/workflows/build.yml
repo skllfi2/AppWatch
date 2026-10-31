@@ -40,6 +40,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
+      - name: Add Microsoft feed for WinUI 2.5.1
+        run: dotnet nuget add source "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-public/nuget/v3/index.json" --name "Microsoft Public" --username "docker" --password "${{ secrets.AZURE_DEVOPS_PAT }}" --store-password-in-clear-text
+
       - name: Restore
         run: |
           dotnet nuget locals all --clear

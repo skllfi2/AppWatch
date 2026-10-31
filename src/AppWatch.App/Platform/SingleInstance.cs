@@ -1,4 +1,4 @@
-﻿// Ported from ZuiV2 Platform/SingleInstance.cs (our own code).
+// Ported from ZuiV2 Platform/SingleInstance.cs (our own code).
 using System.IO.Pipes;
 using System.Security.Cryptography;
 using System.Text;
@@ -18,7 +18,7 @@ public static class SingleInstance
     public static string GetInstanceKey()
     {
         var basePath = Environment.ProcessPath ?? AppContext.BaseDirectory;
-        var hash = SHA1.HashData(Encoding.UTF8.GetBytes(basePath));
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(basePath));
         var digest = Convert.ToHexString(hash).ToLowerInvariant()[..12];
         return $"appwatch_{digest}";
     }

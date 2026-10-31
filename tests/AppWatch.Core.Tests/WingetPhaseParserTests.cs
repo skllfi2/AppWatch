@@ -33,4 +33,26 @@ public class WingetPhaseParserTests
     [Fact]
     public void TryParsePhase_TrimsAndIgnoresCase()
         => Assert.Equal(WingetPhase.Downloading, WingetOutputParser.TryParsePhase("  СКАЧИВАНИЕ https://x/y.exe "));
+
+    [Fact]
+    public void WingetProgress_HoldsBytesTotalSpeedAndPercent()
+    {
+        var p = new WingetProgress(WingetPhase.Downloading, 500, 1000, 250, 50.0);
+        Assert.Equal(WingetPhase.Downloading, p.Phase);
+        Assert.Equal(500, p.Bytes);
+        Assert.Equal(1000, p.TotalBytes);
+        Assert.Equal(250, p.BytesPerSec);
+        Assert.Equal(50.0, p.ProgressPercent);
+    }
+
+    [Fact]
+    public void WingetProgress_Of_FactorySetsDefaults()
+    {
+        var p = WingetProgress.Of(WingetPhase.Verifying);
+        Assert.Equal(WingetPhase.Verifying, p.Phase);
+        Assert.Null(p.Bytes);
+        Assert.Null(p.TotalBytes);
+        Assert.Null(p.BytesPerSec);
+        Assert.Null(p.ProgressPercent);
+    }
 }

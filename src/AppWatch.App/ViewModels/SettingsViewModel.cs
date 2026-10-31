@@ -1,3 +1,4 @@
+using AppWatch.Infrastructure.System;
 using AppWatch.Core.Abstractions;
 using AppWatch.Core.Domain.Models;
 using AppWatch.Infrastructure;
@@ -24,20 +25,23 @@ public partial class SettingsViewModel : ObservableObject
     private readonly AppConfig _config;
     private readonly ThemeService _theme;
     private readonly SelfUpdateService _selfUpdate;
+    private readonly VersionStore _versionStore;
     private bool _initialized;
 
     public IReadOnlyList<int> IntervalChoices { get; } = [1, 3, 6, 12, 24];
+    public IReadOnlyList<int> VersionKeepChoices { get; } = [1, 3, 5, 10];
 
     public IReadOnlyList<UpdateStrategy> StrategyChoices { get; } =
         [UpdateStrategy.Auto, UpdateStrategy.BuiltInUpdater, UpdateStrategy.SilentInstaller,
          UpdateStrategy.PortableReplace, UpdateStrategy.ExternalLauncher];
 
-    public SettingsViewModel(IConfigStore configStore, ThemeService theme, SelfUpdateService selfUpdate)
+    public SettingsViewModel(IConfigStore configStore, ThemeService theme, SelfUpdateService selfUpdate, VersionStore versionStore)
     {
         _configStore = configStore;
         _config = configStore.Load();
         _theme = theme;
         _selfUpdate = selfUpdate;
+        _versionStore = versionStore;
 
         // Assignments below must NOT trigger side effects (theme swap /
         // language switch) — the page is not loaded yet and a mid-navigation
@@ -52,6 +56,15 @@ public partial class SettingsViewModel : ObservableObject
         if (SelectedUpdateStrategyIndex < 0) SelectedUpdateStrategyIndex = 0;
 
         ToastNotificationsEnabled = _config.ToastNotificationsEnabled;
+        AutoRefreshIconsEnabled = _config.AutoRefreshIcons;
+
+        PortableAppsDirectory = _config.InstallRoot
+            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppWatch", "Apps");
+
+        SelectedVersionKeepIndex = VersionKeepChoices.ToList().IndexOf(_config.VersionCacheCount);
+        if (SelectedVersionKeepIndex < 0) SelectedVersionKeepIndex = 1;
+
+        RefreshStorageSizes();
 
         _initialized = true;
     }
@@ -70,10 +83,28 @@ public partial class SettingsViewModel : ObservableObject
     public partial bool ToastNotificationsEnabled { get; set; }
 
     [ObservableProperty]
+    public partial bool AutoRefreshIconsEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsRefreshingIcons { get; set; }
+
+    [ObservableProperty]
     public partial int SelectedIntervalIndex { get; set; }
 
     [ObservableProperty]
     public partial int SelectedUpdateStrategyIndex { get; set; }
+
+    [ObservableProperty]
+    public partial string PortableAppsDirectory { get; set; } = "";
+
+    [ObservableProperty]
+    public partial int SelectedVersionKeepIndex { get; set; }
+
+    [ObservableProperty]
+    public partial string VersionCacheSizeText { get; set; } = "0 Б";
+
+    [ObservableProperty]
+    public partial string TempFilesSizeText { get; set; } = "0 Б";
 
     [ObservableProperty]
     public partial string PatToken { get; set; } = "";
@@ -105,6 +136,8 @@ public partial class SettingsViewModel : ObservableObject
         NextCatalogCheckText = fresh.CatalogCheckNextRunUtc is { } c
             ? c.LocalDateTime.ToString("dd.MM.yyyy HH:mm")
             : none;
+
+        RefreshStorageSizes();
     }
 
     partial void OnSelectedThemeIndexChanged(int value)
@@ -127,19 +160,93 @@ public partial class SettingsViewModel : ObservableObject
         _configStore.Save(_config);
     }
 
+    partial void OnSelectedVersionKeepIndexChanged(int value)
+    {
+        if (!_initialized) return;
+        _config.VersionCacheCount = VersionKeepChoices[Math.Clamp(value, 0, VersionKeepChoices.Count - 1)];
+        _configStore.Save(_config);
+    }
+
     public string PatStatus => string.IsNullOrEmpty(_config.GitHubToken)
         ? LocalizationService.Instance["SettingsPatStatusEmpty"]
         : LocalizationService.Instance["SettingsPatStatusOk"];
 
     [RelayCommand]
+    private async Task BrowsePortableDirectoryAsync()
+    {
+        var picker = new Windows.Storage.Pickers.FolderPicker();
+        picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.ComputerFolder;
+        picker.FileTypeFilter.Add("*");
+        WinRT.Interop.InitializeWithWindow.Initialize(picker,
+            WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow));
+        var folder = await picker.PickSingleFolderAsync();
+        if (folder is not null)
+        {
+            PortableAppsDirectory = folder.Path;
+            _config.InstallRoot = folder.Path;
+            _configStore.Save(_config);
+            StatusText = LocalizationService.Instance["SettingsSaved"];
+        }
+    }
+
+    [RelayCommand]
+    private void ResetPortableDirectory()
+    {
+        var defaultPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppWatch", "Apps");
+        PortableAppsDirectory = defaultPath;
+        _config.InstallRoot = null;
+        _configStore.Save(_config);
+        StatusText = LocalizationService.Instance["SettingsSaved"];
+    }
+
+    partial void OnAutoRefreshIconsEnabledChanged(bool value)
+    {
+        if (!_initialized) return;
+        _config.AutoRefreshIcons = value;
+        _configStore.Save(_config);
+        StatusText = LocalizationService.Instance["SettingsSaved"];
+    }
+
+    [RelayCommand]
+    private async Task RefreshAllIconsAsync()
+    {
+        if (IsRefreshingIcons) return;
+        IsRefreshingIcons = true;
+        try
+        {
+            await App.Resolve<MainViewModel>().RefreshAllIconsAsync();
+            StatusText = LocalizationService.Instance["IconsRefreshed"];
+        }
+        catch (Exception)
+        {
+            StatusText = LocalizationService.Instance["IconsRefreshFailed"];
+        }
+        finally
+        {
+            IsRefreshingIcons = false;
+        }
+    }
+
+    [RelayCommand]
     private void Save()
     {
         _config.Language = SelectedLanguageIndex == 0 ? "ru" : "en";
+        _config.AutoRefreshIcons = AutoRefreshIconsEnabled;
         _config.AutoCheckEnabled = AutoCheckEnabled;
         _config.ToastNotificationsEnabled = ToastNotificationsEnabled;
         _config.CheckIntervalHours = IntervalChoices[Math.Max(0, SelectedIntervalIndex)];
+        _config.VersionCacheCount = VersionKeepChoices[Math.Clamp(SelectedVersionKeepIndex, 0, VersionKeepChoices.Count - 1)];
         if (!string.IsNullOrWhiteSpace(PatToken))
             _config.GitHubToken = PatToken.Trim();
+
+        if (!string.IsNullOrWhiteSpace(PortableAppsDirectory))
+        {
+            var defaultPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppWatch", "Apps");
+            _config.InstallRoot = string.Equals(PortableAppsDirectory.Trim(), defaultPath, StringComparison.OrdinalIgnoreCase)
+                ? null
+                : PortableAppsDirectory.Trim();
+        }
+
         _configStore.Save(_config);
         StatusText = LocalizationService.Instance["SettingsSaved"];
         OnPropertyChanged(nameof(PatStatus));
@@ -285,6 +392,175 @@ public partial class SettingsViewModel : ObservableObject
         StatusText = added > 0
             ? string.Format(LocalizationService.Instance["ImportDone"], added)
             : LocalizationService.Instance["ImportEmpty"];
+    }
+
+    public void RefreshStorageSizes()
+    {
+        var cacheBytes = _versionStore.GetTotalSizeBytes();
+        VersionCacheSizeText = FormatBytes(cacheBytes);
+
+        var (tempBytes, _) = GetTempFilesInfo();
+        TempFilesSizeText = FormatBytes(tempBytes);
+    }
+
+    [RelayCommand]
+    private void CleanVersionCache()
+    {
+        _versionStore.ClearAll();
+        RefreshStorageSizes();
+        var main = App.Resolve<MainViewModel>();
+        foreach (var app in main.Apps)
+            app.Refresh();
+        StatusText = LocalizationService.Instance["SettingsCacheCleaned"];
+    }
+
+    [RelayCommand]
+    private void CleanTempFiles()
+    {
+        var cleanedCount = CleanTempFilesInternal();
+        RefreshStorageSizes();
+        StatusText = string.Format(LocalizationService.Instance["SettingsTempCleaned"], cleanedCount);
+    }
+
+    private static (long TotalBytes, int FileCount) GetTempFilesInfo()
+    {
+        var tempPath = Path.GetTempPath();
+        long bytes = 0;
+        int count = 0;
+        try
+        {
+            var di = new DirectoryInfo(tempPath);
+            foreach (var file in di.EnumerateFiles("appwatch-*", SearchOption.TopDirectoryOnly))
+            {
+                try { bytes += file.Length; count++; } catch { }
+            }
+            foreach (var dir in di.EnumerateDirectories("appwatch-*", SearchOption.TopDirectoryOnly))
+            {
+                try
+                {
+                    foreach (var f in dir.EnumerateFiles("*", SearchOption.AllDirectories))
+                    {
+                        try { bytes += f.Length; count++; } catch { }
+                    }
+                }
+                catch { }
+            }
+        }
+        catch { }
+        return (bytes, count);
+    }
+
+    private static int CleanTempFilesInternal()
+    {
+        var tempPath = Path.GetTempPath();
+        int deleted = 0;
+        try
+        {
+            var di = new DirectoryInfo(tempPath);
+            foreach (var file in di.EnumerateFiles("appwatch-*", SearchOption.TopDirectoryOnly))
+            {
+                try { file.Delete(); deleted++; } catch { }
+            }
+            foreach (var dir in di.EnumerateDirectories("appwatch-*", SearchOption.TopDirectoryOnly))
+            {
+                try { dir.Delete(true); deleted++; } catch { }
+            }
+        }
+        catch { }
+        return deleted;
+    }
+
+    private static string FormatBytes(long bytes) => bytes switch
+    {
+        >= 1024 * 1024 * 1024 => $"{bytes / (1024.0 * 1024 * 1024):F1} ГБ",
+        >= 1024 * 1024 => $"{bytes / (1024.0 * 1024):F1} МБ",
+        >= 1024 => $"{bytes / 1024.0:F0} КБ",
+        _ => $"{bytes} Б"
+    };
+
+    [RelayCommand]
+    private async Task ExportFullBackupAsync(CancellationToken cancellationToken)
+    {
+        var picker = new FileSavePicker { SuggestedFileName = $"appwatch-backup-{DateTime.Now:yyyyMMdd-HHmmss}" };
+        picker.FileTypeChoices.Add("AppWatch Backup", [".json"]);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker,
+            WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow));
+        var file = await picker.PickSaveFileAsync();
+        if (file is null) return;
+
+        var json = JsonSerializer.Serialize(_config, BundleOptions);
+        await File.WriteAllTextAsync(file.Path, json, cancellationToken);
+        StatusText = LocalizationService.Instance["FullBackupExportDone"];
+    }
+
+    [RelayCommand]
+    private async Task RestoreFullBackupAsync(CancellationToken cancellationToken)
+    {
+        var picker = new FileOpenPicker
+        {
+            SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+        };
+        picker.FileTypeFilter.Add(".json");
+        WinRT.Interop.InitializeWithWindow.Initialize(picker,
+            WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow));
+        var file = await picker.PickSingleFileAsync();
+        if (file is null) return;
+
+        try
+        {
+            var text = await File.ReadAllTextAsync(file.Path, cancellationToken);
+            var restored = JsonSerializer.Deserialize<AppConfig>(text, BundleOptions);
+            if (restored is null || restored.TrackedApps is null)
+            {
+                StatusText = LocalizationService.Instance["FullBackupRestoreFailed"];
+                return;
+            }
+
+            _configStore.Save(restored);
+
+            _config.SchemaVersion = restored.SchemaVersion;
+            _config.GitHubToken = restored.GitHubToken;
+            _config.Language = restored.Language;
+            _config.Theme = restored.Theme;
+            _config.AutoCheckEnabled = restored.AutoCheckEnabled;
+            _config.AutoApplyUpdates = restored.AutoApplyUpdates;
+            _config.CheckIntervalHours = restored.CheckIntervalHours;
+            _config.DefaultUpdateStrategy = restored.DefaultUpdateStrategy;
+            _config.InstallRoot = restored.InstallRoot;
+            _config.TrackedApps = restored.TrackedApps;
+            _config.DownloadMirrors = restored.DownloadMirrors;
+            _config.VersionCacheCount = restored.VersionCacheCount;
+            _config.ToastNotificationsEnabled = restored.ToastNotificationsEnabled;
+
+            _initialized = false;
+            SelectedLanguageIndex = _config.Language == "ru" ? 0 : 1;
+            SelectedThemeIndex = (int)_config.Theme;
+            AutoCheckEnabled = _config.AutoCheckEnabled;
+            ToastNotificationsEnabled = _config.ToastNotificationsEnabled;
+            SelectedIntervalIndex = IntervalChoices.ToList().IndexOf(_config.CheckIntervalHours);
+            if (SelectedIntervalIndex < 0) SelectedIntervalIndex = 2;
+            SelectedUpdateStrategyIndex = StrategyChoices.ToList().IndexOf(_config.DefaultUpdateStrategy);
+            if (SelectedUpdateStrategyIndex < 0) SelectedUpdateStrategyIndex = 0;
+            SelectedVersionKeepIndex = VersionKeepChoices.ToList().IndexOf(_config.VersionCacheCount);
+            if (SelectedVersionKeepIndex < 0) SelectedVersionKeepIndex = 1;
+            PortableAppsDirectory = _config.InstallRoot
+                ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppWatch", "Apps");
+            PatToken = _config.GitHubToken ?? "";
+            _initialized = true;
+
+            LocalizationService.Instance.SetLanguage(_config.Language);
+            _theme.SetTheme(_config.Theme);
+
+            var main = App.Resolve<MainViewModel>();
+            main.ReloadAppsFromConfig(_config);
+
+            StatusText = string.Format(LocalizationService.Instance["FullBackupRestoreDone"], _config.TrackedApps.Count);
+            OnPropertyChanged(nameof(PatStatus));
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"{LocalizationService.Instance["FullBackupRestoreFailed"]}: {ex.Message}";
+        }
     }
 
     [RelayCommand]

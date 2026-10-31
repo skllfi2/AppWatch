@@ -7,5 +7,20 @@ namespace AppWatch.Core.Domain;
 /// PowerShell/PowerShell#28252) until Microsoft fixes the CDN data or ships a winget patch.
 /// Not fixable client-side; scoped commands (`search`, `install --id`, `show`) keep working.
 /// </summary>
-public sealed class WingetCatalogBrokenException(string output)
-    : Exception($"winget crashed while listing updates (catalog data bug): {output}");
+public sealed class WingetCatalogBrokenException : Exception
+{
+    public WingetCatalogBrokenException()
+        : base("winget crashed while listing updates (catalog data bug)")
+    {
+    }
+
+    public WingetCatalogBrokenException(string output)
+        : base($"winget crashed while listing updates (catalog data bug): {output}")
+    {
+    }
+
+    public WingetCatalogBrokenException(string message, Exception? innerException)
+        : base(message, innerException)
+    {
+    }
+}

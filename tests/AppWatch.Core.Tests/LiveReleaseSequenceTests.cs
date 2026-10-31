@@ -14,16 +14,22 @@ public class LiveReleaseSequenceTests
 {
     private static TrackedApp App(string name, string owner, string repo, string? current,
         UpdateKind kind, string exe, IReadOnlyList<string> priority) => new()
-    {
-        Name = name, RepoOwner = owner, RepoName = repo,
-        InstallDirectory = @"C:\apps\test", ExecutableName = exe,
-        CurrentVersion = current, UpdateKind = kind,
-        AssetExtensionPriority = priority,
-    };
+        {
+            Name = name,
+            RepoOwner = owner,
+            RepoName = repo,
+            InstallDirectory = @"C:\apps\test",
+            ExecutableName = exe,
+            CurrentVersion = current,
+            UpdateKind = kind,
+            AssetExtensionPriority = priority,
+        };
 
     private static ReleaseInfo Release(string tag, bool preRelease = false, string asset = "app-x64.zip") => new()
     {
-        TagName = tag, IsPreRelease = preRelease, PublishedAt = DateTimeOffset.UtcNow,
+        TagName = tag,
+        IsPreRelease = preRelease,
+        PublishedAt = DateTimeOffset.UtcNow,
         Assets = [new ReleaseAsset(asset, "https://example.com/a", 100, null)],
     };
 

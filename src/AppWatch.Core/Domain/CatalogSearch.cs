@@ -26,8 +26,8 @@ public static class CatalogSearch
     {
         if (string.IsNullOrWhiteSpace(query)) return 0;
 
-        var q = query.Trim().ToLowerInvariant();
-        var n = (name ?? "").Trim().ToLowerInvariant();
+        var q = query.Trim().ToUpperInvariant();
+        var n = (name ?? "").Trim().ToUpperInvariant();
 
         if (n.Length > 0)
         {
@@ -41,7 +41,7 @@ public static class CatalogSearch
             }
         }
 
-        var d = (description ?? "").ToLowerInvariant();
+        var d = (description ?? "").ToUpperInvariant();
         return d.Contains(q, StringComparison.Ordinal) ? ScoreDescription : 0;
     }
 

@@ -29,6 +29,7 @@
       <WindowsAppSdkDeploymentManagerInitialize>false</WindowsAppSdkDeploymentManagerInitialize>
       <!-- Suppress mspdbcmf.exe warning (symbol package not needed for debug builds) -->
       <AppxSymbolPackageEnabled>false</AppxSymbolPackageEnabled>
+      <VCRTForwarders-IncludeDebugCRT>false</VCRTForwarders-IncludeDebugCRT>
       <MsPdbCmfExeFullpath>mspdbcmf.exe</MsPdbCmfExeFullpath>
 
       <!-- Memory: workstation GC + conserve mode. The UI holds a tiny managed heap
@@ -36,7 +37,7 @@
            just inflates Private bytes. AdaptationMode=1 + Conserve=5 trade a little
            CPU for a visibly smaller resident footprint. -->
       <ServerGarbageCollection>false</ServerGarbageCollection>
-      <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+      <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
       <GarbageCollectionAdaptationMode>1</GarbageCollectionAdaptationMode>
       <!-- Fix XamlCompiler culture resource issue: use managed compiler with en-US culture -->
       <XamlCompilerUseManagedResources>true</XamlCompilerUseManagedResources>
@@ -73,8 +74,6 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
       <Content Include="Assets\Wide310x150Logo.scale-200.png" />
-            <!-- Unified theme resources: single file, no Dark/Light duplication for PRI -->
-            <Content Include="Themes\ThemeResources.xaml" CopyToOutputDirectory="PreserveNewest" />
             <Compile Remove="PatchXamlCompiler.cs" />
             <Compile Remove="PatchTool\\**\\*.cs" />
             <Compile Remove="XamlCompilerWrapper.cs" />
@@ -83,18 +82,17 @@
     <ItemGroup>
       <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="CommunityToolkit.WinUI.Helpers" Version="8.2.251219" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.13" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.13" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.14" />
     <PackageReference Include="Microsoft.VCRTForwarders.140" Version="1.1.0" />
         <PackageReference Include="Microsoft.WindowsAppSDK" Version="[2.5.1]" />
-                <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="[2.5.1]" />
-                        <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
+                        <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2957" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools.WinApp" Version="0.7.1" />
     <PackageReference Include="Serilog" Version="4.4.0" />
-    <PackageReference Include="System.Drawing.Common" Version="9.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.14" />
     <PackageReference Include="Velopack" Version="1.2.161" />
   </ItemGroup>
 

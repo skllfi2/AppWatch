@@ -8,10 +8,9 @@ public sealed class FileStore
     public async Task VerifyDigestAsync(string filePath, string expectedSha256)
     {
         await using var stream = File.OpenRead(filePath);
-        var actual = Convert.ToHexString(await SHA256.HashDataAsync(stream)).ToLowerInvariant();
-        if (actual != expectedSha256.ToLowerInvariant())
-            throw new InvalidDataException(
-                $"SHA-256 mismatch: expected {expectedSha256.ToLowerInvariant()}, got {actual}");
+        var actual = Convert.ToHexString(await SHA256.HashDataAsync(stream).ConfigureAwait(false));
+        if (!string.Equals(actual, expectedSha256, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException($"SHA-256 mismatch: expected {expectedSha256.ToLowerInvariant()}, got {actual.ToLowerInvariant()}");
     }
 
     public string ExtractToStaging(string zipPath, string tag, string? targetFileName = null)

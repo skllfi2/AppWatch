@@ -79,15 +79,16 @@ public partial class App : Application
                                                 .AddSingleton<IGitHubClient>(_ => new GitHubApiClient(config.GitHubToken, config.DownloadMirrors))
                                                 .AddSingleton<IProcessService, ProcessService>()
                                                 .AddSingleton<IAppLauncher, AppLauncher>()
+                                                .AddSingleton<IShortcutService, ShortcutService>()
                                                 .AddSingleton<IElevationService, ElevationService>()
                                                 .AddSingleton<FileStore>()
                                                 .AddSingleton<InstallerTrustService>()
                                                 .AddSingleton<Core.Domain.UpdateGate>()
                                                 .AddSingleton<UpdateJournalStore>()
                                                 .AddSingleton<VersionStore>(sp => new VersionStore(config.VersionCacheCount))
+                                                .AddSingleton<SystemVersionResolver>()
                                                 .AddSingleton<IUpdateEngine, UpdateEngine>()
                                                 .AddSingleton<WingetService>()
-                                                .AddSingleton<SystemVersionResolver>()
                                                 .AddSingleton<UpdateHistoryStore>()
                                                 .AddSingleton<CatalogService>()
                                                                 .AddSingleton<AutostartService>()
@@ -100,6 +101,15 @@ public partial class App : Application
                                                 .AddHostedService<CatalogMonitor>()
                                                 .AddLogging(builder => builder.AddDebug())
                                                 .AddSingleton(LocalizationService.Instance)
+                                                .AddSingleton<Services.IDialogService, Services.DialogService>()
+                                                .AddSingleton<Services.AppImportCoordinator>(sp => new Services.AppImportCoordinator(
+                                                    sp.GetRequiredService<Services.IDialogService>(),
+                                                    sp.GetRequiredService<IConfigStore>(),
+                                                    sp.GetRequiredService<IUpdateEngine>(),
+                                                    sp.GetRequiredService<IShortcutService>(),
+                                                    sp.GetRequiredService<SystemVersionResolver>(),
+                                                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppWatch", "Apps")
+                                                ))
                                                 .AddSingleton<MainViewModel>()
                                                 .BuildServiceProvider();
 
@@ -114,12 +124,6 @@ public partial class App : Application
                     _ = Task.Run(() => hosted.StartAsync(_hostedCts.Token));
                 }
 
-                // NOW create and show the window IMMEDIATELY — UI is visible while background work continues
-                _window = new MainWindow();
-                Window = _window;
-                _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
-                _window.AppWindow.Closing += OnWindowClosing;
-
                 // Register converters BEFORE the first page loads (StaticResource lookups happen then)
                 Resources["BoolToVisibility"] = new Converters.BoolToVisibilityConverter();
                 Resources["InverseBool"] = new Converters.InverseBoolConverter();
@@ -127,9 +131,32 @@ public partial class App : Application
                 Resources["NotNullToVisibility"] = new Converters.NotNullToVisibilityConverter();
                 Resources["CountToVisibility"] = new Converters.CountToVisibilityConverter();
                 Resources["InverseCountToVisibility"] = new Converters.InverseCountToVisibilityConverter();
-                Resources["StringToBrushConverter"] = new Converters.StringToBrushConverter();
                 Resources["InverseBoolToVisibility"] = new Converters.InverseBoolToVisibilityConverter();
                 Resources["StringNotEmptyToVisibility"] = new Converters.StringNotEmptyToVisibilityConverter();
+                Resources["StringEmptyToVisibility"] = new Converters.StringEmptyToVisibilityConverter();
+                Resources["ObjectToVisibility"] = new Converters.ObjectToVisibilityConverter();
+                Resources["NullToVisibility"] = new Converters.NullToVisibilityConverter();
+                Resources["StringToBrush"] = new Converters.StringToBrushConverter();
+                Resources["StringToBrushConverter"] = new Converters.StringToBrushConverter();
+                Resources["FirstCharToBrush"] = new Converters.FirstCharToBrushConverter();
+                Resources["FirstCharToBrushConverter"] = new Converters.FirstCharToBrushConverter();
+                Resources["StringToImageSource"] = new Converters.StringToImageSourceConverter();
+                Resources["StringToImageSourceConverter"] = new Converters.StringToImageSourceConverter();
+                Resources["StageToBrush"] = new Converters.StageToBrushConverter();
+                Resources["StageToBrushConverter"] = new Converters.StageToBrushConverter();
+                Resources["StageToVis"] = new Converters.StageToVisConverter();
+                Resources["StageToVisConverter"] = new Converters.StageToVisConverter();
+
+                // Apply persisted theme to resources before first page loads
+                var themeService = Services.GetRequiredService<ThemeService>();
+                themeService.ApplyToRoot();
+
+                // NOW create and show the window IMMEDIATELY — UI is visible while background work continues
+                _window = new MainWindow();
+                Window = _window;
+                _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
+                _window.AppWindow.Closing += OnWindowClosing;
+                themeService.ApplyToRoot();
 
                 // App notifications: register BEFORE the window exists (official WinAppSDK
                 // sample order). Best-effort — a failure here must never take the app down.
@@ -157,13 +184,12 @@ public partial class App : Application
                 if (!StartHidden)
                                     _window.Activate();
 
-                                // Apply persisted theme (ThemeService reads from config and swaps resource dictionaries)
-                                var themeService = Services.GetRequiredService<ThemeService>();
-                                themeService.ApplyToRoot();
+
 
                                 SingleInstance.StartListening(_ => ActivateWindow());
 
                 // Heavy initialization on background thread — window is already visible
+                _ = Services.GetRequiredService<SystemVersionResolver>().PrewarmCacheAsync();
                 _ = Task.Run(async () =>
                 {
                     try
@@ -178,29 +204,33 @@ public partial class App : Application
                                 retainedFileCountLimit: 14)
                             .CreateLogger();
 
-                        // Initialize Velopack for self-updates
-                        VelopackApp.Build().Run();
-
                         // Startup check + onboarding MUST run on the UI thread: they mutate
                         // observable VM state (StatusText, card items, footer), and x:Bind
                         // setters touch TextBlock/ContentDialog directly — from a worker thread
-                        // that's RPC_E_WRONG_THREAD (0x8001010E), which silently killed the
-                        // startup check (auto-updates appeared broken). Network stays async;
+                        // that's RPC_E_WRONG_THREAD (0x8001010E). Network stays async;
                         // only the VM/UI mutations are marshaled here.
                         _window.DispatcherQueue.TryEnqueue(async () =>
-                                                {
-                                                    try
-                                                    {
-                                                        var vm = Services.GetRequiredService<MainViewModel>();
-                                                        await vm.RunStartupTasksAsync();
-                                                        // Show new onboarding dialog if first launch
-                                                        await Views.OnboardingDialog.ShowIfNeededAsync();
-                                                    }
-                                                    catch (Exception ex)
-                                                    {
-                                                        Log.Error(ex, "Startup tasks failed");
-                                                    }
-                                                });
+                        {
+                            try
+                            {
+                                // Show onboarding dialog immediately if first launch
+                                await Views.OnboardingDialog.ShowIfNeededAsync();
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error(ex, "Onboarding dialog failed");
+                            }
+
+                            try
+                            {
+                                var vm = Services.GetRequiredService<MainViewModel>();
+                                await vm.RunStartupTasksAsync();
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error(ex, "Startup tasks failed");
+                            }
+                        });
                     }
                     catch (Exception ex)
                     {

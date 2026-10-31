@@ -8,9 +8,9 @@ public class AssetSelectorTests
 {
     private static GithubAssetCandidate Asset(string name, long size = 100) => new(name, size);
 
-    private static readonly SystemArchitecture X64 = SystemArchitecture.X86_64;
-    private static readonly SystemArchitecture X86 = SystemArchitecture.X86;
-    private static readonly SystemArchitecture Arm64 = SystemArchitecture.Aarch64;
+    private const SystemArchitecture X64 = SystemArchitecture.X86_64;
+    private const SystemArchitecture X86 = SystemArchitecture.X86;
+    private const SystemArchitecture Arm64 = SystemArchitecture.Aarch64;
 
     [Fact]
     public void Choose_InstallerPriority_PrefersMsiThenExe()

@@ -201,7 +201,9 @@ public enum WingetPhase
 public sealed record WingetProgress(
     WingetPhase Phase,
     long? Bytes = null,
-    double? BytesPerSec = null)
+    long? TotalBytes = null,
+    double? BytesPerSec = null,
+    double? ProgressPercent = null)
 {
     public static WingetProgress Of(WingetPhase phase) => new(phase);
 }

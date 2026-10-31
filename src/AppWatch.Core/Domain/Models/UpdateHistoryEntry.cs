@@ -6,4 +6,5 @@ public sealed record UpdateHistoryEntry(
     string ToVersion,
     DateTimeOffset AtUtc,
     bool Success,
-    string? Detail);
+    string? Detail,
+    string? ReleaseNotes = null);
