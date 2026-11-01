@@ -143,6 +143,46 @@ public partial class TrackedAppItem : ObservableObject
                     }
                     catch { /* fall through */ }
 
+                    // 1b. If not found locally yet, check system registry (e.g. for winget or external apps)
+                    try
+                    {
+                        var sysResolver = global::AppWatch.App.Resolve<AppWatch.Infrastructure.SystemVersionResolver>();
+                        if (sysResolver is not null)
+                        {
+                            var rec = sysResolver.FindMatchingInstalledApp(App);
+                            if (rec is not null)
+                            {
+                                string? detectedExe = null;
+                                if (!string.IsNullOrWhiteSpace(rec.DisplayIcon))
+                                {
+                                    var clean = rec.DisplayIcon.Split(',')[0].Trim().Trim('"');
+                                    if (System.IO.File.Exists(clean)) detectedExe = clean;
+                                }
+
+                                if (detectedExe is null && !string.IsNullOrWhiteSpace(rec.InstallLocation) && System.IO.Directory.Exists(rec.InstallLocation))
+                                {
+                                    var primary = AppWatch.Infrastructure.SystemVersionResolver.FindPrimaryExecutable(rec.InstallLocation, App.Name);
+                                    if (primary is not null)
+                                    {
+                                        var p = System.IO.Path.Combine(rec.InstallLocation, primary);
+                                        if (System.IO.File.Exists(p)) detectedExe = p;
+                                    }
+                                }
+
+                                if (!string.IsNullOrEmpty(detectedExe))
+                                {
+                                    var bmp = await Platform.IconExtractor.GetIconFromExecutableAsync(detectedExe, 40).ConfigureAwait(false);
+                                    if (bmp is not null)
+                                    {
+                                        Icon = bmp;
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch { /* fall through */ }
+
                     // 2. Fall back to GitHub avatar URL
                     if (!string.IsNullOrWhiteSpace(AvatarUrl))
                     {

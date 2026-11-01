@@ -79,14 +79,30 @@ public sealed class JsonConfigStore : IConfigStore
         }
     }
 
-    private static bool Migrate(AppConfig config)
-    {
-        if (config.SchemaVersion < 2)
-        {
-            config.HealthCheckSeconds = 6;
-            config.SchemaVersion = 2;
-            return true;
-        }
-        return false;
-    }
-}
+    private static bool Migrate(AppConfig config)
+    {
+        var changed = false;
+        if (config.SchemaVersion < 2)
+        {
+            config.HealthCheckSeconds = 6;
+            config.SchemaVersion = 2;
+            changed = true;
+        }
+
+        // Remap any legacy %LocalAppData%\AppWatch\Apps paths to AppWatchData\Apps
+        if (config.TrackedApps is not null)
+        {
+            foreach (var app in config.TrackedApps)
+            {
+                var remapped = AppWatch.Core.Domain.AppPaths.RemapLegacyPath(app.InstallDirectory);
+                if (remapped != app.InstallDirectory)
+                {
+                    app.InstallDirectory = remapped;
+                    changed = true;
+                }
+            }
+        }
+
+        return changed;
+    }
+}

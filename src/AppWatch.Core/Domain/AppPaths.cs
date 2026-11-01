@@ -41,6 +41,29 @@ public static class AppPaths
     /// Resolves the effective install root for downloaded apps.
     /// Prefers user-configured path, then safely defaults to DefaultInstallRoot.
     /// </summary>
+    /// <summary>
+    /// Remaps any path referencing the legacy directory (%LocalAppData%\AppWatch\Apps\...)
+    /// to the new safe directory (%LocalAppData%\AppWatchData\Apps\...).
+    /// </summary>
+    public static string? RemapLegacyPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return path;
+
+        var fullLegacy = Path.GetFullPath(LegacyInstallRoot).TrimEnd('\\', '/');
+        var fullPath = Path.GetFullPath(path).TrimEnd('\\', '/');
+
+        if (string.Equals(fullPath, fullLegacy, StringComparison.OrdinalIgnoreCase))
+            return DefaultInstallRoot;
+
+        if (fullPath.StartsWith(fullLegacy + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        {
+            var relative = fullPath.Substring(fullLegacy.Length + 1);
+            return Path.Combine(DefaultInstallRoot, relative);
+        }
+
+        return path;
+    }
+
     public static string ResolveInstallRoot(string? configuredPath)
     {
         if (string.IsNullOrWhiteSpace(configuredPath))
