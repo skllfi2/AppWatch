@@ -179,7 +179,7 @@ chore(deps): update CommunityToolkit.Mvvm to 8.4.0
 ```
 AppWatch/
 ├── .github/
-│   ├── workflows/        # CI/CD (build.yml, ci.yml)
+│   ├── workflows/        # CI/CD (ci.yml)
 │   └── dependabot.yml
 ├── docs/
 │   ├── architecture.md   # C4 diagrams, ADRs

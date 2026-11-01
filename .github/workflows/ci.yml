@@ -45,17 +45,7 @@ jobs:
           $xamlCompiler = Get-ChildItem ~/.nuget/packages/microsoft.windowsappsdk.winui/*/tools/net472/Microsoft.UI.Xaml.Markup.Compiler.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
           if ($xamlCompiler) {
             $configPath = "$($xamlCompiler.FullName).config"
-            $configContent = @"
-<?xml version="1.0" encoding="utf-8"?>
-<configuration>
-  <system.globalization>
-    <globalization culture="en-US" uiCulture="en-US" />
-  </system.globalization>
-  <runtime>
-    <AppDomainResourceAssemblyResolver enabled="true" />
-  </runtime>
-</configuration>
-"@
+            $configContent = '<?xml version="1.0" encoding="utf-8"?><configuration><system.globalization><globalization culture="en-US" uiCulture="en-US" /></system.globalization><runtime><AppDomainResourceAssemblyResolver enabled="true" /></runtime></configuration>'
             [System.IO.File]::WriteAllText($configPath, $configContent)
             Write-Host "Patched $configPath"
           } else {
@@ -91,8 +81,8 @@ jobs:
       # run the xunit v3 console exe directly instead.
       - name: Test
         run: |
-          $exe = "tests/AppWatch.Core.Tests/bin/Release/net10.0/AppWatch.Core.Tests.exe"
-          if (-not (Test-Path $exe)) { throw "test exe not found: $exe" }
+          $exe = (Get-ChildItem tests/AppWatch.Core.Tests/bin/Release/**/AppWatch.Core.Tests.exe | Select-Object -First 1).FullName
+          if (-not $exe -or -not (Test-Path $exe)) { throw "test exe not found" }
           & $exe
           if ($LASTEXITCODE -ne 0) { exit 1 }
           Write-Host "tests OK"
