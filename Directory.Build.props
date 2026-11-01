@@ -18,7 +18,7 @@
     <PackageTags>updater;winget;github-releases;velopack;windows;winui3</PackageTags>
 
     <!-- Versioning: Major.Minor.Patch[-prerelease] -->
-    <VersionPrefix>0.2.1</VersionPrefix>
+    <VersionPrefix>0.2.2</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <Version>$(VersionPrefix)$(VersionSuffix)</Version>
     <!-- Assembly attributes managed by each project -->

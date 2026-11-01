@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.2] - 2026-11-01
+
+### Added
+- **Global Path Isolation**: Dedicated `%LocalAppData%\AppWatchData` directory for user-installed portable applications, version snapshots, and diagnostic logs to eliminate installer collision and lock issues.
+- **Automatic Configuration Migration**: Automatic remapping of legacy `%LocalAppData%\AppWatch\Apps` paths to `%LocalAppData%\AppWatchData\Apps` in `config.json`.
+- **System Icon Detection for Winget & External Apps**: Automatic resolution of application icons via Windows Registry (`DisplayIcon` / `InstallLocation`) for apps managed by Winget (such as Telegram Desktop).
+
+### Fixed
+- **Installer Locked Folder Collision**: Prevented Velopack setup crash ("Failed to delete existing application folder") caused by running processes inside user apps.
+- **Unpackaged WinUI 3 Resource Resolution**: Added automated copying of `resources.pri` alongside `AppWatch.pri` during publish to fix startup crash with `ThemeResources.xaml`.
+- **CI Checksum File Lock**: Fixed pipeline failure in GitHub Actions during checksum file generation.
+
+---
+
 ## [0.2.1] - 2026-10-31
 
 ### Added
