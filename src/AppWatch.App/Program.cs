@@ -1,6 +1,7 @@
 using System.IO;
 using AppWatch.Platform;
 using Velopack;
+using AppWatch.Core.Domain;
 
 namespace AppWatch;
 
@@ -20,9 +21,9 @@ public static class Program
 
         VelopackApp.Build().Run();
 
-        var crashLogPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "AppWatch", "logs", "crash.log");
+        AppPaths.MigrateLegacyDataIfNeeded();
+
+        var crashLogPath = Path.Combine(AppPaths.DefaultLogsRoot, "crash.log");
         try
         {
             // Unpackaged self-contained app: Windows App SDK bootstraps automatically via WindowsAppSDKSelfContained.

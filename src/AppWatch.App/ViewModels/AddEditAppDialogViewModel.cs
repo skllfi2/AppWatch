@@ -457,7 +457,7 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
                         if (string.IsNullOrWhiteSpace(InstallDirectory))
                         {
                             var cfg = App.Resolve<AppConfig>();
-                            var root = cfg.InstallRoot ?? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppWatch", "Apps");
+                            var root = AppPaths.ResolveInstallRoot(cfg.InstallRoot);
                             InstallDirectory = System.IO.Path.Combine(root, repo);
                         }
                     }

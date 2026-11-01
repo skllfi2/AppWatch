@@ -17,10 +17,7 @@ public sealed class VersionStore
     public VersionStore(int keepCount = 3, string? rootDirectory = null)
     {
         _keepCount = Math.Max(1, keepCount);
-        _root = rootDirectory
-            ?? Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "AppWatch", "Versions");
+        _root = rootDirectory ?? AppPaths.DefaultVersionsRoot;
     }
 
     /// <summary>Move the post-update backup (installDir + ".old") into the archive.</summary>

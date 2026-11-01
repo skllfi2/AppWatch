@@ -21,7 +21,7 @@
       <WinUISDKReferences>false</WinUISDKReferences>
       <ImplicitUsings>enable</ImplicitUsings>
       <Nullable>enable</Nullable>
-      <Version>0.2.1</Version>
+      <Version>0.2.2</Version>
       <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
       <!-- Unpackaged bootstrap: find framework package at runtime; reg-free WinRT ON (required without package identity) -->
       <WindowsAppSdkAutoInitialize>true</WindowsAppSdkAutoInitialize>
@@ -110,10 +110,12 @@
   </ItemGroup>
 
   <!-- Unpackaged: MrtCore looks for resources.pri next to the exe, but MakePri emits
-       $(AssemblyName).pri. Copy it after build so resource loading works without
+       $(AssemblyName).pri. Copy it after build and publish so resource loading works without
        package identity. -->
-  <Target Name="EnsureResourcesPriForUnpackaged" AfterTargets="Build" Condition="'$(WindowsPackageType)' == 'None'">
-    <Copy SourceFiles="$(OutputPath)$(AssemblyName).pri" DestinationFiles="$(OutputPath)resources.pri" SkipUnchangedFiles="true" />
+  <Target Name="EnsureResourcesPriForUnpackaged" AfterTargets="Build;Publish" Condition="'$(WindowsPackageType)' == 'None'">
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).pri" DestinationFiles="$(OutputPath)resources.pri" SkipUnchangedFiles="true" Condition="Exists('$(OutputPath)$(AssemblyName).pri')" />
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).pri" DestinationFiles="$(PublishDir)resources.pri" SkipUnchangedFiles="true" Condition="'$(PublishDir)' != '' and Exists('$(OutputPath)$(AssemblyName).pri')" />
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).pri" DestinationFiles="$(PublishDir)$(AssemblyName).pri" SkipUnchangedFiles="true" Condition="'$(PublishDir)' != '' and Exists('$(OutputPath)$(AssemblyName).pri')" />
   </Target>
 
 </Project>

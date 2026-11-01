@@ -1,3 +1,4 @@
+using AppWatch.Core.Domain;
 using System.ComponentModel;
 using System.Globalization;
 using System.Reflection;
@@ -81,9 +82,7 @@ public sealed class LocalizationService : INotifyPropertyChanged
     {
         try
         {
-            var p = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "AppWatch", "logs", "loc-debug.log");
+            var p = Path.Combine(AppPaths.DefaultLogsRoot, "loc-debug.log");
             Directory.CreateDirectory(Path.GetDirectoryName(p)!);
             File.AppendAllText(p, $"[{DateTime.Now:HH:mm:ss.fff}] {message}\n");
         }

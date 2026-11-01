@@ -1,3 +1,4 @@
+using AppWatch.Core.Domain;
 using AppWatch.Infrastructure.System;
 using AppWatch.Core.Abstractions;
 using AppWatch.Core.Domain.Models;
@@ -61,8 +62,7 @@ public partial class SettingsViewModel : ObservableObject
         SoundEffectsEnabled = _config.SoundEffectsEnabled;
         AutoRefreshIconsEnabled = _config.AutoRefreshIcons;
 
-        PortableAppsDirectory = _config.InstallRoot
-            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppWatch", "Apps");
+        PortableAppsDirectory = AppPaths.ResolveInstallRoot(_config.InstallRoot);
 
         SelectedVersionKeepIndex = VersionKeepChoices.ToList().IndexOf(_config.VersionCacheCount);
         if (SelectedVersionKeepIndex < 0) SelectedVersionKeepIndex = 1;
@@ -199,7 +199,7 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void ResetPortableDirectory()
     {
-        var defaultPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppWatch", "Apps");
+        var defaultPath = AppPaths.DefaultInstallRoot;
         PortableAppsDirectory = defaultPath;
         _config.InstallRoot = null;
         _configStore.Save(_config);
@@ -272,7 +272,7 @@ public partial class SettingsViewModel : ObservableObject
 
         if (!string.IsNullOrWhiteSpace(PortableAppsDirectory))
         {
-            var defaultPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppWatch", "Apps");
+            var defaultPath = AppPaths.DefaultInstallRoot;
             _config.InstallRoot = string.Equals(PortableAppsDirectory.Trim(), defaultPath, StringComparison.OrdinalIgnoreCase)
                 ? null
                 : PortableAppsDirectory.Trim();
@@ -576,8 +576,7 @@ public partial class SettingsViewModel : ObservableObject
             if (SelectedUpdateStrategyIndex < 0) SelectedUpdateStrategyIndex = 0;
             SelectedVersionKeepIndex = VersionKeepChoices.ToList().IndexOf(_config.VersionCacheCount);
             if (SelectedVersionKeepIndex < 0) SelectedVersionKeepIndex = 1;
-            PortableAppsDirectory = _config.InstallRoot
-                ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppWatch", "Apps");
+            PortableAppsDirectory = AppPaths.ResolveInstallRoot(_config.InstallRoot);
             PatToken = _config.GitHubToken ?? "";
             _initialized = true;
 

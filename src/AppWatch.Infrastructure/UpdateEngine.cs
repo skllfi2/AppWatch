@@ -404,11 +404,10 @@ public sealed class UpdateEngine : IUpdateEngine
                         // SAFETY: only delete directories AppWatch itself manages
                         // (%LOCALAPPDATA%\AppWatch\Apps\...). Anything outside (Program Files,
                         // user-chosen dirs) is the user's own files — untrack only.
-                        var managedRoot = Path.GetFullPath(Path.Combine(
-                            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                            "AppWatch", "Apps"));
+                        var managedRoot = Path.GetFullPath(AppPaths.DefaultInstallRoot);
+                        var legacyManagedRoot = Path.GetFullPath(AppPaths.LegacyInstallRoot);
                         var target = Path.GetFullPath(app.InstallDirectory);
-                        if (target.StartsWith(managedRoot, StringComparison.OrdinalIgnoreCase))
+                        if (target.StartsWith(managedRoot, StringComparison.OrdinalIgnoreCase) || target.StartsWith(legacyManagedRoot, StringComparison.OrdinalIgnoreCase))
                         {
                             var processName = app.ProcessName
                                 ?? (app.ExecutableName is null ? null : Path.GetFileNameWithoutExtension(app.ExecutableName));

@@ -19,6 +19,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Windows.AppNotifications;
 using Serilog;
+using AppWatch.Core.Domain;
 using Velopack;
 
 namespace AppWatch;
@@ -48,9 +49,7 @@ public partial class App : Application
             {
                 try
                 {
-                    var p = Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                        "AppWatch", "logs", "crash.log");
+                    var p = Path.Combine(AppPaths.DefaultLogsRoot, "crash.log");
                     Directory.CreateDirectory(Path.GetDirectoryName(p)!);
                     File.AppendAllText(p,
                         $"[{DateTime.Now}] XAML Unhandled: {e.Exception.GetType().Name}: {e.Message}\n" +
@@ -109,7 +108,7 @@ public partial class App : Application
                                                     sp.GetRequiredService<IUpdateEngine>(),
                                                     sp.GetRequiredService<IShortcutService>(),
                                                     sp.GetRequiredService<SystemVersionResolver>(),
-                                                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AppWatch", "Apps")
+                                                    AppPaths.ResolveInstallRoot(config.InstallRoot)
                                                 ))
                                                 .AddSingleton<MainViewModel>()
                                                 .BuildServiceProvider();
@@ -196,12 +195,10 @@ public partial class App : Application
                 {
                     try
                     {
-                        var appData = Path.Combine(
-                            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AppWatch");
                         Log.Logger = new LoggerConfiguration()
                             .MinimumLevel.Information()
                             .WriteTo.File(
-                                Path.Combine(appData, "logs", "appwatch-.log"),
+                                Path.Combine(AppPaths.DefaultLogsRoot, "appwatch-.log"),
                                 rollingInterval: RollingInterval.Day,
                                 retainedFileCountLimit: 14)
                             .CreateLogger();
