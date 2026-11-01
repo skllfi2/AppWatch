@@ -115,7 +115,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         run: |
-          Get-FileHash -Algorithm SHA256 dist/* | ForEach-Object { "$($_.Hash)  $($_.Path | Split-Path -Leaf)" } | Out-File -Encoding utf8 dist/SHA256SUMS.txt
+          $hashes = Get-ChildItem dist -File | Where-Object { $_.Name -ne "SHA256SUMS.txt" } | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash)  $($_.Path | Split-Path -Leaf)" }
+          $hashes | Out-File -Encoding utf8 dist/SHA256SUMS.txt
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
