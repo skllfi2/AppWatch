@@ -21,6 +21,7 @@ public static class Program
 
         VelopackApp.Build().Run();
 
+        AppPaths.InitializePortableMode();
         AppPaths.MigrateLegacyDataIfNeeded();
 
         var crashLogPath = Path.Combine(AppPaths.DefaultLogsRoot, "crash.log");

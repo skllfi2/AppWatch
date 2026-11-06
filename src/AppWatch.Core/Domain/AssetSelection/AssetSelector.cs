@@ -12,14 +12,16 @@ public static class AssetSelector
     private const int ArchIncompatible = 0;
 
     private const int FlavorStable = 3;
-    private const int FlavorPrerelease = 2;
-    private const int FlavorUnstable = 1;
-    private const int FlavorDebug = 0;
+    private const int FlavorBaseline = 2;
+    private const int FlavorPrerelease = 1;
+    private const int FlavorUnstable = 0;
+    private const int FlavorDebug = -1;
 
     private static readonly Regex DebugRegex = Boundary("debug");
     private static readonly Regex UnstableRegex = Boundary("nightly", "canary", "snapshot");
     private static readonly Regex PreReleaseRegex =
         new("""(^|[^a-z0-9])(alpha|beta|rc|preview|pre)[-_.]?\d*([^a-z0-9]|$)""", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    private static readonly Regex BaselineRegex = Boundary("baseline");
 
     public static GithubAssetCandidate? Choose(
         IReadOnlyList<GithubAssetCandidate> assets,
@@ -56,6 +58,7 @@ public static class AssetSelector
         return DebugRegex.IsMatch(assetName) ? FlavorDebug
             : UnstableRegex.IsMatch(assetName) ? FlavorUnstable
             : PreReleaseRegex.IsMatch(assetName) ? FlavorPrerelease
+            : BaselineRegex.IsMatch(assetName) ? FlavorBaseline
             : FlavorStable;
     }
 

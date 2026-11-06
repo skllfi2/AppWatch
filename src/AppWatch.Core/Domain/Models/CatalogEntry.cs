@@ -14,19 +14,31 @@ public sealed class CatalogEntry
     public string? Description { get; set; }
     public string? Category { get; set; }
 
-    public TrackedApp ToTrackedApp(string? installDirectory = null, string? currentVersion = null) => new()
+    public TrackedApp ToTrackedApp(string? installDirectory = null, string? currentVersion = null)
     {
-        Name = Name,
-        RepoOwner = RepoOwner,
-        RepoName = RepoName,
-        Description = Description,
-        InstallDirectory = installDirectory,
-        ExecutableName = ExecutableName,
-        ProcessName = ProcessName,
-        UpdateKind = UpdateKind,
-        WingetPackageId = WingetPackageId,
-        AssetExtensionPriority = AssetExtensionPriority,
-        IgnorePreReleases = IgnorePreReleases,
-        CurrentVersion = currentVersion,
-    };
+        var category = AppCategory.Uncategorized;
+        if (!string.IsNullOrEmpty(Category) &&
+            Enum.TryParse<AppCategory>(Category, ignoreCase: true, out var parsedCat))
+        {
+            category = parsedCat;
+        }
+
+        return new()
+        {
+            Name = Name,
+            RepoOwner = RepoOwner,
+            RepoName = RepoName,
+            Description = Description,
+            InstallDirectory = installDirectory,
+            ExecutableName = ExecutableName,
+            ProcessName = ProcessName,
+            UpdateKind = UpdateKind,
+            WingetPackageId = WingetPackageId,
+            AssetExtensionPriority = AssetExtensionPriority,
+            IgnorePreReleases = IgnorePreReleases,
+            CurrentVersion = currentVersion,
+            Category = category,
+            SourceOrigin = AppSourceOrigin.GitHubRelease
+        };
+    }
 }

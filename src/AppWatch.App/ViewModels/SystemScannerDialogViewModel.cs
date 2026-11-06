@@ -194,6 +194,60 @@ public sealed partial class SystemScannerDialogViewModel : ObservableObject
                     return a.IsCatalogMatch ? -1 : 1;
                 return string.Compare(a.DisplayName, b.DisplayName, StringComparison.OrdinalIgnoreCase);
             });
+
+            // Scan environment PATH and common tool directories for CLI tools (SystemAdoptionScanner)
+            try
+            {
+                var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? "";
+                var pathDirs = pathEnv.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                      .Where(Directory.Exists)
+                                      .Distinct(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var dir in pathDirs)
+                {
+                    // Skip system-protected Windows directories to avoid clutter
+                    var lower = dir.ToLowerInvariant();
+                    if (lower.Contains(@"windows\system32") || lower.Contains(@"windows\winsxs")) continue;
+
+                    var exes = SystemAdoptionScanner.ScanDirectory(dir, AdoptionSource.PathEnvironment);
+                    foreach (var bin in exes)
+                    {
+                        var match = SystemAdoptionScanner.TryMatch(bin, catalogEntries);
+                        if (match is null) continue;
+
+                        var alreadyTracked = _existingApps.Any(a =>
+                            (a.RepoOwner.Equals(match.RepoOwner, StringComparison.OrdinalIgnoreCase) &&
+                             a.RepoName.Equals(match.RepoName, StringComparison.OrdinalIgnoreCase)) ||
+                            (!string.IsNullOrEmpty(a.InstallDirectory) &&
+                             !string.IsNullOrEmpty(bin.FilePath) &&
+                             Path.GetDirectoryName(bin.FilePath)!.Equals(a.InstallDirectory, StringComparison.OrdinalIgnoreCase)));
+
+                        if (alreadyTracked) continue;
+                        if (_allCandidates.Any(c => c.CatalogMatch?.RepoOwner == match.RepoOwner && c.CatalogMatch?.RepoName == match.RepoName))
+                            continue;
+
+                        var candidate = new SystemScanCandidate
+                        {
+                            DisplayName = match.Name,
+                            DisplayVersion = bin.FileVersion,
+                            InstallLocation = Path.GetDirectoryName(bin.FilePath),
+                            ExecutableName = bin.FileName,
+                            CatalogMatch = match,
+                            IsAlreadyTracked = false,
+                            IsSelected = true
+                        };
+
+                        candidate.PropertyChanged += (s, e) =>
+                        {
+                            if (e.PropertyName == nameof(SystemScanCandidate.IsSelected))
+                                UpdateSelectedCount();
+                        };
+
+                        _allCandidates.Insert(0, candidate);
+                    }
+                }
+            }
+            catch { }
         });
 
         ApplyFilter();
@@ -254,6 +308,13 @@ public sealed partial class SystemScannerDialogViewModel : ObservableObject
                     app.ExecutableName = candidate.ExecutableName;
                 if (!string.IsNullOrWhiteSpace(candidate.RegistryKeyName))
                     app.RegistryKeyName = candidate.RegistryKeyName;
+
+                // In-Place adoption safety: mark as In-Place to prevent directory deletion on untrack
+                if (!string.IsNullOrWhiteSpace(candidate.InstallLocation))
+                {
+                    app.IsInPlaceInstall = true;
+                    app.SourceOrigin = AppSourceOrigin.LocalInPlace;
+                }
 
                 result.Add(app);
             }

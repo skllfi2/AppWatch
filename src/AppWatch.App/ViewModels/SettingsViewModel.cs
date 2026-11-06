@@ -374,15 +374,15 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private async Task ExportAppsAsync(CancellationToken cancellationToken)
     {
-        var picker = new FileSavePicker { SuggestedFileName = $"appwatch-apps-{DateTime.Now:yyyyMMdd}" };
-        picker.FileTypeChoices.Add("AppWatch bundle", [".json"]);
+        var picker = new FileSavePicker { SuggestedFileName = $"appwatch-manifest-{DateTime.Now:yyyyMMdd}" };
+        picker.FileTypeChoices.Add("AppWatch Manifest", [".json"]);
         WinRT.Interop.InitializeWithWindow.Initialize(picker,
             WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow));
         var file = await picker.PickSaveFileAsync();
         if (file is null) return;
 
-        await File.WriteAllTextAsync(file.Path,
-            JsonSerializer.Serialize(_config.TrackedApps, BundleOptions), cancellationToken);
+        var manifestJson = ProfileManager.ExportManifestJson(_config, includeSecrets: false);
+        await File.WriteAllTextAsync(file.Path, manifestJson, cancellationToken);
         StatusText = LocalizationService.Instance["ExportDone"];
     }
 
@@ -399,26 +399,45 @@ public partial class SettingsViewModel : ObservableObject
         var file = await picker.PickSingleFileAsync();
         if (file is null) return;
 
-        var imported = JsonSerializer.Deserialize<List<TrackedApp>>(
-            await File.ReadAllTextAsync(file.Path, cancellationToken), BundleOptions) ?? [];
-
+        var content = await File.ReadAllTextAsync(file.Path, cancellationToken);
         var main = App.Resolve<MainViewModel>();
-        var added = 0;
-        foreach (var app in imported)
-        {
-            if (string.IsNullOrWhiteSpace(app.RepoName)) continue;
-            if (_config.TrackedApps.Any(a => a.RepoOwner == app.RepoOwner && a.RepoName == app.RepoName))
-                continue; // dedupe by owner/repo
+        int added = 0;
 
-            _config.TrackedApps.Add(app);
-            main.Apps.Add(new TrackedAppItem(app));
-            added++;
+        // Try importing as portable ProfileManifest first
+        var manifest = ProfileManager.ParseManifestJson(content);
+        if (manifest is not null && manifest.TrackedApps.Count > 0)
+        {
+            var initialCount = _config.TrackedApps.Count;
+            var report = ProfileManager.ApplyManifest(manifest, _config);
+            added = report.AddedCount;
+            if (added > 0)
+            {
+                for (int i = initialCount; i < _config.TrackedApps.Count; i++)
+                {
+                    main.Apps.Add(new TrackedAppItem(_config.TrackedApps[i]));
+                }
+            }
+        }
+        else
+        {
+            // Fallback for legacy raw TrackedApp list
+            var imported = JsonSerializer.Deserialize<List<TrackedApp>>(content, BundleOptions) ?? [];
+            foreach (var app in imported)
+            {
+                if (string.IsNullOrWhiteSpace(app.RepoName)) continue;
+                if (_config.TrackedApps.Any(a => a.RepoOwner == app.RepoOwner && a.RepoName == app.RepoName))
+                    continue; // dedupe by owner/repo
+
+                _config.TrackedApps.Add(app);
+                main.Apps.Add(new TrackedAppItem(app));
+                added++;
+            }
         }
 
         if (added > 0)
         {
             _configStore.Save(_config);
-            main.AppsTrackedCount = main.Apps.Count;
+            main.ReloadAppsFromConfig(_config);
         }
         StatusText = added > 0
             ? string.Format(LocalizationService.Instance["ImportDone"], added)

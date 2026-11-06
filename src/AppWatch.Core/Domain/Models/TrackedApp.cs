@@ -61,6 +61,17 @@ public sealed class TrackedApp
 
     // New: Update strategy
     public UpdateStrategy Strategy { get; set; } = UpdateStrategy.Auto;
+
+    // Taxonomy and Grouping (Phase 2)
+    public AppCategory Category { get; set; } = AppCategory.Uncategorized;
+    public AppSourceOrigin SourceOrigin { get; set; } = AppSourceOrigin.GitHubRelease;
+    public List<string> Tags { get; set; } = [];
+
+    /// <summary>
+    /// Indicates whether this app was adopted in-place (pre-existing directory).
+    /// Prevents deletion of user directory when untracking.
+    /// </summary>
+    public bool IsInPlaceInstall { get; set; }
 }
 
 public enum UpdateStrategy

@@ -156,4 +156,19 @@ public class AssetSelectorTests
         Assert.Equal(0, AssetSelector.ArchRank("app-x86.zip", Arm64));
         Assert.Equal(3, AssetSelector.ArchRank("app-x86.zip", X86));
     }
+
+    [Fact]
+    public void Choose_StandardVsBaseline_PrefersStandardOptimized()
+    {
+        var assets = new[]
+        {
+            Asset("omo-windows-x64-baseline.exe", 197747712),
+            Asset("omo-windows-x64.exe", 197747712)
+        };
+        var priority = new[] { ".exe" };
+
+        var chosen = AssetSelector.Choose(assets, X64, priority);
+
+        Assert.Equal("omo-windows-x64.exe", chosen?.Name);
+    }
 }

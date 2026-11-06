@@ -58,4 +58,27 @@ public class AppPathsTests
         var resolved = AppPaths.ResolveInstallRoot(AppPaths.LegacyInstallRoot);
         Assert.Equal(AppPaths.DefaultInstallRoot, resolved);
     }
+
+    [Fact]
+    public void PortableMode_WhenFlagPresent_RedirectsRootsToAppDirectory()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "AppWatchPortableTest_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            File.WriteAllText(Path.Combine(tempDir, "portable.flag"), "");
+
+            AppPaths.InitializePortableMode(tempDir);
+
+            Assert.True(AppPaths.IsPortableMode);
+            Assert.Equal(Path.Combine(tempDir, "Data"), AppPaths.DataRoot);
+            Assert.Equal(Path.Combine(tempDir, "Data", "Apps"), AppPaths.DefaultInstallRoot);
+            Assert.Equal(Path.Combine(tempDir, "Data", "Config"), AppPaths.ConfigDirectory);
+        }
+        finally
+        {
+            AppPaths.ResetPortableMode();
+            try { Directory.Delete(tempDir, recursive: true); } catch { }
+        }
+    }
 }

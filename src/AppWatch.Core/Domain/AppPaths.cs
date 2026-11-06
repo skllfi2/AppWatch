@@ -2,19 +2,48 @@ namespace AppWatch.Core.Domain;
 
 /// <summary>
 /// Centralized management of application filesystem directories.
-/// Enforces clean separation between application binaries (managed by Velopack in %LocalAppData%\AppWatch)
-/// and user data/apps (isolated in %LocalAppData%\AppWatchData).
+/// Enforces clean separation between application binaries and user data/apps.
+/// Supports both installed mode (%LocalAppData%\AppWatchData) and True Portable Mode (via portable.flag).
 /// </summary>
 public static class AppPaths
 {
-    private static readonly string LocalAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-    private static readonly string RoamingAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+    private static readonly string StandardLocalAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    private static readonly string StandardRoamingAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+    private static string? _portableBaseDirectory;
+
+    /// <summary>
+    /// Indicates whether AppWatch is currently running in self-contained Portable Mode.
+    /// </summary>
+    public static bool IsPortableMode => !string.IsNullOrEmpty(_portableBaseDirectory);
+
+    /// <summary>
+    /// Checks for portable.flag in the specified directory (defaults to AppContext.BaseDirectory)
+    /// and switches AppPaths to portable mode if present.
+    /// </summary>
+    public static void InitializePortableMode(string? baseDir = null)
+    {
+        var targetDir = baseDir ?? AppContext.BaseDirectory;
+        if (!string.IsNullOrEmpty(targetDir) && File.Exists(Path.Combine(targetDir, "portable.flag")))
+        {
+            _portableBaseDirectory = Path.GetFullPath(targetDir);
+        }
+    }
+
+    /// <summary>
+    /// Resets portable mode back to standard system paths (primarily for testing).
+    /// </summary>
+    public static void ResetPortableMode()
+    {
+        _portableBaseDirectory = null;
+    }
 
     /// <summary>
     /// Root directory for all user-managed data (downloaded portable apps, version cache, logs).
-    /// Kept strictly separate from %LocalAppData%\AppWatch so that installer updates/repairs never wipe user data.
     /// </summary>
-    public static string DataRoot => Path.Combine(LocalAppData, "AppWatchData");
+    public static string DataRoot => _portableBaseDirectory is not null
+        ? Path.Combine(_portableBaseDirectory, "Data")
+        : Path.Combine(StandardLocalAppData, "AppWatchData");
 
     /// <summary>Default directory where downloaded applications are staged and installed.</summary>
     public static string DefaultInstallRoot => Path.Combine(DataRoot, "Apps");
@@ -25,22 +54,20 @@ public static class AppPaths
     /// <summary>Directory where application and crash diagnostic logs are recorded.</summary>
     public static string DefaultLogsRoot => Path.Combine(DataRoot, "logs");
 
-    /// <summary>Roaming directory where configuration is stored.</summary>
-    public static string ConfigDirectory => Path.Combine(RoamingAppData, "AppWatch");
+    /// <summary>Directory where configuration is stored.</summary>
+    public static string ConfigDirectory => _portableBaseDirectory is not null
+        ? Path.Combine(_portableBaseDirectory, "Data", "Config")
+        : Path.Combine(StandardRoamingAppData, "AppWatch");
 
     /// <summary>Legacy install directory (%LocalAppData%\AppWatch\Apps) used prior to v0.2.2.</summary>
-    public static string LegacyInstallRoot => Path.Combine(LocalAppData, "AppWatch", "Apps");
+    public static string LegacyInstallRoot => Path.Combine(StandardLocalAppData, "AppWatch", "Apps");
 
     /// <summary>Legacy version cache directory (%LocalAppData%\AppWatch\Versions).</summary>
-    public static string LegacyVersionsRoot => Path.Combine(LocalAppData, "AppWatch", "Versions");
+    public static string LegacyVersionsRoot => Path.Combine(StandardLocalAppData, "AppWatch", "Versions");
 
     /// <summary>Legacy logs directory (%LocalAppData%\AppWatch\logs).</summary>
-    public static string LegacyLogsRoot => Path.Combine(LocalAppData, "AppWatch", "logs");
+    public static string LegacyLogsRoot => Path.Combine(StandardLocalAppData, "AppWatch", "logs");
 
-    /// <summary>
-    /// Resolves the effective install root for downloaded apps.
-    /// Prefers user-configured path, then safely defaults to DefaultInstallRoot.
-    /// </summary>
     /// <summary>
     /// Remaps any path referencing the legacy directory (%LocalAppData%\AppWatch\Apps\...)
     /// to the new safe directory (%LocalAppData%\AppWatchData\Apps\...).
@@ -64,6 +91,10 @@ public static class AppPaths
         return path;
     }
 
+    /// <summary>
+    /// Resolves the effective install root for downloaded apps.
+    /// Prefers user-configured path, then safely defaults to DefaultInstallRoot.
+    /// </summary>
     public static string ResolveInstallRoot(string? configuredPath)
     {
         if (string.IsNullOrWhiteSpace(configuredPath))
