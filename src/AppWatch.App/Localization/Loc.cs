@@ -269,6 +269,15 @@ public sealed class Loc : INotifyPropertyChanged
                 public string SortByName => LocalizationService.Instance["SortByName"];
                 public string SortByStatus => LocalizationService.Instance["SortByStatus"];
                 public string SortBySource => LocalizationService.Instance["SortBySource"];
+                public string SortByCategory => LocalizationService.Instance["SortByCategory"];
+                public string ViewCards => LocalizationService.Instance["ViewCards"];
+                public string ViewCompact => LocalizationService.Instance["ViewCompact"];
+                public string SourceGitVerse => LocalizationService.Instance["SourceGitVerse"];
+                public string SourceGitLab => LocalizationService.Instance["SourceGitLab"];
+                public string SourceInPlace => LocalizationService.Instance["SourceInPlace"];
+                public string CategoryDev => LocalizationService.Instance["CategoryDev"];
+                public string CategoryAi => LocalizationService.Instance["CategoryAi"];
+                public string CategorySystem => LocalizationService.Instance["CategorySystem"];
                 public string MenuRefreshIcon => LocalizationService.Instance["MenuRefreshIcon"];
                 public string SettingsAutoRefreshIcons => LocalizationService.Instance["SettingsAutoRefreshIcons"];
                 public string SettingsAutoRefreshIconsHint => LocalizationService.Instance["SettingsAutoRefreshIconsHint"];

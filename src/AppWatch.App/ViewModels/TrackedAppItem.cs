@@ -367,6 +367,9 @@ public partial class TrackedAppItem : ObservableObject
         // Stage transitions bracket every check/apply — by the time the stage
         // leaves Checking, the engine has already persisted App.LastCheckUtc.
         OnPropertyChanged(nameof(LastCheckText));
+        OnPropertyChanged(nameof(SourceDisplay));
+        OnPropertyChanged(nameof(CategoryDisplay));
+        OnPropertyChanged(nameof(HasCategory));
     }
 
     partial void OnStatusDetailChanged(string? value) => OnPropertyChanged(nameof(StatusTooltip));
@@ -424,13 +427,35 @@ public partial class TrackedAppItem : ObservableObject
     public IRelayCommand RefreshAppIconCommand => global::AppWatch.App.Resolve<MainViewModel>().RefreshAppIconCommand;
 
     /// <summary>Human-readable source display: GitHub / winget / Installer / External.</summary>
-    public string SourceDisplay => App.UpdateKind switch
+    public string SourceDisplay
     {
-        UpdateKind.WingetPackage => LocalizationService.Instance["SourceWinget"],
-        UpdateKind.Installer => LocalizationService.Instance["SourceInstaller"],
-        UpdateKind.External => LocalizationService.Instance["SourceExternal"],
-        _ => LocalizationService.Instance["SourceGitHub"],
+        get
+        {
+            if (App.IsInPlaceInstall) return LocalizationService.Instance["SourceInPlace"];
+            if (App.SourceOrigin == AppSourceOrigin.GitVerse) return LocalizationService.Instance["SourceGitVerse"];
+            if (App.SourceOrigin == AppSourceOrigin.GitLab) return LocalizationService.Instance["SourceGitLab"];
+            return App.UpdateKind switch
+            {
+                UpdateKind.WingetPackage => LocalizationService.Instance["SourceWinget"],
+                UpdateKind.Installer => LocalizationService.Instance["SourceInstaller"],
+                UpdateKind.External => LocalizationService.Instance["SourceExternal"],
+                _ => LocalizationService.Instance["SourceGitHub"],
+            };
+        }
+    }
+
+    public string CategoryDisplay => App.Category switch
+    {
+        AppCategory.DevToolsAndCli => LocalizationService.Instance["CategoryDev"],
+        AppCategory.AiAndLlm => LocalizationService.Instance["CategoryAi"],
+        AppCategory.SystemUtilities => LocalizationService.Instance["CategorySystem"],
+        AppCategory.MediaAndGraphics => LocalizationService.Instance["CategoryMedia"],
+        AppCategory.InternetAndNetwork => LocalizationService.Instance["CategoryNetwork"],
+        AppCategory.Productivity => LocalizationService.Instance["CategoryProductivity"],
+        _ => ""
     };
+
+    public bool HasCategory => !string.IsNullOrEmpty(CategoryDisplay);
 
     /// <summary>B10: true when the version cache holds at least one older snapshot for this app.</summary>
     public bool RollbackAvailable =>

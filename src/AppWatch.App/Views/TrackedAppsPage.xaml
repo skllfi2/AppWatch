@@ -39,7 +39,13 @@
                             <Border Background="{StaticResource NeutralSubtleBrush}"
                                     BorderBrush="{StaticResource NeutralPillBorderBrush}"
                                     BorderThickness="1" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
-                                <TextBlock Text="{x:Bind SourceDisplay, Mode=OneTime}" FontSize="10" Opacity="0.75"/>
+                                <TextBlock Text="{x:Bind SourceDisplay, Mode=OneWay}" FontSize="10" Opacity="0.75"/>
+                            </Border>
+                            <Border Background="{StaticResource AccentSubtleBrush}"
+                                    BorderBrush="{StaticResource AccentPillBorderBrush}"
+                                    BorderThickness="1" CornerRadius="4" Padding="6,1" VerticalAlignment="Center"
+                                    Visibility="{x:Bind HasCategory, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                                <TextBlock Text="{x:Bind CategoryDisplay, Mode=OneWay}" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"/>
                             </Border>
                         </StackPanel>
                         <TextBlock Text="{x:Bind Description, Mode=OneWay}" FontSize="12" Opacity="0.7"
@@ -190,7 +196,86 @@
                 </Grid>
             </Border>
         </DataTemplate>
-    </Page.Resources>
+            <DataTemplate x:Key="TrackedAppCompactItemTemplate" x:DataType="vm:TrackedAppItem">
+            <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="6" Padding="12,6"
+                    BorderThickness="1" BorderBrush="{StaticResource BorderDefaultBrush}" Margin="0,1">
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="28"/>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <!-- Small icon -->
+                    <Grid Grid.Column="0" Width="24" Height="24" CornerRadius="4" VerticalAlignment="Center">
+                        <Image Source="{x:Bind Icon, Mode=OneWay}" Stretch="UniformToFill"
+                               Visibility="{x:Bind Icon, Converter={StaticResource ObjectToVisibility}, Mode=OneWay}"/>
+                        <Border Background="{x:Bind MonogramBrush, Mode=OneTime}" CornerRadius="4"
+                                Visibility="{x:Bind Icon, Converter={StaticResource NullToVisibility}, Mode=OneWay}">
+                            <TextBlock Text="{x:Bind Monogram, Mode=OneTime}" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+                    <!-- App Name & Source -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <TextBlock Text="{x:Bind App.Name, Mode=OneTime}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <Border Background="{StaticResource NeutralSubtleBrush}" BorderBrush="{StaticResource NeutralPillBorderBrush}"
+                                BorderThickness="1" CornerRadius="4" Padding="4,1" VerticalAlignment="Center">
+                            <TextBlock Text="{x:Bind SourceDisplay, Mode=OneWay}" FontSize="9" Opacity="0.75"/>
+                        </Border>
+                    </StackPanel>
+                    <!-- Category -->
+                    <Border Grid.Column="2" Background="{StaticResource AccentSubtleBrush}" BorderBrush="{StaticResource AccentPillBorderBrush}"
+                            BorderThickness="1" CornerRadius="4" Padding="6,1" VerticalAlignment="Center" HorizontalAlignment="Left"
+                            Visibility="{x:Bind HasCategory, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="{x:Bind CategoryDisplay, Mode=OneWay}" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"/>
+                    </Border>
+                    <!-- Version & Status -->
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <Border Background="{StaticResource NeutralSubtleBrush}" BorderBrush="{StaticResource NeutralPillBorderBrush}"
+                                BorderThickness="1" CornerRadius="4" Padding="5,1" VerticalAlignment="Center">
+                            <TextBlock Text="{x:Bind Version, Mode=OneWay}" FontSize="11" Opacity="0.8"/>
+                        </Border>
+                        <StackPanel Orientation="Horizontal" Spacing="3" VerticalAlignment="Center"
+                                    Visibility="{x:Bind UpdateAvailable, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                            <FontIcon Glyph="&#xE72A;" FontSize="9" Opacity="0.5" VerticalAlignment="Center"/>
+                            <Border Background="{StaticResource AccentSubtleBrush}" BorderBrush="{StaticResource AccentPillBorderBrush}"
+                                    BorderThickness="1" CornerRadius="4" Padding="5,1" VerticalAlignment="Center">
+                                <TextBlock Text="{x:Bind LatestTag, Mode=OneWay}" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"/>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                    <!-- Status text / Stage -->
+                    <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <Ellipse Width="6" Height="6" Fill="{x:Bind StatusBrush, Mode=OneWay}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{x:Bind StatusText, Mode=OneWay}" FontSize="11" Opacity="0.7"/>
+                    </StackPanel>
+                    <!-- Quick Actions -->
+                    <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <Button Command="{x:Bind UpdateOneCommand}" CommandParameter="{x:Bind}"
+                                Visibility="{x:Bind UpdateAvailable, Converter={StaticResource BoolToVisibility}, Mode=OneWay}"
+                                Style="{StaticResource AccentButtonStyle}" Padding="8,4" FontSize="11">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <FontIcon Glyph="&#xE896;" FontSize="11"/>
+                                <TextBlock Text="{x:Bind BtnUpdateOne, Mode=OneWay}" FontSize="11" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{x:Bind LaunchAppCommand}" CommandParameter="{x:Bind}"
+                                Visibility="{x:Bind CanLaunchPrimary, Converter={StaticResource BoolToVisibility}, Mode=OneWay}"
+                                Padding="8,4" CornerRadius="6" FontSize="11" Background="{StaticResource CardBackgroundBrush}" BorderThickness="1">
+                            <FontIcon Glyph="&#xE768;" FontSize="11" Foreground="{StaticResource AccentBrush}"/>
+                        </Button>
+                        <Button Command="{x:Bind ShowDetailsCommand}" CommandParameter="{x:Bind}"
+                                Padding="6,4" CornerRadius="6" FontSize="11" Background="{StaticResource CardBackgroundBrush}" BorderThickness="1">
+                            <FontIcon Glyph="&#xE946;" FontSize="11" Foreground="{StaticResource AccentBrush}"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+</Page.Resources>
     <Grid Padding="32,24" RowSpacing="0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -219,6 +304,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0"
                          Text="{x:Bind ViewModel.TrackedAppsSearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -233,6 +319,7 @@
                     <ComboBoxItem Content="{x:Bind Loc.SortByName, Mode=OneWay}"/>
                     <ComboBoxItem Content="{x:Bind Loc.SortByStatus, Mode=OneWay}"/>
                     <ComboBoxItem Content="{x:Bind Loc.SortBySource, Mode=OneWay}"/>
+                    <ComboBoxItem Content="{x:Bind Loc.SortByCategory, Mode=OneWay}"/>
                 </ComboBox>
                 <Button Grid.Column="2" Command="{x:Bind ViewModel.AddCustomAppCommand}"
                         AutomationProperties.Name="{x:Bind Loc.AddApp, Mode=OneWay}"
@@ -293,6 +380,24 @@
                         <TextBlock Text="{x:Bind Loc.BtnRefreshIcons, Mode=OneWay}" FontSize="12"/>
                     </StackPanel>
                 </Button>
+                <!-- View Mode Toggle (Cards / Compact Table) -->
+                <Border Grid.Column="8" Background="{StaticResource CardBackgroundBrush}" CornerRadius="8"
+                        BorderThickness="1" BorderBrush="{StaticResource BorderDefaultBrush}" Padding="2">
+                    <StackPanel Orientation="Horizontal" Spacing="2">
+                        <Button Command="{x:Bind ViewModel.SetCardsViewCommand}"
+                                ToolTipService.ToolTip="{x:Bind Loc.ViewCards, Mode=OneWay}"
+                                Padding="8,5" CornerRadius="6"
+                                Background="{x:Bind ViewModel.CardsViewButtonBackground, Mode=OneWay}">
+                            <FontIcon Glyph="&#xE80A;" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                        </Button>
+                        <Button Command="{x:Bind ViewModel.SetCompactViewCommand}"
+                                ToolTipService.ToolTip="{x:Bind Loc.ViewCompact, Mode=OneWay}"
+                                Padding="8,5" CornerRadius="6"
+                                Background="{x:Bind ViewModel.CompactViewButtonBackground, Mode=OneWay}">
+                            <FontIcon Glyph="&#xE8B9;" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                        </Button>
+                    </StackPanel>
+                </Border>
             </Grid>
             <!-- Bottom Row: Filter chips -->
             <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
@@ -338,6 +443,38 @@
                             Background="{x:Bind ViewModel.FilterDisabledBackground, Mode=OneWay}"
                             Foreground="{x:Bind ViewModel.FilterDisabledForeground, Mode=OneWay}"
                             Padding="12,5" CornerRadius="14" FontSize="12" BorderThickness="1"/>
+                    <Border Width="1" Height="16" Background="{StaticResource BorderDefaultBrush}" Margin="2,0"/>
+                    <Button Command="{x:Bind ViewModel.SetFilterGitVerseCommand}"
+                            Content="{x:Bind ViewModel.FilterGitVerseLabel, Mode=OneWay}"
+                            Background="{x:Bind ViewModel.FilterGitVerseBackground, Mode=OneWay}"
+                            Foreground="{x:Bind ViewModel.FilterGitVerseForeground, Mode=OneWay}"
+                            Padding="12,5" CornerRadius="14" FontSize="12" BorderThickness="1"/>
+                    <Button Command="{x:Bind ViewModel.SetFilterGitLabCommand}"
+                            Content="{x:Bind ViewModel.FilterGitLabLabel, Mode=OneWay}"
+                            Background="{x:Bind ViewModel.FilterGitLabBackground, Mode=OneWay}"
+                            Foreground="{x:Bind ViewModel.FilterGitLabForeground, Mode=OneWay}"
+                            Padding="12,5" CornerRadius="14" FontSize="12" BorderThickness="1"/>
+                    <Button Command="{x:Bind ViewModel.SetFilterInPlaceCommand}"
+                            Content="{x:Bind ViewModel.FilterInPlaceLabel, Mode=OneWay}"
+                            Background="{x:Bind ViewModel.FilterInPlaceBackground, Mode=OneWay}"
+                            Foreground="{x:Bind ViewModel.FilterInPlaceForeground, Mode=OneWay}"
+                            Padding="12,5" CornerRadius="14" FontSize="12" BorderThickness="1"/>
+                    <Border Width="1" Height="16" Background="{StaticResource BorderDefaultBrush}" Margin="2,0"/>
+                    <Button Command="{x:Bind ViewModel.SetFilterCategoryDevCommand}"
+                            Content="{x:Bind ViewModel.FilterCategoryDevLabel, Mode=OneWay}"
+                            Background="{x:Bind ViewModel.FilterCategoryDevBackground, Mode=OneWay}"
+                            Foreground="{x:Bind ViewModel.FilterCategoryDevForeground, Mode=OneWay}"
+                            Padding="12,5" CornerRadius="14" FontSize="12" BorderThickness="1"/>
+                    <Button Command="{x:Bind ViewModel.SetFilterCategoryAiCommand}"
+                            Content="{x:Bind ViewModel.FilterCategoryAiLabel, Mode=OneWay}"
+                            Background="{x:Bind ViewModel.FilterCategoryAiBackground, Mode=OneWay}"
+                            Foreground="{x:Bind ViewModel.FilterCategoryAiForeground, Mode=OneWay}"
+                            Padding="12,5" CornerRadius="14" FontSize="12" BorderThickness="1"/>
+                    <Button Command="{x:Bind ViewModel.SetFilterCategorySystemCommand}"
+                            Content="{x:Bind ViewModel.FilterCategorySystemLabel, Mode=OneWay}"
+                            Background="{x:Bind ViewModel.FilterCategorySystemBackground, Mode=OneWay}"
+                            Foreground="{x:Bind ViewModel.FilterCategorySystemForeground, Mode=OneWay}"
+                            Padding="12,5" CornerRadius="14" FontSize="12" BorderThickness="1"/>
                 </StackPanel>
             </ScrollViewer>
         </Grid>
@@ -368,10 +505,16 @@
                             Background="{StaticResource CardBackgroundBrush}" BorderThickness="1"/>
                 </Grid>
             </Border>
-            <!-- Tracked apps list -->
+            <!-- Tracked apps list (Standard Cards) -->
             <ListView Grid.Row="1" x:Name="TrackedAppsList"
                       ItemsSource="{x:Bind ViewModel.FilteredApps, Mode=OneWay}"
-                      SelectionMode="None" ItemTemplate="{StaticResource TrackedAppItemTemplate}"/>
+                      SelectionMode="None" ItemTemplate="{StaticResource TrackedAppItemTemplate}"
+                      Visibility="{x:Bind ViewModel.IsCardsView, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"/>
+            <!-- Tracked apps list (Compact Table) -->
+            <ListView Grid.Row="1" x:Name="TrackedAppsCompactList"
+                      ItemsSource="{x:Bind ViewModel.FilteredApps, Mode=OneWay}"
+                      SelectionMode="None" ItemTemplate="{StaticResource TrackedAppCompactItemTemplate}"
+                      Visibility="{x:Bind ViewModel.IsCompactView, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"/>
             <!-- Empty search/filter state -->
             <Border Grid.Row="1" Background="{StaticResource CardBackgroundBrush}" CornerRadius="12" Padding="32,28"
                     BorderThickness="1" BorderBrush="{StaticResource BorderDefaultBrush}"

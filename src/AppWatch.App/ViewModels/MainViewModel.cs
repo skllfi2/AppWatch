@@ -532,6 +532,34 @@ public partial class MainViewModel : ObservableObject
 
     public partial TrackedAppsFilter SelectedAppsFilter { get; set; } = TrackedAppsFilter.All;
 
+    [ObservableProperty]
+    public partial TrackedAppsViewMode CurrentViewMode { get; set; } = TrackedAppsViewMode.Cards;
+
+    public bool IsCardsView => CurrentViewMode == TrackedAppsViewMode.Cards;
+    public bool IsCompactView => CurrentViewMode == TrackedAppsViewMode.Compact;
+
+    public Microsoft.UI.Xaml.Media.Brush CardsViewButtonBackground => IsCardsView
+        ? (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["AccentSubtleBrush"]
+        : new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+
+    public Microsoft.UI.Xaml.Media.Brush CompactViewButtonBackground => IsCompactView
+        ? (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["AccentSubtleBrush"]
+        : new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+
+    partial void OnCurrentViewModeChanged(TrackedAppsViewMode value)
+    {
+        OnPropertyChanged(nameof(IsCardsView));
+        OnPropertyChanged(nameof(IsCompactView));
+        OnPropertyChanged(nameof(CardsViewButtonBackground));
+        OnPropertyChanged(nameof(CompactViewButtonBackground));
+    }
+
+    [RelayCommand]
+    private void SetCardsView() => CurrentViewMode = TrackedAppsViewMode.Cards;
+
+    [RelayCommand]
+    private void SetCompactView() => CurrentViewMode = TrackedAppsViewMode.Compact;
+
 
 
 
@@ -821,6 +849,55 @@ public partial class MainViewModel : ObservableObject
     public int FilterWingetCount => Apps.Count(a => a.App.UpdateKind == UpdateKind.WingetPackage);
 
     public int FilterExternalCount => Apps.Count(a => a.App.UpdateKind == UpdateKind.External);
+    public int FilterGitVerseCount => Apps.Count(a => a.App.SourceOrigin == AppSourceOrigin.GitVerse);
+    public int FilterGitLabCount => Apps.Count(a => a.App.SourceOrigin == AppSourceOrigin.GitLab);
+    public int FilterInPlaceCount => Apps.Count(a => a.App.IsInPlaceInstall);
+    public int FilterCategoryDevCount => Apps.Count(a => a.App.Category == AppCategory.DevToolsAndCli);
+    public int FilterCategoryAiCount => Apps.Count(a => a.App.Category == AppCategory.AiAndLlm);
+    public int FilterCategorySystemCount => Apps.Count(a => a.App.Category == AppCategory.SystemUtilities);
+
+    public string FilterGitVerseLabel => $"{_loc["SourceGitVerse"]} ({FilterGitVerseCount})";
+    public string FilterGitLabLabel => $"{_loc["SourceGitLab"]} ({FilterGitLabCount})";
+    public string FilterInPlaceLabel => $"{_loc["SourceInPlace"]} ({FilterInPlaceCount})";
+    public string FilterCategoryDevLabel => $"{_loc["CategoryDev"]} ({FilterCategoryDevCount})";
+    public string FilterCategoryAiLabel => $"{_loc["CategoryAi"]} ({FilterCategoryAiCount})";
+    public string FilterCategorySystemLabel => $"{_loc["CategorySystem"]} ({FilterCategorySystemCount})";
+
+    public Microsoft.UI.Xaml.Media.Brush FilterGitVerseBackground => SelectedAppsFilter == TrackedAppsFilter.GitVerse ? (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["AccentBrush"] : (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["CardBackgroundBrush"];
+    public Microsoft.UI.Xaml.Media.Brush FilterGitVerseForeground => SelectedAppsFilter == TrackedAppsFilter.GitVerse ? new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White) : (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["TextPrimaryBrush"];
+
+    public Microsoft.UI.Xaml.Media.Brush FilterGitLabBackground => SelectedAppsFilter == TrackedAppsFilter.GitLab ? (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["AccentBrush"] : (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["CardBackgroundBrush"];
+    public Microsoft.UI.Xaml.Media.Brush FilterGitLabForeground => SelectedAppsFilter == TrackedAppsFilter.GitLab ? new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White) : (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["TextPrimaryBrush"];
+
+    public Microsoft.UI.Xaml.Media.Brush FilterInPlaceBackground => SelectedAppsFilter == TrackedAppsFilter.LocalInPlace ? (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["AccentBrush"] : (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["CardBackgroundBrush"];
+    public Microsoft.UI.Xaml.Media.Brush FilterInPlaceForeground => SelectedAppsFilter == TrackedAppsFilter.LocalInPlace ? new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White) : (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["TextPrimaryBrush"];
+
+    public Microsoft.UI.Xaml.Media.Brush FilterCategoryDevBackground => SelectedAppsFilter == TrackedAppsFilter.CategoryDev ? (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["AccentBrush"] : (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["CardBackgroundBrush"];
+    public Microsoft.UI.Xaml.Media.Brush FilterCategoryDevForeground => SelectedAppsFilter == TrackedAppsFilter.CategoryDev ? new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White) : (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["TextPrimaryBrush"];
+
+    public Microsoft.UI.Xaml.Media.Brush FilterCategoryAiBackground => SelectedAppsFilter == TrackedAppsFilter.CategoryAi ? (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["AccentBrush"] : (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["CardBackgroundBrush"];
+    public Microsoft.UI.Xaml.Media.Brush FilterCategoryAiForeground => SelectedAppsFilter == TrackedAppsFilter.CategoryAi ? new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White) : (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["TextPrimaryBrush"];
+
+    public Microsoft.UI.Xaml.Media.Brush FilterCategorySystemBackground => SelectedAppsFilter == TrackedAppsFilter.CategorySystem ? (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["AccentBrush"] : (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["CardBackgroundBrush"];
+    public Microsoft.UI.Xaml.Media.Brush FilterCategorySystemForeground => SelectedAppsFilter == TrackedAppsFilter.CategorySystem ? new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White) : (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["TextPrimaryBrush"];
+
+    [RelayCommand]
+    private void SetFilterGitVerse() => SelectedAppsFilter = TrackedAppsFilter.GitVerse;
+
+    [RelayCommand]
+    private void SetFilterGitLab() => SelectedAppsFilter = TrackedAppsFilter.GitLab;
+
+    [RelayCommand]
+    private void SetFilterInPlace() => SelectedAppsFilter = TrackedAppsFilter.LocalInPlace;
+
+    [RelayCommand]
+    private void SetFilterCategoryDev() => SelectedAppsFilter = TrackedAppsFilter.CategoryDev;
+
+    [RelayCommand]
+    private void SetFilterCategoryAi() => SelectedAppsFilter = TrackedAppsFilter.CategoryAi;
+
+    [RelayCommand]
+    private void SetFilterCategorySystem() => SelectedAppsFilter = TrackedAppsFilter.CategorySystem;
 
 
 
@@ -963,6 +1040,12 @@ public partial class MainViewModel : ObservableObject
             TrackedAppsFilter.Winget => query.Where(a => a.App.UpdateKind == UpdateKind.WingetPackage),
 
             TrackedAppsFilter.External => query.Where(a => a.App.UpdateKind == UpdateKind.External),
+            TrackedAppsFilter.GitVerse => query.Where(a => a.App.SourceOrigin == AppSourceOrigin.GitVerse),
+            TrackedAppsFilter.GitLab => query.Where(a => a.App.SourceOrigin == AppSourceOrigin.GitLab),
+            TrackedAppsFilter.LocalInPlace => query.Where(a => a.App.IsInPlaceInstall),
+            TrackedAppsFilter.CategoryDev => query.Where(a => a.App.Category == AppCategory.DevToolsAndCli),
+            TrackedAppsFilter.CategoryAi => query.Where(a => a.App.Category == AppCategory.AiAndLlm),
+            TrackedAppsFilter.CategorySystem => query.Where(a => a.App.Category == AppCategory.SystemUtilities),
 
             _ => query
 
@@ -1038,6 +1121,9 @@ public partial class MainViewModel : ObservableObject
 
                 .ThenBy(a => a.Name, StringComparer.OrdinalIgnoreCase),
 
+            TrackedAppsSort.ByCategory => query
+                .OrderBy(a => a.App.Category)
+                .ThenBy(a => a.Name, StringComparer.OrdinalIgnoreCase),
             TrackedAppsSort.BySource => query
 
                 .OrderBy(a => a.App.UpdateKind switch
@@ -1187,6 +1273,30 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(FilterExternalBackground));
 
         OnPropertyChanged(nameof(FilterExternalForeground));
+        OnPropertyChanged(nameof(FilterGitVerseCount));
+        OnPropertyChanged(nameof(FilterGitLabCount));
+        OnPropertyChanged(nameof(FilterInPlaceCount));
+        OnPropertyChanged(nameof(FilterCategoryDevCount));
+        OnPropertyChanged(nameof(FilterCategoryAiCount));
+        OnPropertyChanged(nameof(FilterCategorySystemCount));
+        OnPropertyChanged(nameof(FilterGitVerseLabel));
+        OnPropertyChanged(nameof(FilterGitLabLabel));
+        OnPropertyChanged(nameof(FilterInPlaceLabel));
+        OnPropertyChanged(nameof(FilterCategoryDevLabel));
+        OnPropertyChanged(nameof(FilterCategoryAiLabel));
+        OnPropertyChanged(nameof(FilterCategorySystemLabel));
+        OnPropertyChanged(nameof(FilterGitVerseBackground));
+        OnPropertyChanged(nameof(FilterGitVerseForeground));
+        OnPropertyChanged(nameof(FilterGitLabBackground));
+        OnPropertyChanged(nameof(FilterGitLabForeground));
+        OnPropertyChanged(nameof(FilterInPlaceBackground));
+        OnPropertyChanged(nameof(FilterInPlaceForeground));
+        OnPropertyChanged(nameof(FilterCategoryDevBackground));
+        OnPropertyChanged(nameof(FilterCategoryDevForeground));
+        OnPropertyChanged(nameof(FilterCategoryAiBackground));
+        OnPropertyChanged(nameof(FilterCategoryAiForeground));
+        OnPropertyChanged(nameof(FilterCategorySystemBackground));
+        OnPropertyChanged(nameof(FilterCategorySystemForeground));
 
 
 
