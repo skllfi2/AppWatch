@@ -46,6 +46,8 @@ public sealed class UpdateEngine : IUpdateEngine
         _systemVersion = systemVersion;
         _sourceRegistry = sourceRegistry ?? new UpdateSourceRegistry(new IUpdateSourceProvider[]
         {
+            new Sources.GitVerseUpdateSourceProvider(new Git.GitVerseApiClient(), systemVersion),
+            new Sources.GitLabUpdateSourceProvider(new Git.GitLabApiClient(), systemVersion),
             new Sources.GitHubUpdateSourceProvider(github, systemVersion),
             new Sources.WingetUpdateSourceProvider(),
             new Sources.ExternalUpdateSourceProvider()
