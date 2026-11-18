@@ -1,0 +1,25 @@
+[package]
+name = "appwatch-native"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "appwatch_native"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+memmap2 = "0.9"
+
+[dependencies.windows]
+version = "0.58"
+features = [
+    "Win32_Foundation",
+    "Win32_System_RestartManager",
+    "Win32_Security_WinTrust",
+    "Win32_Security_Cryptography",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Threading",
+]
+
+[build-dependencies]
+csbindgen = "1.9"

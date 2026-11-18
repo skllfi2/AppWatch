@@ -863,6 +863,18 @@ public partial class MainViewModel : ObservableObject
     public string FilterCategoryAiLabel => $"{_loc["CategoryAi"]} ({FilterCategoryAiCount})";
     public string FilterCategorySystemLabel => $"{_loc["CategorySystem"]} ({FilterCategorySystemCount})";
 
+    public bool HasFilterGitHub => FilterGitHubCount > 0;
+    public bool HasFilterWinget => FilterWingetCount > 0;
+    public bool HasFilterExternal => FilterExternalCount > 0;
+    public bool HasFilterErrors => FilterErrorsCount > 0;
+    public bool HasFilterDisabled => FilterDisabledCount > 0;
+    public bool HasFilterGitVerse => FilterGitVerseCount > 0;
+    public bool HasFilterGitLab => FilterGitLabCount > 0;
+    public bool HasFilterInPlace => FilterInPlaceCount > 0;
+    public bool HasFilterCategoryDev => FilterCategoryDevCount > 0;
+    public bool HasFilterCategoryAi => FilterCategoryAiCount > 0;
+    public bool HasFilterCategorySystem => FilterCategorySystemCount > 0;
+
     public Microsoft.UI.Xaml.Media.Brush FilterGitVerseBackground => SelectedAppsFilter == TrackedAppsFilter.GitVerse ? (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["AccentBrush"] : (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["CardBackgroundBrush"];
     public Microsoft.UI.Xaml.Media.Brush FilterGitVerseForeground => SelectedAppsFilter == TrackedAppsFilter.GitVerse ? new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White) : (Microsoft.UI.Xaml.Media.Brush)App.Current.Resources["TextPrimaryBrush"];
 
@@ -1285,6 +1297,17 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(FilterCategoryDevLabel));
         OnPropertyChanged(nameof(FilterCategoryAiLabel));
         OnPropertyChanged(nameof(FilterCategorySystemLabel));
+        OnPropertyChanged(nameof(HasFilterGitHub));
+        OnPropertyChanged(nameof(HasFilterWinget));
+        OnPropertyChanged(nameof(HasFilterExternal));
+        OnPropertyChanged(nameof(HasFilterErrors));
+        OnPropertyChanged(nameof(HasFilterDisabled));
+        OnPropertyChanged(nameof(HasFilterGitVerse));
+        OnPropertyChanged(nameof(HasFilterGitLab));
+        OnPropertyChanged(nameof(HasFilterInPlace));
+        OnPropertyChanged(nameof(HasFilterCategoryDev));
+        OnPropertyChanged(nameof(HasFilterCategoryAi));
+        OnPropertyChanged(nameof(HasFilterCategorySystem));
         OnPropertyChanged(nameof(FilterGitVerseBackground));
         OnPropertyChanged(nameof(FilterGitVerseForeground));
         OnPropertyChanged(nameof(FilterGitLabBackground));
@@ -1479,25 +1502,8 @@ public partial class MainViewModel : ObservableObject
 
 
     private static void FillGroup(ObservableCollection<TrackedAppItem> group, IEnumerable<TrackedAppItem> items)
-
-
-
     {
-
-
-
-        group.Clear();
-
-
-
-        foreach (var i in items)
-
-
-
-            group.Add(i);
-
-
-
+        group.SyncWith(items);
     }
 
 
@@ -1787,10 +1793,7 @@ public partial class MainViewModel : ObservableObject
 
 
     public IReadOnlyList<string> CatalogCategories { get; } =
-
-
-
-        ["utility", "media", "network", "security", "productivity", "development"];
+        new[] { "utility", "media", "network", "security", "productivity", "development" };
 
 
 
@@ -5285,119 +5288,48 @@ private void ApplyCatalogFilter()
 
 
             var current = 0;
-
-
-
-
-
-
-
-            foreach (var item in appsToCheck)
-
-
-
+            using var throttle = new SemaphoreSlim(4);
+            var tasks = appsToCheck.Select(async item =>
             {
-
-
-
-                if (cancellationToken.IsCancellationRequested) break;
-
-
-
-                current++;
-
-
-
-                CheckingProgressValue = total > 0 ? (double)current / total * 100.0 : 0;
-
-
-
-                CheckingProgressText = _loc.Format("CheckingProgress", current, total, item.Name);
-
-
-
-
-
-
-
-                var vm = Apps.FirstOrDefault(a => ReferenceEquals(a.App, item));
-
-
-
-                if (vm is null) continue;
-
-
-
-
-
-
-
-                vm.Stage = UpdateStage.Checking;
-
-
-
-                var result = await _engine.CheckAsync(item, cancellationToken);
-
-
-
-                BackgroundCheckOrder.RecordOutcome(item, result.Status);
-
-
-
-
-
-
-
-                vm.StatusText = Describe(result.Status);
-
-
-
-                vm.StatusDetail = result.Detail;
-
-
-
-                vm.UpdateAvailable = result.Status == UpdateStatus.UpdateAvailable;
-
-
-
-                vm.LatestTag = result.NewRelease?.TagName;
-
-
-
-                vm.PendingNotes = result.NewRelease?.Body;
-
-
-
-                vm.ReportVersionChanged();
-
-
-
-                vm.Stage = result.Status switch
-
-
-
+                await throttle.WaitAsync(ct);
+                try
                 {
-
-
-
-                    UpdateStatus.Error => UpdateStage.Error,
-
-
-
-                    UpdateStatus.UpdateAvailable => UpdateStage.Idle,
-
-
-
-                    _ => UpdateStage.Idle
-
-
-
-                };
-
-
-
-            }
-
+                    if (ct.IsCancellationRequested) return;
+                    var vm = Apps.FirstOrDefault(a => ReferenceEquals(a.App, item));
+                    if (vm is not null)
+                    {
+                        RunOnUI(() => vm.Stage = UpdateStage.Checking);
+                    }
+                    var result = await _engine.CheckAsync(item, ct);
+                    BackgroundCheckOrder.RecordOutcome(item, result.Status);
+                    RunOnUI(() =>
+                    {
+                        int done = Interlocked.Increment(ref current);
+                        CheckingProgressValue = total > 0 ? (double)done / total * 100.0 : 0;
+                        CheckingProgressText = _loc.Format("CheckingProgress", done, total, item.Name);
+                        if (vm is not null)
+                        {
+                            vm.StatusText = Describe(result.Status);
+                            vm.StatusDetail = result.Detail;
+                            vm.UpdateAvailable = result.Status == UpdateStatus.UpdateAvailable;
+                            vm.LatestTag = result.NewRelease?.TagName;
+                            vm.PendingNotes = result.NewRelease?.Body;
+                            vm.ReportVersionChanged();
+                            vm.Stage = result.Status switch
+                            {
+                                UpdateStatus.Error => UpdateStage.Error,
+                                UpdateStatus.UpdateAvailable => UpdateStage.Idle,
+                                _ => UpdateStage.Done,
+                            };
+                        }
+                    });
+                }
+                finally
+                {
+                    throttle.Release();
+                }
+            });
+            await Task.WhenAll(tasks);
 
 
             StatusText = _loc["CheckingDone"];
@@ -7366,16 +7298,19 @@ private void ApplyCatalogFilter()
 
                 // Check tracked apps first so user immediately sees fresh statuses on cards
 
-                if (_config.AutoCheckEnabled && Apps.Count > 0)
-
+                var cfg = _configStore.Load();
+                var interval = TimeSpan.FromHours(Math.Max(1, cfg.CheckIntervalHours));
+                bool shouldCheck = cfg.AutoCheckEnabled && Apps.Count > 0 &&
+                    (!cfg.LastCheckUtc.HasValue || (DateTimeOffset.UtcNow - cfg.LastCheckUtc.Value) >= interval);
+                if (shouldCheck)
                 {
-
                     StatusText = _loc["checking"];
-
                     await RunBackgroundCheckAsync();
-
                     StatusText = _loc["checkDone"];
-
+                }
+                else
+                {
+                    StatusText = _loc["checkDone"];
                 }
 
 

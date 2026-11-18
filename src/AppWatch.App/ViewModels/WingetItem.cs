@@ -23,7 +23,7 @@ public partial class WingetItem : ObservableObject
     public string Versions => $"{CurrentVersion} → {AvailableVersion}";
 
     [ObservableProperty]
-    public partial bool IsSelected { get; set; } = true;
+    public partial bool IsSelected { get; set; } = false;
 
     [ObservableProperty]
     public partial string Status { get; set; } = "";

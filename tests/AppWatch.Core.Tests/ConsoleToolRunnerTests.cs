@@ -23,13 +23,13 @@ public class ConsoleToolRunnerTests
     public async Task UpdateToolAsync_WhenRunnerMissing_ReturnsClearExplanationWithoutCrashing()
     {
         var runner = new FakeMissingRunner();
-        var result = await runner.UpdateToolAsync(PackageRunnerType.Bun, "my-tool");
+        var result = await runner.UpdateToolAsync(PackageRunnerType.Bun, "my-tool", cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
         Assert.Contains("не найден в системе", result.Error);
     }
 
-    private class FakeMissingRunner : ConsoleToolRunner
+    private sealed class FakeMissingRunner : ConsoleToolRunner
     {
         public override PackageRunnerProbe ProbeRunner(PackageRunnerType runnerType)
         {

@@ -12,7 +12,7 @@ public class VirusTotalClientTests
     {
         using var client = new HttpClient();
         var vt = new VirusTotalClient(client, apiKey: null);
-        var res = await vt.CheckFileHashAsync("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+        var res = await vt.CheckFileHashAsync("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Null(res);
     }
@@ -24,7 +24,7 @@ public class VirusTotalClientTests
         using var client = new HttpClient(handler);
         var vt = new VirusTotalClient(client, apiKey: "fake-key");
 
-        var res = await vt.CheckFileHashAsync("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+        var res = await vt.CheckFileHashAsync("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(res);
         Assert.False(res.IsKnown);
@@ -52,7 +52,7 @@ public class VirusTotalClientTests
         using var client = new HttpClient(handler);
         var vt = new VirusTotalClient(client, apiKey: "fake-key");
 
-        var res = await vt.CheckFileHashAsync("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+        var res = await vt.CheckFileHashAsync("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(res);
         Assert.True(res.IsKnown);

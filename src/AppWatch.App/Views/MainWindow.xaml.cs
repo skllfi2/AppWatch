@@ -134,6 +134,7 @@ public sealed partial class MainWindow : Window
                 ["trackedapps"] = typeof(Views.TrackedAppsPage),
                 ["updates"] = typeof(Views.UpdatesPage),
                 ["winget"] = typeof(WingetPage),
+                ["packagetools"] = typeof(PackageToolsPage),
                 ["history"] = typeof(HistoryPage),
                 ["settings"] = typeof(SettingsPage),
                 ["about"] = typeof(AboutPage),

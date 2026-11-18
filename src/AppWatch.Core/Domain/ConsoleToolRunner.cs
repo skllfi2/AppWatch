@@ -10,7 +10,9 @@ public enum PackageRunnerType
     Bun,
     Cargo,
     Pipx,
-    DotnetTool
+    DotnetTool,
+    Scoop,
+    Chocolatey
 }
 
 public sealed record PackageRunnerProbe(
@@ -40,7 +42,9 @@ public class ConsoleToolRunner
         [PackageRunnerType.Bun] = ("bun.exe", "--version", "update -g {0}"),
         [PackageRunnerType.Cargo] = ("cargo.exe", "--version", "install-update {0}"),
         [PackageRunnerType.Pipx] = ("pipx.exe", "--version", "upgrade {0}"),
-        [PackageRunnerType.DotnetTool] = ("dotnet.exe", "tool --version", "tool update -g {0}")
+        [PackageRunnerType.DotnetTool] = ("dotnet.exe", "tool --version", "tool update -g {0}"),
+        [PackageRunnerType.Scoop] = ("scoop.cmd", "--version", "update {0}"),
+        [PackageRunnerType.Chocolatey] = ("choco.exe", "--version", "upgrade {0} -y")
     };
 
     /// <summary>

@@ -1,24 +1,23 @@
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using AppWatch.Core.Domain;
+using AppWatch.Core.Domain.Models;
+using AppWatch.Infrastructure.Native;
 
 namespace AppWatch.Infrastructure.System;
 
 /// <summary>
-/// B7 — Authenticode signature verification.
-/// Implemented via `Get-AuthenticodeSignature` (PowerShell) which drives the same
-/// WinVerifyTrust machinery and handles both embedded and catalog signatures.
-/// The direct WinVerifyTrust P/Invoke returns TRUST_E_SYSTEM_ERROR (0x800B0003)
-/// for every file on this machine — including catalog-signed system binaries and
-/// embedded-signed dotnet.exe — while Get-AuthenticodeSignature verifies the same
-/// files correctly from the same session (probed 2026-10-14; PS Status codes:
-/// 0 = Valid, 2 = NotSigned). Spawn cost ~1s, paid once per installer run — fine.
+/// B7 — Authenticode signature verification and certificate pinning.
+/// Uses high-performance native Rust zero-copy PE + WinVerifyTrust when available,
+/// verifies Certificate Thumbprint and Subject pinning against supply chain attacks.
 /// </summary>
 public sealed class InstallerTrustService
 {
-    public InstallerTrustLevel Verify(string filePath)
+    public InstallerTrustLevel Verify(string filePath, TrackedApp? app = null)
     {
         var ext = Path.GetExtension(filePath).ToLowerInvariant();
         if (ext is not (".exe" or ".msi"))
@@ -26,17 +25,92 @@ public sealed class InstallerTrustService
         if (!File.Exists(filePath))
             return InstallerTrustLevel.UnsupportedFile;
 
+        InstallerTrustLevel baseLevel = InstallerTrustLevel.Unsigned;
+
+        // Try fast native path first (instant zero-copy PE inspection + WinVerifyTrust)
+        if (NativeSystemBridge.IsAvailable)
+        {
+            if (NativeSystemBridge.TryInspectPe(filePath, out _, out var isSigned, out var isTrusted, out _))
+            {
+                if (isTrusted)
+                    baseLevel = InstallerTrustLevel.TrustedSignature;
+                else if (!isSigned)
+                    baseLevel = InstallerTrustLevel.Unsigned;
+                else
+                    baseLevel = InstallerTrustLevel.InvalidSignature;
+            }
+            else
+            {
+                baseLevel = VerifyFallback(filePath);
+            }
+        }
+        else
+        {
+            baseLevel = VerifyFallback(filePath);
+        }
+
+        // If file is signed and trusted, check Certificate Pinning rules
+        if (baseLevel == InstallerTrustLevel.TrustedSignature)
+        {
+            var cert = ExtractCertificate(filePath);
+            if (cert is not null)
+            {
+                var thumbprint = cert.GetCertHashString();
+                var subject = cert.Subject;
+
+                if (app is not null)
+                {
+                    // If thumbprint was pinned, it must match exactly
+                    if (!string.IsNullOrWhiteSpace(app.PinnedCertificateThumbprint) &&
+                        !string.Equals(app.PinnedCertificateThumbprint, thumbprint, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return InstallerTrustLevel.CertificateMismatch;
+                    }
+
+                    // If subject was pinned, it must match
+                    if (!string.IsNullOrWhiteSpace(app.PinnedCertificateSubject) &&
+                        !string.Equals(app.PinnedCertificateSubject, subject, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return InstallerTrustLevel.CertificateMismatch;
+                    }
+
+                    // Auto-pin certificate on first successful trusted verification if empty
+                    if (string.IsNullOrWhiteSpace(app.PinnedCertificateThumbprint))
+                    {
+                        app.PinnedCertificateThumbprint = thumbprint;
+                        app.PinnedCertificateSubject = subject;
+                    }
+                }
+            }
+        }
+
+        return baseLevel;
+    }
+
+    public static X509Certificate2? ExtractCertificate(string filePath)
+    {
         try
         {
-            // -LiteralPath + doubled single-quotes: no injection through the file path
+#pragma warning disable SYSLIB0057
+            return new X509Certificate2(X509Certificate.CreateFromSignedFile(filePath));
+#pragma warning restore SYSLIB0057
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static InstallerTrustLevel VerifyFallback(string filePath)
+    {
+        try
+        {
             var escaped = filePath.Replace("'", "''");
             var psi = new ProcessStartInfo
             {
                 FileName = "powershell.exe",
                 Arguments =
                     "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command " +
-                    // NB: [int] cast must wrap the WHOLE member access — `$sig.Status` —
-                    // `[int](expr).Status` parses as ([int](expr)).Status and yields null.
                     $"\"$sig = Get-AuthenticodeSignature -LiteralPath '{escaped}'; [int]$sig.Status\"",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -63,12 +137,11 @@ public sealed class InstallerTrustService
             {
                 "0" => InstallerTrustLevel.TrustedSignature,   // Valid
                 "2" => InstallerTrustLevel.Unsigned,           // NotSigned
-                _ => InstallerTrustLevel.InvalidSignature,      // UnknownError, HashMismatch, NotTrusted…
+                _ => InstallerTrustLevel.InvalidSignature,
             };
         }
         catch
         {
-            // verification machinery broken — never pretend the file is fine
             return InstallerTrustLevel.InvalidSignature;
         }
     }

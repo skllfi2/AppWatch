@@ -30,12 +30,12 @@ public partial class SettingsViewModel : ObservableObject
     private readonly SoundService _soundService;
     private bool _initialized;
 
-    public IReadOnlyList<int> IntervalChoices { get; } = [1, 3, 6, 12, 24];
-    public IReadOnlyList<int> VersionKeepChoices { get; } = [1, 3, 5, 10];
+    public IReadOnlyList<int> IntervalChoices { get; } = new[] { 1, 3, 6, 12, 24 };
+    public IReadOnlyList<int> VersionKeepChoices { get; } = new[] { 1, 3, 5, 10 };
 
     public IReadOnlyList<UpdateStrategy> StrategyChoices { get; } =
-        [UpdateStrategy.Auto, UpdateStrategy.BuiltInUpdater, UpdateStrategy.SilentInstaller,
-         UpdateStrategy.PortableReplace, UpdateStrategy.ExternalLauncher];
+        new[] { UpdateStrategy.Auto, UpdateStrategy.BuiltInUpdater, UpdateStrategy.SilentInstaller,
+                UpdateStrategy.PortableReplace, UpdateStrategy.ExternalLauncher };
 
     public SettingsViewModel(IConfigStore configStore, ThemeService theme, SelfUpdateService selfUpdate, VersionStore versionStore, SoundService soundService)
     {
@@ -700,5 +700,19 @@ public partial class SettingsViewModel : ObservableObject
             _preparedUpdate = null;
             OnPropertyChanged(nameof(CanApplySelfUpdate));
         }
+    }
+
+    [RelayCommand]
+    private void OpenGitHubTokensPage()
+    {
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo("https://github.com/settings/tokens/new?description=AppWatch&scopes=public_repo")
+            {
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(psi);
+        }
+        catch { }
     }
 }

@@ -71,11 +71,19 @@ public partial class App : Application
                 var configStore = new JsonConfigStore();
                 var config = configStore.Load();
 
+                // If config language is empty/default and config file was absent, sync with system culture
+                if (string.IsNullOrWhiteSpace(config.Language))
+                {
+                    config.Language = LocalizationService.DetectSystemLanguage();
+                    configStore.Save(config);
+                }
+
                 Services = new ServiceCollection()
+                                                .AddHttpClient()
                                                 .AddSingleton(configStore)
                                                 .AddSingleton(config)
                                                 .AddSingleton<IConfigStore>(sp => sp.GetRequiredService<JsonConfigStore>())
-                                                .AddSingleton<IGitHubClient>(_ => new GitHubApiClient(config.GitHubToken, config.DownloadMirrors))
+                                                .AddSingleton<IGitHubClient>(sp => new GitHubApiClient(config.GitHubToken, config.DownloadMirrors, sp.GetRequiredService<IHttpClientFactory>().CreateClient("GitHub")))
                                                 .AddSingleton<IProcessService, ProcessService>()
                                                 .AddSingleton<IAppLauncher, AppLauncher>()
                                                 .AddSingleton<IShortcutService, ShortcutService>()
@@ -110,6 +118,7 @@ public partial class App : Application
                                                     sp.GetRequiredService<SystemVersionResolver>(),
                                                     AppPaths.ResolveInstallRoot(config.InstallRoot)
                                                 ))
+                                                .AddSingleton<ViewModels.PackageToolsViewModel>()
                                                 .AddSingleton<MainViewModel>()
                                                 .BuildServiceProvider();
 
@@ -282,14 +291,27 @@ public partial class App : Application
 
             private void ActivateWindow()
             {
-                var dispatcherQueue = DispatcherQueue.GetForCurrentThread();
-                dispatcherQueue.TryEnqueue(() =>
+                var queue = _window?.DispatcherQueue
+                            ?? MainWindow?.DispatcherQueue
+                            ?? DispatcherQueue.GetForCurrentThread();
+
+                if (queue is not null)
                 {
-                    if (_window is null) return;
+                    queue.TryEnqueue(() =>
+                    {
+                        if (_window is null) return;
+                        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
+                        NativeMethods.ShowWindow(hwnd, NativeMethods.SwRestore);
+                        NativeMethods.SetForegroundWindow(hwnd);
+                    });
+                }
+                else if (_window is not null)
+                {
+                    // Fallback directly via Win32 API if no dispatcher is bound to the thread
                     var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_window);
                     NativeMethods.ShowWindow(hwnd, NativeMethods.SwRestore);
                     NativeMethods.SetForegroundWindow(hwnd);
-                });
+                }
             }
 
             /// <summary>

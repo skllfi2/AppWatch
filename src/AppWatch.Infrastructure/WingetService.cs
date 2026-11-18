@@ -46,16 +46,32 @@ public sealed class WingetService
 
 
 
+    private static readonly string WingetInstalledDbPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "Packages", "Microsoft.DesktopAppInstaller_8wekyb3d8bbwe", "LocalState",
+        "Microsoft.Winget.Source_8wekyb3d8bbwe", "installed.db");
+
+    private static readonly object _cacheLock = new();
+    private static IReadOnlyList<WingetPackageUpdate>? _cachedUpgrades;
+    private static DateTime _cacheTimestamp = DateTime.MinValue;
+    private static DateTime _lastDbWriteTime = DateTime.MinValue;
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(10);
+
     private readonly SystemVersionResolver? _systemVersion;
 
-
-
     public WingetService(SystemVersionResolver? systemVersion = null)
-
     {
-
         _systemVersion = systemVersion;
+    }
 
+    public static void InvalidateCache()
+    {
+        lock (_cacheLock)
+        {
+            _cachedUpgrades = null;
+            _cacheTimestamp = DateTime.MinValue;
+            _lastDbWriteTime = DateTime.MinValue;
+        }
     }
 
 
@@ -88,6 +104,23 @@ public sealed class WingetService
 
             throw new InvalidOperationException("winget is not available");
 
+        // Timestamp-guarded fast memory cache: if installed.db was not modified and TTL has not expired, return cache
+        lock (_cacheLock)
+        {
+            if (_cachedUpgrades is not null && (DateTime.UtcNow - _cacheTimestamp) < CacheTtl)
+            {
+                if (File.Exists(WingetInstalledDbPath))
+                {
+                    var currentWriteTime = File.GetLastWriteTimeUtc(WingetInstalledDbPath);
+                    if (currentWriteTime == _lastDbWriteTime)
+                    {
+                        Log.Debug("Returning timestamp-guarded cached winget upgrades ({Count} items)", _cachedUpgrades.Count);
+                        return _cachedUpgrades;
+                    }
+                }
+            }
+        }
+
         var (exitCode, output) = await RunWingetAsync(
 
             "upgrade --include-unknown --disable-interactivity --accept-source-agreements",
@@ -98,7 +131,17 @@ public sealed class WingetService
 
             throw new WingetCatalogBrokenException(output);
 
-        return WingetOutputParser.ParseUpgrades(output);
+        var parsed = WingetOutputParser.ParseUpgrades(output);
+        lock (_cacheLock)
+        {
+            _cachedUpgrades = parsed;
+            _cacheTimestamp = DateTime.UtcNow;
+            if (File.Exists(WingetInstalledDbPath))
+            {
+                _lastDbWriteTime = File.GetLastWriteTimeUtc(WingetInstalledDbPath);
+            }
+        }
+        return parsed;
 
     }
 

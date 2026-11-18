@@ -22,7 +22,24 @@ public sealed class LocalizationService : INotifyPropertyChanged
 
     public string this[string key] => GetString(key);
 
-    public IReadOnlyList<string> AvailableLanguages { get; } = [.. Packs.Keys.OrderBy(x => x)];
+    public IReadOnlyList<string> AvailableLanguages { get; } = Packs.Keys.OrderBy(x => x).ToArray();
+
+    /// <summary>
+    /// Detects the most appropriate available language based on the user's current Windows UI culture.
+    /// Falls back to English if the system language is not supported.
+    /// </summary>
+    public static string DetectSystemLanguage()
+    {
+        var sys = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+        if (Packs.ContainsKey(sys))
+            return sys;
+
+        // CIS/Slavic group fallback to Russian if system is Ukrainian, Belarusian, Kazakh, etc.
+        if (sys is "uk" or "be" or "kk" or "uz" or "tg" or "ky")
+            return "ru";
+
+        return FallbackLanguage;
+    }
 
     public string GetString(string key) =>
         _current.TryGetValue(key, out var value) ? value

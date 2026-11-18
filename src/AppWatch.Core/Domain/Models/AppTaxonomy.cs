@@ -14,6 +14,9 @@ public enum AppSourceOrigin
     CargoTool,
     NpmTool,
     PipxTool,
+    Scoop,
+    Chocolatey,
+    FeedOrWeb,
     Custom,
 }
 

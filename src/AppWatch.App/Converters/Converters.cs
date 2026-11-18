@@ -221,7 +221,12 @@ public sealed class StringToImageSourceConverter : IValueConverter
             return null!;
         try
         {
-            return new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(url));
+            return new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(url))
+            {
+                DecodePixelWidth = 64,
+                DecodePixelHeight = 64,
+                DecodePixelType = Microsoft.UI.Xaml.Media.Imaging.DecodePixelType.Logical
+            };
         }
         catch { return null!; }
     }

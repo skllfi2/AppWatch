@@ -279,9 +279,19 @@
                                         <TextBlock Text="{x:Bind ViewModel.PatStatus, Mode=OneWay}" FontSize="11"
                                                    Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
                                     </StackPanel>
+                                    <Button Grid.Column="1" VerticalAlignment="Center" Padding="12,6" CornerRadius="6"
+                                            Background="{StaticResource HeroOverlayBrush}" BorderThickness="0"
+                                            Command="{x:Bind ViewModel.OpenGitHubTokensPageCommand}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <FontIcon Glyph="&#xE8A7;" FontSize="12" Foreground="{StaticResource AccentBrush}"/>
+                                            <TextBlock Text="Получить токен GitHub" FontSize="12"/>
+                                        </StackPanel>
+                                    </Button>
                                 </Grid>
-                                <PasswordBox PlaceholderText="ghp_…" MaxLength="255"
+                                <PasswordBox PlaceholderText="ghp_… (Personal Access Token, scope: public_repo)" MaxLength="255"
                                              Password="{x:Bind ViewModel.PatToken, Mode=TwoWay}"/>
+                                <TextBlock Text="💡 GitHub ограничивает анонимные запросы до 60/час. Персональный токен (PAT) с правами 'public_repo' или без прав (только публичные данные) увеличивает лимит до 5 000 запросов/час."
+                                           FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Opacity="0.8"/>
                             </StackPanel>
                         </Border>
 

@@ -49,4 +49,10 @@ public sealed class AppConfig
 
     /// <summary>Enable native WinUI 3 spatial audio and UI sound effects.</summary>
     public bool SoundEffectsEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Minimum release age in hours before allowing automatic unattended installation.
+    /// Protects against malicious release takeovers in the first hours of publication.
+    /// </summary>
+    public int ReleaseQuarantineHours { get; set; } = 2;
 }

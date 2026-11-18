@@ -72,6 +72,29 @@ public sealed class TrackedApp
     /// Prevents deletion of user directory when untracking.
     /// </summary>
     public bool IsInPlaceInstall { get; set; }
+
+    /// <summary>
+    /// Optional package manager runtime for global CLI packages (Npm, Bun, DotnetTool, Cargo, Pipx, Scoop, Chocolatey).
+    /// </summary>
+    public string? PackageToolManager { get; set; }
+
+    /// <summary>
+    /// URL for RSS/Atom feed or web page for version discovery.
+    /// </summary>
+    public string? FeedOrWebUrl { get; set; }
+
+    /// <summary>
+    /// Optional regex with named group (?<version>...) or capture group 1 to extract version from HTML/Feed.
+    /// </summary>
+    public string? WebVersionRegex { get; set; }
+
+    /// <summary>
+    /// Optional direct download URL template (e.g. https://domain.com/app-{version}.exe)
+    /// </summary>
+    public string? DownloadUrlTemplate { get; set; }
+
+    public string? PinnedCertificateThumbprint { get; set; }
+    public string? PinnedCertificateSubject { get; set; }
 }
 
 public enum UpdateStrategy

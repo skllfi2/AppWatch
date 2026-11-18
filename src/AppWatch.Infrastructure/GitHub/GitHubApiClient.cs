@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 ﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -22,6 +23,7 @@ public sealed class GitHubApiClient : IGitHubClient
 
     private readonly HttpClient _http;
     private readonly MemoryCache _cache = new(new MemoryCacheOptions { SizeLimit = 100 });
+    private readonly ConcurrentDictionary<string, (string ETag, string Json)> _eTagCache = new();
     private readonly IReadOnlyList<string> _downloadMirrors;
     private DateTimeOffset _rateLimitReset = DateTimeOffset.MinValue;
     private int? _remainingRequests;
@@ -30,9 +32,9 @@ public sealed class GitHubApiClient : IGitHubClient
     public DateTimeOffset? RateLimitResetUtc => _rateLimitReset == DateTimeOffset.MinValue ? null : _rateLimitReset;
     public int? RemainingRequests => _remainingRequests;
 
-    public GitHubApiClient(string? token = null, IEnumerable<string>? downloadMirrors = null)
+    public GitHubApiClient(string? token = null, IEnumerable<string>? downloadMirrors = null, HttpClient? httpClient = null)
     {
-        _http = new HttpClient();
+        _http = httpClient ?? new HttpClient();
         // P0 live-fix: the API calls use RELATIVE urls (repos/{owner}/{repo}/releases) вЂ”
         // without BaseAddress every call died with "request URI must be absolute"
         // (the GitHub path of the app never actually worked until this line).
@@ -201,11 +203,29 @@ public sealed class GitHubApiClient : IGitHubClient
         {
             try
             {
-                using var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+                using var request = new HttpRequestMessage(HttpMethod.Get, url);
+                if (_eTagCache.TryGetValue(url, out var cachedEntry) && !string.IsNullOrEmpty(cachedEntry.ETag))
+                {
+                    request.Headers.TryAddWithoutValidation("If-None-Match", cachedEntry.ETag);
+                }
+
+                using var response = await _http.SendAsync(request, cancellationToken).ConfigureAwait(false);
                 TrackRateLimit(response);
                 await EnsureNotRateLimited(response).ConfigureAwait(false);
+
+                if (response.StatusCode == HttpStatusCode.NotModified && _eTagCache.TryGetValue(url, out var notModifiedEntry))
+                {
+                    return notModifiedEntry.Json;
+                }
+
                 response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                var etag = response.Headers.ETag?.Tag;
+                if (!string.IsNullOrEmpty(etag))
+                {
+                    _eTagCache[url] = (etag, json);
+                }
+                return json;
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {

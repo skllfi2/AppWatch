@@ -7,7 +7,7 @@ namespace AppWatch.Core.Domain;
 public static class UpdateDecisionEngine
 {
     public static UpdateCheckResult Evaluate(
-        TrackedApp app, IReadOnlyList<ReleaseInfo> releases, SystemArchitecture arch)
+        TrackedApp app, IReadOnlyList<ReleaseInfo> releases, SystemArchitecture arch, int quarantineHours = 0)
     {
         if (!app.Enabled)
             return new(app, UpdateStatus.Disabled);
@@ -39,6 +39,18 @@ public static class UpdateDecisionEngine
 
         if (!VersionParser.IsNewer(app.CurrentVersion, newest.TagName))
             return new(app, UpdateStatus.UpToDate);
+
+        // Supply Chain Protection: Quarantine fresh releases (< quarantineHours) for unattended auto-updates
+        if (quarantineHours > 0 && newest.PublishedAt != default)
+        {
+            var age = DateTimeOffset.UtcNow - newest.PublishedAt;
+            if (age.TotalHours < quarantineHours)
+            {
+                var remaining = TimeSpan.FromHours(quarantineHours) - age;
+                return new(app, UpdateStatus.UpToDate, newest,
+                    Detail: $"Release {newest.TagName} is in quarantine ({remaining.TotalMinutes:F0}m remaining before auto-apply)");
+            }
+        }
 
         var strategy = DetermineStrategy(app, newest);
         var priority = GetAssetPriority(app, strategy);

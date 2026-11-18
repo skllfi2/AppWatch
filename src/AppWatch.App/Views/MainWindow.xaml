@@ -42,6 +42,11 @@
                         <FontIcon Glyph="&#xE7B8;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                            <NavigationViewItem Tag="packagetools" Content="{x:Bind Loc.NavPackageTools, Mode=OneWay}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE756;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                             <NavigationViewItem Tag="history" Content="{x:Bind Loc.NavHistory, Mode=OneWay}">
                                 <NavigationViewItem.Icon>
                                     <FontIcon Glyph="&#xE81C;"/>

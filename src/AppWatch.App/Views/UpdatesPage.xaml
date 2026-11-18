@@ -11,13 +11,13 @@
     <Page.Resources>
         <conv:StageToVisConverter x:Key="StageToVis" xmlns:conv="using:AppWatch.Converters" />
         <!-- Same card as the old Updates tab (HomeCatalogPage) -->
-<DataTemplate x:Key="UpdatesPageAppCardTemplate" x:DataType="vm:TrackedAppItem">
+        <DataTemplate x:Key="UpdatesPageAppCardTemplate" x:DataType="vm:TrackedAppItem">
             <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="10" Padding="14,12"
                     BorderThickness="1" BorderBrush="{StaticResource BorderDefaultBrush}" Margin="0,0,0,8">
                 <Grid ColumnSpacing="14">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="130" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Button Grid.Column="0" Command="{x:Bind ShowDetailsCommand}" CommandParameter="{x:Bind}"
@@ -44,39 +44,30 @@
                                 <TextBlock Text="{x:Bind Description, Mode=OneWay}" FontSize="12" Opacity="0.7"
                                            TextTrimming="CharacterEllipsis" MaxLines="1"
                                            Visibility="{x:Bind HasDescription, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"/>
-                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                    <Ellipse Width="8" Height="8" Fill="{x:Bind StatusBrush, Mode=OneWay}" VerticalAlignment="Center"
-                                             ToolTipService.ToolTip="{x:Bind StatusTooltip, Mode=OneWay}"/>
-                                    <TextBlock Text="{x:Bind StatusText, Mode=OneWay}" FontSize="11" Opacity="0.7"
-                                               VerticalAlignment="Center"/>
-                                    <!-- Version Transition Pills -->
-                                    <Border Background="{StaticResource NeutralSubtleBrush}"
-                                            BorderBrush="{StaticResource NeutralPillBorderBrush}"
-                                            BorderThickness="1" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
-                                        <TextBlock Text="{x:Bind Version, Mode=OneWay}" FontSize="11" Opacity="0.75"
-                                                   VerticalAlignment="Center"/>
-                                    </Border>
-                                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center"
-                                                Visibility="{x:Bind UpdateAvailable, Converter={StaticResource BoolToVisibility}, Mode=OneWay}">
-                                        <TextBlock Text="→" FontSize="11" Opacity="0.5" VerticalAlignment="Center"/>
-                                        <Border Background="{StaticResource AccentSubtleBrush}"
-                                                BorderBrush="{StaticResource AccentPillBorderBrush}"
-                                                BorderThickness="1" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
-                                            <TextBlock Text="{x:Bind LatestTag, Mode=OneWay}" FontSize="11" FontWeight="SemiBold"
-                                                       Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
-                                        </Border>
-                                    </StackPanel>
-                                    <TextBlock Text="{x:Bind LastCheckText, Mode=OneWay}" FontSize="10" Opacity="0.4"
-                                               VerticalAlignment="Center"/>
-                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
                     </Button>
-                    <ProgressBar Grid.Column="1" VerticalAlignment="Center" Width="110" Height="6"
-                                 Minimum="0" Maximum="100" CornerRadius="3"
-                                 Value="{x:Bind ProgressValue, Mode=OneWay}"
-                                 Visibility="{x:Bind Stage, Converter={StaticResource StageToVis}, Mode=OneWay}"
-                                 IsIndeterminate="False"/>
+
+                    <!-- Dedicated Column 1: Versions (Aligned in 130px column like all pages) -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <Border Background="{StaticResource NeutralSubtleBrush}"
+                                BorderBrush="{StaticResource NeutralPillBorderBrush}"
+                                BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                            <TextBlock Text="{x:Bind Version, Mode=OneWay}" FontSize="11" Opacity="0.8" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center"
+                                    Visibility="{x:Bind UpdateAvailable, Converter={StaticResource BoolToVisibility}, Mode=OneWay}">
+                            <TextBlock Text="→" FontSize="11" Opacity="0.5" VerticalAlignment="Center"/>
+                            <Border Background="{StaticResource AccentSubtleBrush}"
+                                    BorderBrush="{StaticResource AccentPillBorderBrush}"
+                                    BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                <TextBlock Text="{x:Bind LatestTag, Mode=OneWay}" FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Dedicated Column 2: Actions -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                         <Button Command="{x:Bind UpdateOneCommand}" CommandParameter="{x:Bind}"
                                 AutomationProperties.Name="{x:Bind BtnUpdateOne, Mode=OneWay}"
@@ -105,6 +96,19 @@
                             <FontIcon Glyph="&#xE10C;" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
                             <Button.Flyout>
                                 <MenuFlyout>
+                                    <MenuFlyoutItem Command="{x:Bind CheckUpdateCommand}" CommandParameter="{x:Bind}"
+                                                    Text="Проверить обновление">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE72C;"/>
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutItem Command="{x:Bind ShowDetailsCommand}" CommandParameter="{x:Bind}"
+                                                    Text="О программе / релизы">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE946;"/>
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutSeparator/>
                                     <MenuFlyoutItem Command="{x:Bind SkipVersionCommand}" CommandParameter="{x:Bind}"
                                                     Text="{x:Bind MenuSkipVersion, Mode=OneWay}"
                                                     Visibility="{x:Bind UpdateAvailable, Converter={StaticResource BoolToVisibility}, Mode=OneWay}">
@@ -118,34 +122,6 @@
                                             <FontIcon Glyph="&#xE840;"/>
                                         </MenuFlyoutItem.Icon>
                                     </MenuFlyoutItem>
-                                    <MenuFlyoutItem Command="{x:Bind RollbackAppCommand}" CommandParameter="{x:Bind}"
-                                                    Text="{x:Bind BtnRollback, Mode=OneWay}"
-                                                    Visibility="{x:Bind RollbackAvailable, Converter={StaticResource BoolToVisibility}, Mode=OneWay}">
-                                        <MenuFlyoutItem.Icon>
-                                            <FontIcon Glyph="&#xE7A6;"/>
-                                        </MenuFlyoutItem.Icon>
-                                    </MenuFlyoutItem>
-                                    <MenuFlyoutItem Command="{x:Bind EditAppCommand}" CommandParameter="{x:Bind}"
-                                                    Text="{x:Bind MenuEdit, Mode=OneWay}">
-                                        <MenuFlyoutItem.Icon>
-                                            <FontIcon Glyph="&#xE70F;"/>
-                                        </MenuFlyoutItem.Icon>
-                                    </MenuFlyoutItem>
-                                    <MenuFlyoutSeparator/>
-                                    <MenuFlyoutItem Command="{x:Bind ResetRulesCommand}" CommandParameter="{x:Bind}"
-                                                    Text="{x:Bind MenuResetRules, Mode=OneWay}"
-                                                    Visibility="{x:Bind RuleBadge, Converter={StaticResource StringNotEmptyToVisibility}, Mode=OneWay}">
-                                        <MenuFlyoutItem.Icon>
-                                            <FontIcon Glyph="&#xE74D;"/>
-                                        </MenuFlyoutItem.Icon>
-                                    </MenuFlyoutItem>
-                                    <MenuFlyoutSeparator/>
-                                    <MenuFlyoutItem Command="{x:Bind UninstallAppCommand}" CommandParameter="{x:Bind}"
-                                                    Text="{x:Bind MenuUninstall, Mode=OneWay}">
-                                        <MenuFlyoutItem.Icon>
-                                            <FontIcon Glyph="&#xE74D;"/>
-                                        </MenuFlyoutItem.Icon>
-                                    </MenuFlyoutItem>
                                 </MenuFlyout>
                             </Button.Flyout>
                         </Button>
@@ -154,102 +130,91 @@
             </Border>
         </DataTemplate>
     </Page.Resources>
+
     <Grid Padding="32,24" RowSpacing="0">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+
         <!-- Header -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,16">
-            <TextBlock Text="{x:Bind Loc.TabUpdates, Mode=OneWay}" Style="{StaticResource PageHeaderStyle}"/>
-            <TextBlock Text="{x:Bind Loc.UpdatesPageSubtitle, Mode=OneWay}" Style="{StaticResource PageSubtitleStyle}" TextWrapping="Wrap"/>
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,16">
+            <StackPanel Spacing="4">
+                <TextBlock Text="{x:Bind Loc.FilterUpdates, Mode=OneWay}" Style="{StaticResource PageHeaderStyle}" />
+                <TextBlock Text="{x:Bind Loc.UpdatesPageSubtitle, Mode=OneWay}" Style="{StaticResource PageSubtitleStyle}" TextWrapping="Wrap" />
+            </StackPanel>
         </StackPanel>
-        <!-- Toolbar: schedule chips + quick actions -->
-        <Grid Grid.Row="1" ColumnSpacing="12" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <!-- Secondary info: updated today + next check (auto-hidden when empty) -->
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" HorizontalAlignment="Left">
-                <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="6" Padding="12,6"
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Spacing="16">
+
+                <!-- Toolbar: Next Check Info + Action Buttons -->
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <FontIcon Glyph="&#xE823;" FontSize="13" Foreground="{StaticResource TextTertiaryBrush}"/>
+                        <TextBlock Text="{x:Bind ViewModel.NextCheckText, Mode=OneWay}" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    </StackPanel>
+
+                    <!-- Check Updates Button -->
+                    <Button Grid.Column="1" Command="{x:Bind ViewModel.CheckUpdatesCommand}"
+                            AutomationProperties.Name="{x:Bind Loc.QuickCheck, Mode=OneWay}"
+                            ToolTipService.ToolTip="{x:Bind Loc.QuickCheck, Mode=OneWay}"
+                            Padding="12,6" CornerRadius="8" FontSize="12"
+                            Background="{StaticResource CardBackgroundBrush}" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <ProgressRing IsActive="{x:Bind ViewModel.IsCheckingApps, Mode=OneWay}"
+                                          Width="12" Height="12"
+                                          Visibility="{x:Bind ViewModel.IsCheckingApps, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"/>
+                            <FontIcon Glyph="&#xE72C;" FontSize="12" Foreground="{StaticResource AccentBrush}"
+                                      Visibility="{x:Bind ViewModel.IsCheckingApps, Mode=OneWay, Converter={StaticResource InverseBoolToVisibility}}"/>
+                            <TextBlock Text="{x:Bind Loc.QuickCheck, Mode=OneWay}" FontSize="12"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Update All Button -->
+                    <Button Grid.Column="2" Command="{x:Bind ViewModel.UpdateAllCommand}"
+                            AutomationProperties.Name="{x:Bind Loc.UpdateAll, Mode=OneWay}"
+                            ToolTipService.ToolTip="{x:Bind Loc.UpdateAll, Mode=OneWay}"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Padding="14,6" CornerRadius="8" FontSize="12">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE896;" FontSize="12"/>
+                            <TextBlock Text="{x:Bind Loc.UpdateAll, Mode=OneWay}" FontSize="12" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <!-- Updates List -->
+                <ListView ItemsSource="{x:Bind ViewModel.UpdatesGroup, Mode=OneWay}"
+                          ItemTemplate="{StaticResource UpdatesPageAppCardTemplate}"
+                          SelectionMode="None">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="0"/>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                </ListView>
+
+                <!-- Empty state when no updates are available -->
+                <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="12" Padding="40,32"
                         BorderThickness="1" BorderBrush="{StaticResource BorderDefaultBrush}"
-                        Visibility="{x:Bind ViewModel.UpdatedTodayCount, Converter={StaticResource CountToVisibility}, Mode=OneWay}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xE73E;" FontSize="11" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
-                        <TextBlock Text="{x:Bind Loc.HeroMetricUpdatedToday, Mode=OneWay}" FontSize="12" Opacity="0.7" VerticalAlignment="Center"/>
-                        <TextBlock Text="{x:Bind ViewModel.UpdatedTodayCount, Mode=OneWay}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        Visibility="{x:Bind ViewModel.UpdatesGroup.Count, Converter={StaticResource InverseCountToVisibility}, Mode=OneWay}">
+                    <StackPanel Spacing="10" HorizontalAlignment="Center">
+                        <FontIcon Glyph="&#xE73E;" FontSize="36" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{x:Bind Loc.NoUpdatesAvailable, Mode=OneWay}" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{x:Bind Loc.NoUpdatesSubtitle, Mode=OneWay}" FontSize="12" Opacity="0.7" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Border>
-                <Border Background="{StaticResource CardBackgroundBrush}" CornerRadius="6" Padding="12,6"
-                        BorderThickness="1" BorderBrush="{StaticResource BorderDefaultBrush}"
-                        Visibility="{x:Bind ViewModel.NextCheckText, Converter={StaticResource StringNotEmptyToVisibility}, Mode=OneWay}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xE823;" FontSize="11" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
-                        <TextBlock Text="{x:Bind ViewModel.NextCheckText, Mode=OneWay}" FontSize="12" Opacity="0.7" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
+
             </StackPanel>
-            <!-- Quick actions -->
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                <Button Command="{x:Bind ViewModel.CheckUpdatesCommand}"
-                        AutomationProperties.Name="{x:Bind Loc.QuickCheck, Mode=OneWay}"
-                        ToolTipService.ToolTip="{x:Bind Loc.QuickCheck, Mode=OneWay}"
-                        Padding="12,7" CornerRadius="8" FontSize="12"
-                        Background="{StaticResource CardBackgroundBrush}" BorderThickness="1"
-                        Visibility="{x:Bind ViewModel.IsUpdateAllRunning, Converter={StaticResource InverseBoolToVisibility}, Mode=OneWay}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xE72C;" FontSize="12" Foreground="{StaticResource AccentBrush}"/>
-                        <TextBlock Text="{x:Bind Loc.QuickCheck, Mode=OneWay}" FontSize="12"/>
-                    </StackPanel>
-                </Button>
-                <Button Command="{x:Bind ViewModel.UpdateAllCommand}"
-                        AutomationProperties.Name="{x:Bind Loc.UpdateAll, Mode=OneWay}"
-                        ToolTipService.ToolTip="{x:Bind Loc.UpdateAll, Mode=OneWay}"
-                        Style="{StaticResource AccentButtonStyle}"
-                        Visibility="{x:Bind ViewModel.IsUpdateAllRunning, Converter={StaticResource InverseBoolToVisibility}, Mode=OneWay}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xE896;" FontSize="12"/>
-                        <TextBlock Text="{x:Bind Loc.UpdateAll, Mode=OneWay}" FontSize="12" FontWeight="SemiBold"/>
-                    </StackPanel>
-                </Button>
-                <Button Command="{x:Bind ViewModel.StopUpdateAllCommand}"
-                        AutomationProperties.Name="{x:Bind Loc.BtnStop, Mode=OneWay}"
-                        ToolTipService.ToolTip="{x:Bind Loc.BtnStop, Mode=OneWay}"
-                        Padding="12,7" CornerRadius="8" FontSize="12"
-                        Background="{StaticResource CriticalSubtleBrush}" BorderBrush="{StaticResource CriticalPillBorderBrush}" BorderThickness="1"
-                        Visibility="{x:Bind ViewModel.IsUpdateAllRunning, Converter={StaticResource BoolToVisibility}, Mode=OneWay}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xE711;" FontSize="12" Foreground="{StaticResource ErrorColor}"/>
-                        <TextBlock Text="{x:Bind Loc.BtnStop, Mode=OneWay}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource ErrorColor}"/>
-                    </StackPanel>
-                </Button>
-            </StackPanel>
-        </Grid>
-        <!-- Updates list -->
-        <ListView Grid.Row="2" ItemsSource="{x:Bind ViewModel.UpdatesGroup, Mode=OneWay}" SelectionMode="None"
-                  ItemTemplate="{StaticResource UpdatesPageAppCardTemplate}"/>
-        <!-- Empty state: no updates available -->
-        <Border Grid.Row="2" Background="{StaticResource CardBackgroundBrush}" CornerRadius="12" Padding="32,28"
-                BorderThickness="1" BorderBrush="{StaticResource BorderDefaultBrush}"
-                Visibility="{x:Bind ViewModel.HasUpdates, Converter={StaticResource InverseBoolToVisibility}, Mode=OneWay}"
-                VerticalAlignment="Center" HorizontalAlignment="Center">
-            <StackPanel Spacing="6" HorizontalAlignment="Center">
-                <Border Style="{StaticResource EmptyStateCircleStyle}" Background="{StaticResource SuccessSubtleBrush}">
-                    <FontIcon Glyph="&#xE73E;" FontSize="26" Foreground="{StaticResource SuccessColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
-                <TextBlock Text="{x:Bind Loc.NoUpdatesAvailable, Mode=OneWay}" Style="{StaticResource EmptyStateTitleStyle}"/>
-                <TextBlock Text="{x:Bind Loc.NoUpdatesSubtitle, Mode=OneWay}" Style="{StaticResource EmptyStateSubtitleStyle}"/>
-                <Button Command="{x:Bind ViewModel.CheckUpdatesCommand}"
-                        Padding="16,8" CornerRadius="8" HorizontalAlignment="Center"
-                        Background="{StaticResource AccentSubtleBrush}" BorderThickness="1" BorderBrush="{StaticResource AccentPillBorderBrush}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xE72C;" FontSize="12" Foreground="{StaticResource AccentBrush}"/>
-                        <TextBlock Text="{x:Bind Loc.QuickCheck, Mode=OneWay}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"/>
-                    </StackPanel>
-                </Button>
-            </StackPanel>
-        </Border>
+        </ScrollViewer>
     </Grid>
 </Page>

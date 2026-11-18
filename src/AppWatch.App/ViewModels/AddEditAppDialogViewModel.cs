@@ -154,11 +154,12 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
     [ObservableProperty]
     public partial bool HasAvailableAssets { get; set; }
 
-    /// <summary>Primary button gate: name + (owner & repo) for GitHub kinds; name + winget id for winget.</summary>
+    /// <summary>Primary button gate: name + (owner & repo) for GitHub kinds; name + winget id for winget. Blocked if duplicate.</summary>
     public bool CanAdd
     {
         get
         {
+            if (HasDuplicateWarning) return false;
             if (string.IsNullOrWhiteSpace(Name)) return false;
             if (SelectedUpdateKindIndex == (int)UpdateKind.WingetPackage)
                 return !string.IsNullOrWhiteSpace(WingetPackageId);
@@ -354,6 +355,7 @@ public sealed partial class AddEditAppDialogViewModel : ObservableObject
             ? string.Format(LocalizationService.Instance["AppAlreadyTracked"], dup.Name)
             : null;
         OnPropertyChanged(nameof(HasDuplicateWarning));
+        OnPropertyChanged(nameof(CanAdd));
     }
 
     [RelayCommand]

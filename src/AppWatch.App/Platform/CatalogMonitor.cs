@@ -106,8 +106,7 @@ public sealed class CatalogMonitor : BackgroundService, ICatalogMonitor
 
                 if (updatesFound > 0)
                 {
-                    _toast.ShowSummary(updatesFound);
-                    _logger.LogInformation("Catalog check found {Count} updates", updatesFound);
+                    _logger.LogInformation("Catalog check found {Count} updates in catalog (catalog notifications muted to avoid confusion with user tracked apps)", updatesFound);
                 }
                 else
                 {
@@ -185,8 +184,7 @@ public sealed class CatalogMonitor : BackgroundService, ICatalogMonitor
 
             if (updatesFound > 0)
             {
-                _toast.ShowSummary(updatesFound);
-                _logger.LogInformation("Manual catalog check found {Count} updates", updatesFound);
+                _logger.LogInformation("Manual catalog check found {Count} updates in catalog", updatesFound);
             }
             else
             {

@@ -73,14 +73,26 @@ public partial class TrackedAppItem : ObservableObject
     /// <summary>
     /// Status dot color; uses the DesignSystem semantic palette (theme-independent).
     /// </summary>
-    public Brush StatusBrush => Stage switch
+    public Brush StatusBrush
     {
-        UpdateStage.Done => MakeBrush(0x2E, 0xA0, 0x43),
-        UpdateStage.Error => MakeBrush(0xD8, 0x3B, 0x01),
-        UpdateStage.Replacing => MakeBrush(0xFF, 0xB9, 0x00),
-        UpdateStage.Checking or UpdateStage.Downloading or UpdateStage.Restarting => MakeBrush(0x00, 0x78, 0xD4),
-        _ => MakeBrush(0x61, 0x61, 0x61),
-    };
+        get
+        {
+            if (!App.Enabled)
+                return MakeBrush(0x61, 0x61, 0x61);
+
+            if (UpdateAvailable)
+                return MakeBrush(0x00, 0x78, 0xD4); // Blue / Accent for available update
+
+            return Stage switch
+            {
+                UpdateStage.Done or UpdateStage.Idle => MakeBrush(0x2E, 0xA0, 0x43), // Green for up-to-date
+                UpdateStage.Error => MakeBrush(0xD8, 0x3B, 0x01), // Red for error
+                UpdateStage.Replacing => MakeBrush(0xFF, 0xB9, 0x00), // Amber/Yellow
+                UpdateStage.Checking or UpdateStage.Downloading or UpdateStage.Restarting => MakeBrush(0x00, 0x78, 0xD4),
+                _ => MakeBrush(0x2E, 0xA0, 0x43),
+            };
+        }
+    }
 
     public Brush MonogramBrush
     {
@@ -312,6 +324,13 @@ public partial class TrackedAppItem : ObservableObject
     [ObservableProperty]
     public partial bool UpdateAvailable { get; set; }
 
+    partial void OnUpdateAvailableChanged(bool value)
+    {
+        OnPropertyChanged(nameof(StatusBrush));
+        OnPropertyChanged(nameof(CanLaunchPrimary));
+        OnPropertyChanged(nameof(AvailableVersion));
+    }
+
     /// <summary>A1: newest release tag from the last check (drives "skip this version").</summary>
     [ObservableProperty]
     public partial string? LatestTag { get; set; }
@@ -470,6 +489,7 @@ public partial class TrackedAppItem : ObservableObject
     public IRelayCommand ResetRulesCommand => global::AppWatch.App.Resolve<MainViewModel>().ResetRulesCommand;
 
     /// <summary>Layer-1 UI: opens the app details dialog (versions, release notes, history, automation).</summary>
+    public IRelayCommand CheckUpdateCommand => global::AppWatch.App.Resolve<MainViewModel>().CheckSingleAppUpdateCommand;
     public IRelayCommand ShowDetailsCommand => global::AppWatch.App.Resolve<MainViewModel>().ShowAppDetailsCommand;
 
     /// <summary>Uninstall/untrack this app (with confirm) — proxied from MainViewModel.</summary>

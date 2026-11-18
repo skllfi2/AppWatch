@@ -54,6 +54,15 @@ public sealed class Loc : INotifyPropertyChanged
                 public string NavApps => LocalizationService.Instance["navApps"];
     public string NavCatalog => LocalizationService.Instance["navCatalog"];
     public string NavWinget => LocalizationService.Instance["navWinget"];
+    public string NavPackageTools => LocalizationService.Instance["NavPackageTools"];
+    public string PackageToolsPageSubtitle => LocalizationService.Instance["PackageToolsPageSubtitle"];
+    public string PackageToolsEmpty => LocalizationService.Instance["PackageToolsEmpty"];
+    public string PackageToolsEmptyHint => LocalizationService.Instance["PackageToolsEmptyHint"];
+    public string BtnUpdateSelected => LocalizationService.Instance["BtnUpdateSelected"];
+    public string InstallGlobalPackageTitle => LocalizationService.Instance["InstallGlobalPackageTitle"];
+    public string InstallGlobalPackagePlaceholder => LocalizationService.Instance["InstallGlobalPackagePlaceholder"];
+    public string BtnInstallPackage => LocalizationService.Instance["BtnInstallPackage"];
+    public string FilterAll => LocalizationService.Instance["filterAll"];
     public string NavSettings => LocalizationService.Instance["navSettings"];
     public string NavAbout => LocalizationService.Instance["navAbout"];
     public string TabHome => LocalizationService.Instance["TabHome"];
@@ -202,6 +211,21 @@ public sealed class Loc : INotifyPropertyChanged
                                 public string AboutVersion => LocalizationService.Instance["AboutVersion"];
         public string AboutRepo => LocalizationService.Instance["AboutRepo"];
         public string AboutAttribution => LocalizationService.Instance["AboutAttribution"];
+        public string AboutHeroDescription => LocalizationService.Instance["AboutHeroDescription"];
+        public string AboutCheckUpdates => LocalizationService.Instance["AboutCheckUpdates"];
+        public string AboutReleaseNotes => LocalizationService.Instance["AboutReleaseNotes"];
+        public string AboutDocumentation => LocalizationService.Instance["AboutDocumentation"];
+        public string AboutReportIssue => LocalizationService.Instance["AboutReportIssue"];
+        public string AboutRequestFeature => LocalizationService.Instance["AboutRequestFeature"];
+        public string AboutLicense => LocalizationService.Instance["AboutLicense"];
+        public string AboutLicenseType => LocalizationService.Instance["AboutLicenseType"];
+        public string AboutSystemInfo => LocalizationService.Instance["AboutSystemInfo"];
+        public string AboutCopySystemInfo => LocalizationService.Instance["AboutCopySystemInfo"];
+        public string AboutSystemInfoCopied => LocalizationService.Instance["AboutSystemInfoCopied"];
+        public string AboutTechStack => LocalizationService.Instance["AboutTechStack"];
+        public string AboutLinks => LocalizationService.Instance["AboutLinks"];
+        public string AboutDisclaimer => LocalizationService.Instance["AboutDisclaimer"];
+        public string AboutDisclaimerText => LocalizationService.Instance["AboutDisclaimerText"];
 
         // Hero banner keys
         public string HeroTitle => LocalizationService.Instance["HeroTitle"];
@@ -262,8 +286,7 @@ public sealed class Loc : INotifyPropertyChanged
                 public string NotImplemented => LocalizationService.Instance["notImplemented"];
 
                 // New UI keys (P-UI)
-                public string FilterAll => LocalizationService.Instance["FilterAll"];
-                public string FilterUpdates => LocalizationService.Instance["FilterUpdates"];
+                                public string FilterUpdates => LocalizationService.Instance["FilterUpdates"];
                 public string FilterErrors => LocalizationService.Instance["FilterErrors"];
                 public string FilterDisabled => LocalizationService.Instance["FilterDisabled"];
                 public string SortByName => LocalizationService.Instance["SortByName"];

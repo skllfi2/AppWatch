@@ -177,7 +177,24 @@ public sealed class TrayService : IDisposable
         }
     }
 
-    public void HideWindow(IntPtr hwnd) => ShowWindow(hwnd, SW_HIDE);
+    public void HideWindow(IntPtr hwnd)
+    {
+        ShowWindow(hwnd, SW_HIDE);
+        TrimProcessWorkingSet();
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool SetProcessWorkingSetSize(IntPtr hProcess, IntPtr dwMinimumWorkingSetSize, IntPtr dwMaximumWorkingSetSize);
+
+    public static void TrimProcessWorkingSet()
+    {
+        try
+        {
+            using var proc = System.Diagnostics.Process.GetCurrentProcess();
+            SetProcessWorkingSetSize(proc.Handle, new IntPtr(-1), new IntPtr(-1));
+        }
+        catch { }
+    }
 
     public void ShowWindowRestore(IntPtr hwnd)
     {

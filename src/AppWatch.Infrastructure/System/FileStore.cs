@@ -51,6 +51,18 @@ public sealed class FileStore
         if (!string.IsNullOrEmpty(destDir))
             Directory.CreateDirectory(destDir);
 
+        // Remove MOTW (Zone.Identifier) if present
+        Native.NativeSystemBridge.UnblockFile(sourceFilePath);
+
+        // Try atomic native replace if target file exists and native bridge is available
+        if (File.Exists(destinationFilePath) && Native.NativeSystemBridge.IsAvailable)
+        {
+            if (Native.NativeSystemBridge.ReplaceFile(destinationFilePath, sourceFilePath))
+            {
+                return true;
+            }
+        }
+
         // Try direct overwrite first
         try
         {

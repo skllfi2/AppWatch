@@ -56,3 +56,9 @@ $RECYCLE.BIN/
 app-diagnostic.log
 results.tsv
 warnings-report.txt
+
+## Rust & Cargo
+target/
+**/target/
+.cargo/config.toml
+**/.cargo/config.toml

@@ -13,11 +13,15 @@ public static class DownloadMirrors
         if (!IsMirrorable(originalUrl) || mirrorPrefixes is null)
             return candidates;
 
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var prefix in mirrorPrefixes)
         {
             if (string.IsNullOrWhiteSpace(prefix)) continue;
             var trimmed = prefix.TrimEnd('/') + "/";
-            candidates.Add(trimmed + originalUrl);
+            if (seen.Add(trimmed))
+            {
+                candidates.Add(trimmed + originalUrl);
+            }
         }
         return candidates;
     }

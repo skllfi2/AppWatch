@@ -46,6 +46,8 @@ public sealed class UpdateEngine : IUpdateEngine
         _systemVersion = systemVersion;
         _sourceRegistry = sourceRegistry ?? new UpdateSourceRegistry(new IUpdateSourceProvider[]
         {
+            new Sources.PackageToolUpdateSourceProvider(),
+            new Sources.FeedUpdateSourceProvider(),
             new Sources.GitVerseUpdateSourceProvider(new Git.GitVerseApiClient(), systemVersion),
             new Sources.GitLabUpdateSourceProvider(new Git.GitLabApiClient(), systemVersion),
             new Sources.GitHubUpdateSourceProvider(github, systemVersion),
@@ -114,6 +116,33 @@ public sealed class UpdateEngine : IUpdateEngine
                     throw new InvalidOperationException(
                         $"не удалось остановить процесс «{processName}» — вероятно, он запущен от администратора. " +
                         "Остановите его вручную или запустите AppWatch от администратора.");
+            }
+
+            // Rust Restart Manager check: verify if the target executable is held by other lock holders
+            if (app.ExecutableName is not null && !string.IsNullOrWhiteSpace(installDir))
+            {
+                var targetExe = Path.Combine(installDir, app.ExecutableName);
+                if (File.Exists(targetExe))
+                {
+                    var lockingPids = Native.NativeSystemBridge.GetLockingProcesses(targetExe);
+                    if (lockingPids.Count > 0)
+                    {
+                        Log.Information("found {Count} processes locking {File}: {Pids}", lockingPids.Count, targetExe, lockingPids);
+                        foreach (var pid in lockingPids)
+                        {
+                            try
+                            {
+                                using var p = Process.GetProcessById(pid);
+                                p.Kill(entireProcessTree: true);
+                                p.WaitForExit(5_000);
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Warning("failed to terminate locking pid {Pid}: {Msg}", pid, ex.Message);
+                            }
+                        }
+                    }
+                }
             }
 
             var installerPath = await DownloadAndVerifyAsync(check.ChosenAsset!, app.RepoName, tag, check.NewRelease, progress, cancellationToken).ConfigureAwait(false);
